@@ -1,7 +1,7 @@
 import time
 import random
+from . import Graph
 from itertools import combinations
-from graphs import Graph
 
 
 def test01():
