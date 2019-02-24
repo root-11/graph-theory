@@ -1,20 +1,50 @@
 import time
 import random
-from graph import Graph
+from graph import *
 from itertools import combinations
 
 
-def test01():
+def graph_01():
     """
-    Asserts that the shortest_path is correct
+    :return: Graph.
     """
     d = {1: {2: 10, 3: 5},
          2: {4: 1, 3: 2},
          3: {2: 3, 4: 9, 5: 2},
          4: {5: 4},
          5: {1: 7, 4: 6}}
-    G = Graph()
-    G.update_from_dict(d)
+    return Graph(from_dict=d)
+
+
+def graph_02():
+    """
+    1 -> 2 -> 3
+    |    |    |
+    v    v    v
+    4 -> 5 -> 6
+    |    |    |
+    v    v    v
+    7 -> 8 -> 9
+
+    :return: :return:
+    """
+    d = {1: {2: 1, 4: 1},
+         2: {3: 1, 5: 1},
+         3: {6: 1},
+         4: {5: 1, 7: 1},
+         5: {6: 1, 8: 1},
+         6: {9: 1},
+         7: {8: 1},
+         8: {9: 1}
+         }
+    return Graph(from_dict=d)
+
+
+def test01():
+    """
+    Asserts that the shortest_path is correct
+    """
+    G = graph_01()
 
     dist, path = G.shortest_path(1, 4)
     assert [1, 3, 2, 4] == path, path
@@ -30,14 +60,13 @@ def test02():
          3: {2: 3, 4: 9, 5: 2},
          4: {5: 4},
          5: {1: 7, 4: 6}}
-    G = Graph()
-    G.update_from_dict(d)
+    G = Graph(from_dict=d)
     assert d[3] == G[3]
     assert d[3][4] == G[3][4]
 
 
 def test_graph_data():
-    """triggers error in priorityDictionary
+    """
     g and h are two dictionaries with exactly same structure, but some distances vary
     g triggers an error and h doesn't
     """
@@ -198,4 +227,28 @@ def test_tsp_larger_problem():
     assert len(path) == points
 
 
+def test_path_permutations01():
+    G = graph_02()
+    paths = G.all_paths(1, 3)
+    assert len(paths) == 1, paths
+    assert paths[0] == [1, 2, 3]
+
+
+def test_path_permutations02():
+    G = graph_02()
+    paths = G.all_paths(1, 6)
+    assert len(paths) == 3
+    assert paths == [[1, 2, 3, 6], [1, 2, 5, 6], [1, 4, 5, 6]]
+
+
+def test_path_permutations03():
+    G = graph_02()
+    paths = G.all_paths(1, 9)
+    assert len(paths) == 6
+    assert paths == [[1, 2, 3, 6, 9],
+                     [1, 2, 5, 6, 9],
+                     [1, 2, 5, 8, 9],
+                     [1, 4, 5, 6, 9],
+                     [1, 4, 5, 8, 9],
+                     [1, 4, 7, 8, 9]], paths
 

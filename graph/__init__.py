@@ -1,11 +1,12 @@
 from functools import lru_cache
-from itertools import combinations, permutations
+from itertools import combinations, chain
 from collections import defaultdict
 from heapq import heappop, heappush
 
-
-__all__ = ['Graph', 'CustomNode',
-           'shortest_path', 'distance', 'subgraph', 'same', 'tsp']
+__all__ = ['Graph',
+           'subgraph',
+           'shortest_path', 'distance', 'same',
+           'tsp', 'all_paths']
 
 
 class Graph(object):
@@ -16,6 +17,7 @@ class Graph(object):
     individual functions, by importing them separately.
 
     """
+
     def __init__(self, nodes=None, links=None, from_dict=None):
         """
         :param nodes:
@@ -152,25 +154,31 @@ class Graph(object):
 
     def all_pairs_shortest_paths(self):
         """
-
         :return:
         """
         return all_pairs_shortest_paths(graph=self)
 
     def shortest_tree_all_pairs(self):
         """
-
         :return:
         """
         return shortest_tree_all_pairs(graph=self)
 
     def has_path(self, path):
         """
-
-        :param path:
-        :return:
+        :param path: list of nodes
+        :return: boolean, if the path is in G.
         """
         return has_path(graph=self, path=path)
+
+    def all_paths(self, start, end):
+        """
+        finds all paths from start to end
+        :param start: node
+        :param end: node
+        :return: list of paths
+        """
+        return all_paths(graph=self, start=start, end=end)
 
 
 def shortest_path(graph, start, end):
@@ -222,8 +230,8 @@ def distance(graph, path):
     assert isinstance(graph, Graph)
     assert isinstance(path, list)
     d = 0
-    for idx in range(len(path)-1):
-        n1, n2 = path[idx], path[idx+1]
+    for idx in range(len(path) - 1):
+        n1, n2 = path[idx], path[idx + 1]
         d += graph.links[n1][n2]
     return d
 
@@ -274,7 +282,7 @@ def tsp(graph):
 
     def shortest_links_first(graph):
         """ returns a list of (distance, node1, node2) with shortest on top."""
-        c = combinations(graph.nodes, 2)
+        c = combinations(graph.nodes(), 2)
         distances = [(graph.links[a][b], a, b) for a, b in c]
         distances.sort()
         return distances
@@ -293,7 +301,7 @@ def tsp(graph):
     def tsp_tour_length(graph, tour):
         """ The TSP tour length WITH return to the starting point."""
         return sum(graph.links[tour[i - 1]][tour[i]] for i in range(len(tour)))
-    
+
     def improve_tour(graph, tour):
         if not tour:
             raise ValueError("No tour to improve?")
@@ -309,7 +317,7 @@ def tsp(graph):
         """ Return (i, j) pairs denoting tour[i:j] subsegments of a tour of length N."""
         return [(i, i + length) for length in reversed(range(2, N))
                 for i in reversed(range(N - length + 1))]
-    
+
     def reverse_segment_if_improvement(graph, tour, i, j):
         """If reversing tour[i:j] would make the tour shorter, then do it."""
         # Given tour [...A,B...C,D...], consider reversing B...C to get [...A,C...B,D...]
@@ -371,7 +379,8 @@ def adjacency_matrix(graph):
          5: {1: inf, 2: inf, 3: inf, 4: 6, 5: 0}}
     """
     assert isinstance(graph, Graph)
-    return {v1: {v2: 0 if v1 == v2 else graph[v1].get(v2, float('inf')) for v2 in graph.nodes()} for v1 in graph.nodes()}
+    return {v1: {v2: 0 if v1 == v2 else graph[v1].get(v2, float('inf')) for v2 in graph.nodes()} for v1 in
+            graph.nodes()}
 
 
 def all_pairs_shortest_paths(graph):
@@ -462,32 +471,27 @@ def has_path(graph, path):
     for v2 in path[1:]:
         try:
             _ = graph[v1][v2]
+            v1 = v2
         except KeyError:
             return False
     return True
 
 
-def path_permutations(graph, path, start_and_end_prescribed=True):
-    """
-
+def all_paths(graph, start, end):
+    """ Returns all paths from start to end.
     :param graph: instance of Graph
-    :param path: list of nodes
-    :param start_and_end_prescribed: boolean;
-        if True, all valid paths have start = path[0] and end = path[-1
+    :param start: node
+    :param end: node
     :return: list of paths
     """
     assert isinstance(graph, Graph)
-    if start_and_end_prescribed:
-        start, variables, end = [path[0]], path[1:-1], [path[-1]]
-    else:
-        start, variables, end = [], path, []
+    options = set(graph.nodes()) - {start, end}
+
+    # powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
+    s = list(options)
     L = []
-    for permutation in permutations(variables):
-        path = start + list(permutation) + end
+    for combination in chain.from_iterable(combinations(s, r) for r in range(len(s) + 1)):
+        path = [start] + list(combination) + [end]
         if has_path(graph, path):
             L.append(path)
     return L
-
-
-
-
