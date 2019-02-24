@@ -4,15 +4,23 @@ from collections import defaultdict
 from heapq import heappop, heappush
 
 
-__all__ = ['Graph']
+__all__ = ['Graph',
+           'shortest_path', 'distance', 'subgraph', 'same', 'tsp']
 
 
 class Graph(object):
     """
     Graph is the base graph that all methods use.
 
+    For methods, please see the documentation on the
+    individual functions, by importing them separately.
+
     """
     def __init__(self, nodes=None, links=None):
+        """
+        :param nodes:
+        :param links:
+        """
         if nodes is None:
             nodes = {}
         self.nodes = nodes
@@ -39,6 +47,9 @@ class Graph(object):
         return L
 
     def add_node(self, node_id):
+        """
+        :param node_id: hashable node.
+        """
         self.nodes[node_id] = 1
 
     def add_link(self, node1, node2, distance=1, bidirectional=False):
@@ -81,21 +92,45 @@ class Graph(object):
             for n2 in dictionary[n1]:
                 self.add_link(n1, n2, dictionary[n1][n2])
 
-    # methods:
     def shortest_path(self, start, end):
-
+        """
+        :param start: start node
+        :param end: end node
+        :return: distance, path as list
+        """
         return shortest_path(graph=self, start=start, end=end)
 
     def distance_from_path(self, path):
+        """
+        :param path: list of nodes
+        :return: distance along the path.
+        """
         return distance(graph=self, path=path)
 
     def solve_tsp(self):
+        """ solves the traveling salesman problem for the graph
+        (finds the shortest path through all nodes)
+        :return: tour length (path+retrun to starting point),
+                 path travelled.
+        """
         return tsp(self)
 
     def subgraph_from_nodes(self, nodes):
+        """
+        constructs a copy of the graph containing only the
+        listed nodes (and their links)
+        :param nodes: list of nodes
+        :return: class Graph
+        """
         return subgraph(graph=self, nodes=nodes)
 
     def same_path(self, p1, p2):
+        """ compares two paths to determine if they're the same, despite
+        being in different order.
+        :param p1: list of nodes
+        :param p2: list of nodes
+        :return: boolean
+        """
         return same(p1, p2)
 
 
