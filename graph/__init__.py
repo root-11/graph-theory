@@ -1,10 +1,10 @@
 from functools import lru_cache
-from itertools import combinations
+from itertools import combinations, permutations
 from collections import defaultdict
 from heapq import heappop, heappush
 
 
-__all__ = ['Graph',
+__all__ = ['Graph', 'CustomNode',
            'shortest_path', 'distance', 'subgraph', 'same', 'tsp']
 
 
@@ -16,22 +16,29 @@ class Graph(object):
     individual functions, by importing them separately.
 
     """
-    def __init__(self, nodes=None, links=None):
+    def __init__(self, nodes=None, links=None, from_dict=None):
         """
         :param nodes:
         :param links:
         """
-        if nodes is None:
-            nodes = {}
-        self.nodes = nodes
-        if links is None:
-            links = {}
-        self.links = links
+        self._nodes = {}
+        self.links = {}
         self._max_length = 0
         self._edges_cache = None
 
+        if from_dict is not None:
+            self.update_from_dict(from_dict)
+        else:
+            if nodes is not None:
+                self._nodes = nodes
+            if links is not None:
+                self.links = links
+
     def __getitem__(self, item):
         return self.links.__getitem__(item)
+
+    def nodes(self):
+        return self._nodes.keys()
 
     def edges(self):
         """
@@ -48,18 +55,22 @@ class Graph(object):
 
     def add_node(self, node_id):
         """
-        :param node_id: hashable node.
+        :param node_id: any hashable node.
+
+        PRO TIP:
+        If you want to hold additional values on your node, then define
+        you class with a __hash__() method. See CustomNode as example.
         """
-        self.nodes[node_id] = 1
+        self._nodes[node_id] = 1
 
     def add_link(self, node1, node2, distance=1, bidirectional=False):
         """
         :param node1: hashable node
         :param node2: hashable node
-        :param distance: numeric value.
+        :param distance: numeric value (int or float)
         :param bidirectional: boolean.
         """
-        self._edges_cache = None  #
+        self._edges_cache = None  # Resetting the edge cache if it has been loaded.
 
         assert isinstance(distance, (float, int))
         self.add_node(node1)
@@ -133,6 +144,34 @@ class Graph(object):
         """
         return same(p1, p2)
 
+    def adjacency_matrix(self):
+        """
+        :return:
+        """
+        return adjacency_matrix(graph=self)
+
+    def all_pairs_shortest_paths(self):
+        """
+
+        :return:
+        """
+        return all_pairs_shortest_paths(graph=self)
+
+    def shortest_tree_all_pairs(self):
+        """
+
+        :return:
+        """
+        return shortest_tree_all_pairs(graph=self)
+
+    def has_path(self, path):
+        """
+
+        :param path:
+        :return:
+        """
+        return has_path(graph=self, path=path)
+
 
 def shortest_path(graph, start, end):
     """
@@ -197,7 +236,7 @@ def subgraph(graph, nodes):
     """
     assert isinstance(graph, Graph)
     assert isinstance(nodes, list)
-    assert all(n1 in graph.nodes for n1 in nodes)
+    assert all(n1 in graph._nodes for n1 in nodes)
     G = Graph()
     for n1 in nodes:
         G.add_node(n1)
@@ -286,20 +325,20 @@ def tsp(graph):
 
     # 1. create a path using greedy algorithm (picks nearest peer)
     new_segment = []
-    endpoints = {n: [n] for n in graph.nodes}
+    endpoints = {n: [n] for n in graph._nodes}
     L = shortest_links_first(graph)
     for _, a, b in L:
         if a in endpoints and b in endpoints and endpoints[a] != endpoints[b]:
             new_segment = join_endpoints(endpoints, a, b)
-            if len(new_segment) == len(graph.nodes):
+            if len(new_segment) == len(graph._nodes):
                 break  # return new_segment
-    assert len(new_segment) == len(graph.nodes)
+    assert len(new_segment) == len(graph._nodes)
     first_tour = new_segment[:]
     first_path_length = tsp_tour_length(graph, first_tour)
 
     # 2. run improvement on the created path.
     improved_tour = improve_tour(graph, new_segment)
-    assert set(graph.nodes) == set(improved_tour)
+    assert set(graph._nodes) == set(improved_tour)
 
     second_path_length = tsp_tour_length(graph, improved_tour)
 
@@ -308,3 +347,147 @@ def tsp(graph):
     )
 
     return second_path_length, improved_tour
+
+
+def adjacency_matrix(graph):
+    """
+    :param graph:
+    :return: dictionary
+
+    Converts directed graph to an adjacency matrix.
+    Note: The distance from a node to itself is 0 and distance from a node to
+    an unconnected node is defined to be infinite. This does not mean that there
+    is no path from a node to another via other nodes.
+        g = {1: {2: 3, 3: 8, 5: -4},
+             2: {4: 1, 5: 7},
+             3: {2: 4},
+             4: {1: 2, 3: -5},
+             5: {4: 6}}
+        adj(g)
+        {1: {1: 0, 2: 3, 3: 8, 4: inf, 5: -4},
+         2: {1: inf, 2: 0, 3: inf, 4: 1, 5: 7},
+         3: {1: inf, 2: 4, 3: 0, 4: inf, 5: inf},
+         4: {1: 2, 2: inf, 3: -5, 4: 0, 5: inf},
+         5: {1: inf, 2: inf, 3: inf, 4: 6, 5: 0}}
+    """
+    assert isinstance(graph, Graph)
+    return {v1: {v2: 0 if v1 == v2 else graph[v1].get(v2, float('inf')) for v2 in graph.nodes()} for v1 in graph.nodes()}
+
+
+def all_pairs_shortest_paths(graph):
+    """
+    Find the cost of the shortest path between every pair of vertices in a
+    weighted graph. Uses the Floyd-Warshall algorithm.
+
+    inf = float('inf')
+    g = {0: {0: 0,   1: 1,   2: 4},
+         1: {0: inf, 1: 0,   2: 2},
+         2: {0: inf, 1: inf, 2: 0}}
+    fw(g) #
+    {0: {0: 0,   1: 1,   2: 3},
+    1: {0: inf, 1: 0,   2: 2},
+    2: {0: inf, 1: inf, 2: 0}}
+    h = {1: {2: 3, 3: 8, 5: -4},
+         2: {4: 1, 5: 7},
+         3: {2: 4},
+         4: {1: 2, 3: -5},
+         5: {4: 6}}
+    fw(adj(h)) #
+        {1: {1: 0, 2: 1, 3: -3, 4: 2, 5: -4},
+         2: {1: 3, 2: 0, 3: -4, 4: 1, 5: -1},
+         3: {1: 7, 2: 4, 3: 0, 4: 5, 5: 3},
+         4: {1: 2, 2: -1, 3: -5, 4: 0, 5: -2},
+         5: {1: 8, 2: 5, 3: 1, 4: 6, 5: 0}}
+    """
+    g = Graph(from_dict=adjacency_matrix(graph))
+    for v2 in g.nodes():
+        d = {v1: {v3: min(d[v1][v3], d[v1][v2] + d[v2][v3])
+                  for v3 in g.nodes()}
+             for v1 in g.nodes()}
+    else:
+        d = {}
+    return d
+
+
+def shortest_tree_all_pairs(graph):
+    """
+       'minimize the longest distance between any pair'
+
+    Note: This algorithm is not shortest path as it jumps
+    to a new branch when it has exhausted a branch in the tree.
+    :return: path
+    """
+    assert isinstance(graph, Graph)
+    g = Graph(from_dict=all_pairs_shortest_paths(graph))
+
+    distance = float('inf')
+    best_starting_point = -1
+    # create shortest path gantt diagram.
+    for start_node in g.nodes():
+        if start_node in g:
+            dist = sum(v for k, v in g[start_node].items())
+            if dist < distance:
+                best_starting_point = start_node
+        else:
+            print("node {} is isolated, skipping...".format(start_node))  # it's an island.
+
+    g2 = g[best_starting_point]  # {1: 0, 2: 1, 3: 2, 4: 3}
+    del g
+    inv_g2 = {}
+    for k, v in g2.items():
+        if v not in inv_g2:
+            inv_g2[v] = set()
+        inv_g2[v].add(k)
+
+    all_nodes = set(g.nodes())
+    path = []
+    while all_nodes and inv_g2.keys():
+        v_nearest = min(inv_g2.keys())
+        for v in inv_g2[v_nearest]:
+            all_nodes.remove(v)
+            path.append(v)
+        del inv_g2[v_nearest]
+    return path
+
+
+def has_path(graph, path):
+    """ checks if path exists is graph
+    :param graph: instance of Graph
+    :param path: list of nodes
+    :return: boolean
+    """
+    assert isinstance(graph, Graph)
+    assert isinstance(path, list)
+    v1 = path[0]
+    for v2 in path[1:]:
+        try:
+            _ = graph[v1][v2]
+        except KeyError:
+            return False
+    return True
+
+
+def path_permutations(graph, path, start_and_end_prescribed=True):
+    """
+
+    :param graph: instance of Graph
+    :param path: list of nodes
+    :param start_and_end_prescribed: boolean;
+        if True, all valid paths have start = path[0] and end = path[-1
+    :return: list of paths
+    """
+    assert isinstance(graph, Graph)
+    if start_and_end_prescribed:
+        start, variables, end = [path[0]], path[1:-1], [path[-1]]
+    else:
+        start, variables, end = [], path, []
+    L = []
+    for permutation in permutations(variables):
+        path = start + list(permutation) + end
+        if has_path(graph, path):
+            L.append(path)
+    return L
+
+
+
+
