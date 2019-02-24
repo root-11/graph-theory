@@ -1,6 +1,6 @@
 import time
 import random
-from . import Graph
+from graph import Graph
 from itertools import combinations
 
 

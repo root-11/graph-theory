@@ -83,16 +83,14 @@ class Graph(object):
 
     # methods:
     def shortest_path(self, start, end):
+
         return shortest_path(graph=self, start=start, end=end)
 
     def distance_from_path(self, path):
         return distance(graph=self, path=path)
 
     def solve_tsp(self):
-        tsp = TSP(nodes=self.nodes, links=self.links)
-        path = tsp.solve()
-        length = tsp.tsp_tour_length(path)
-        return length, path
+        return tsp(self)
 
     def subgraph_from_nodes(self, nodes):
         return subgraph(graph=self, nodes=nodes)
@@ -142,6 +140,11 @@ def shortest_path(graph, start, end):
 
 
 def distance(graph, path):
+    """ Calculates the distance for the path in graph
+    :param graph: class Graph
+    :param path: list of nodes
+    :return: distance
+    """
     assert isinstance(graph, Graph)
     assert isinstance(path, list)
     d = 0
@@ -152,6 +155,11 @@ def distance(graph, path):
 
 
 def subgraph(graph, nodes):
+    """ Creates a subgraph as a copy from the graph
+    :param graph: class Graph
+    :param nodes: list of nodes
+    :return: new instance of Graph.
+    """
     assert isinstance(graph, Graph)
     assert isinstance(nodes, list)
     assert all(n1 in graph.nodes for n1 in nodes)
@@ -179,45 +187,24 @@ def same(path1, path2):
     return False
 
 
-class TSP(Graph):
-    def __init__(self, nodes=None, links=None):
-        super().__init__(nodes, links)
-        self.cache = {}
+def tsp(graph):
+    """
+    Attempts to solve the traveling salesmans problem TSP for the graph.
 
-    def shortest_links_first(self):
+    Runtime approximation: seconds = 10**(-5) * (points)**2.31
+    Solution quality: Range 98.1% - 100% optimal.
+
+    :param graph: instance of class Graph
+    :return: tour_length, path
+    """
+
+    def shortest_links_first(graph):
         """ returns a list of (distance, node1, node2) with shortest on top."""
-        c = combinations(self.nodes, 2)
-        distances = [(self.links[a][b], a, b) for a, b in c]
+        c = combinations(graph.nodes, 2)
+        distances = [(graph.links[a][b], a, b) for a, b in c]
         distances.sort()
         return distances
 
-    def reverse_segment_if_improvement(self, tour, i, j):
-        """If reversing tour[i:j] would make the tour shorter, then do it."""
-        # Given tour [...A,B...C,D...], consider reversing B...C to get [...A,C...B,D...]
-        A, B, C, D = tour[i - 1], tour[i], tour[j - 1], tour[j % len(tour)]
-        # Are old links (AB + CD) longer than new ones (AC + BD)? If so, reverse segment.
-        if self.links[A][B] + self.links[C][D] > self.links[A][C] + self.links[B][D]:
-            tour[i:j] = reversed(tour[i:j])
-            return True
-
-    def improve_tour(self, tour):
-        if not tour:
-            raise ValueError("No tour to improve?")
-
-        while True:
-            improvements = {self.reverse_segment_if_improvement(tour, i, j)
-                            for (i, j) in self.subsegments(len(tour))}
-            if improvements == {None} or len(improvements) == 0:
-                return tour
-
-    @staticmethod
-    @lru_cache()
-    def subsegments(N):
-        """ Return (i, j) pairs denoting tour[i:j] subsegments of a tour of length N."""
-        return [(i, i + length) for length in reversed(range(2, N))
-                for i in reversed(range(N - length + 1))]
-
-    @staticmethod
     def join_endpoints(endpoints, A, B):
         "Join segments [...,A] + [B,...] into one segment. Maintain `endpoints`."
         Aseg, Bseg = endpoints[A], endpoints[B]
@@ -229,39 +216,60 @@ class TSP(Graph):
         endpoints[Aseg[0]] = endpoints[Aseg[-1]] = Aseg
         return Aseg
 
-    def tsp_tour_length(self, tour):
-        """ The TSP tour length with return to the starting point."""
-        return sum(self.links[tour[i - 1]][tour[i]] for i in range(len(tour)))
+    def tsp_tour_length(graph, tour):
+        """ The TSP tour length WITH return to the starting point."""
+        return sum(graph.links[tour[i - 1]][tour[i]] for i in range(len(tour)))
+    
+    def improve_tour(graph, tour):
+        if not tour:
+            raise ValueError("No tour to improve?")
 
-    def solve(self):
-        """ Attempts to solve the TSP
+        while True:
+            improvements = {reverse_segment_if_improvement(graph, tour, i, j)
+                            for (i, j) in subsegments(len(tour))}
+            if improvements == {None} or len(improvements) == 0:
+                return tour
 
-        Runtime approximation: seconds = 10**(-5) * (points)**2.31
-        Solution quality: Range 98.1% - 100% optimal.
+    @lru_cache()
+    def subsegments(N):
+        """ Return (i, j) pairs denoting tour[i:j] subsegments of a tour of length N."""
+        return [(i, i + length) for length in reversed(range(2, N))
+                for i in reversed(range(N - length + 1))]
+    
+    def reverse_segment_if_improvement(graph, tour, i, j):
+        """If reversing tour[i:j] would make the tour shorter, then do it."""
+        # Given tour [...A,B...C,D...], consider reversing B...C to get [...A,C...B,D...]
+        A, B, C, D = tour[i - 1], tour[i], tour[j - 1], tour[j % len(tour)]
+        # Are old links (AB + CD) longer than new ones (AC + BD)? If so, reverse segment.
+        if graph.links[A][B] + graph.links[C][D] > graph.links[A][C] + graph.links[B][D]:
+            tour[i:j] = reversed(tour[i:j])
+            return True
 
-        """
-        # The core TSP solver:
-        # 1. create a path using greedy algorithm (picks nearest peer)
-        new_segment = []
-        endpoints = {n: [n] for n in self.nodes}
-        L = self.shortest_links_first()
-        for _, a, b in L:
-            if a in endpoints and b in endpoints and endpoints[a] != endpoints[b]:
-                new_segment = self.join_endpoints(endpoints, a, b)
-                if len(new_segment) == len(self.nodes):
-                    break  # return new_segment
-        assert len(new_segment) == len(self.nodes)
-        first_tour = new_segment[:]
-        first_path_length = self.tsp_tour_length(first_tour)
+    # The core TSP solver:
+    if not isinstance(graph, Graph):
+        raise ValueError("Expected {} not {}".format(Graph.__class__.__name__, type(graph)))
 
-        # 2. run improvement on the created path.
-        improved_tour = self.improve_tour(new_segment)
-        assert set(self.nodes) == set(improved_tour)
+    # 1. create a path using greedy algorithm (picks nearest peer)
+    new_segment = []
+    endpoints = {n: [n] for n in graph.nodes}
+    L = shortest_links_first(graph)
+    for _, a, b in L:
+        if a in endpoints and b in endpoints and endpoints[a] != endpoints[b]:
+            new_segment = join_endpoints(endpoints, a, b)
+            if len(new_segment) == len(graph.nodes):
+                break  # return new_segment
+    assert len(new_segment) == len(graph.nodes)
+    first_tour = new_segment[:]
+    first_path_length = tsp_tour_length(graph, first_tour)
 
-        second_path_length = self.tsp_tour_length(improved_tour)
+    # 2. run improvement on the created path.
+    improved_tour = improve_tour(graph, new_segment)
+    assert set(graph.nodes) == set(improved_tour)
 
-        assert first_path_length >= second_path_length, "first path was better than improved tour?! {} {}".format(
-            first_path_length, second_path_length
-        )
+    second_path_length = tsp_tour_length(graph, improved_tour)
 
-        return improved_tour
+    assert first_path_length >= second_path_length, "first path was better than improved tour?! {} {}".format(
+        first_path_length, second_path_length
+    )
+
+    return second_path_length, improved_tour
