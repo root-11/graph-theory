@@ -200,7 +200,7 @@ def test_tsp_perfect_problem():
     expected_tour = [i for i in range(len(xys))]
     expected_length = len(xys)
     assert dist == expected_length, (dist, expected_length)
-    g.same_path(path, expected_tour)
+    assert g.same_path(path, expected_tour)
 
 
 def test_tsp_larger_problem():
@@ -227,6 +227,43 @@ def test_tsp_larger_problem():
     assert len(path) == points
 
 
+def test_shortest_path_fail():
+    G = graph_02()
+    d, p = G.shortest_path(start=9, end=1)
+    assert d == float('inf')
+    assert p == []
+
+
+def test_subgraph():
+    G = graph_02()
+    G2 = G.subgraph_from_nodes([1, 2, 3, 4])
+    d = {1: {2: 1, 4: 1},
+         2: {3: 1},
+         }
+
+    for k, v in d.items():
+        for k2, d2 in v.items():
+            assert G[k][k2] == G2[k][k2]
+
+
+def test_distance():
+    G = graph_02()
+    p = [1, 2, 3, 6, 9]
+    assert G.distance_from_path(p) == len(p)
+
+
+def test_adjacency_matrix():
+    pass
+
+
+def test_all_pairs_shortest_path():
+    pass
+
+
+def test_shortest_tree_all_pairs():
+    pass
+
+
 def test_path_permutations01():
     G = graph_02()
     paths = G.all_paths(1, 3)
@@ -251,4 +288,3 @@ def test_path_permutations03():
                      [1, 4, 5, 6, 9],
                      [1, 4, 5, 8, 9],
                      [1, 4, 7, 8, 9]], paths
-
