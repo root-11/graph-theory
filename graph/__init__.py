@@ -137,6 +137,13 @@ class Graph(object):
         """
         return subgraph(graph=self, nodes=nodes)
 
+    def is_subgraph(self, other):
+        """ Checks if self is a subgraph in other.
+        :param other: instance of Graph
+        :return: boolean
+        """
+        return is_subgraph(self, other)
+
     def same_path(self, p1, p2):
         """ compares two paths to determine if they're the same, despite
         being in different order.
@@ -251,6 +258,22 @@ def subgraph(graph, nodes):
         for n2 in graph[n1]:
             G.add_link(n1, n2, graph[n1][n2])
     return G
+
+
+def is_subgraph(graph1, graph2):
+    """
+    Checks is graph1 is subgraph in graph2
+    :param graph1: instance of Graph
+    :param graph2: instance of Graph
+    :return: boolean
+    """
+    assert isinstance(graph1, Graph)
+    assert isinstance(graph2, Graph)
+    if not set(graph1.nodes()).issubset(set(graph2.nodes())):
+        return False
+    if not set(graph1.edges()).issubset(set(graph2.edges())):
+        return False
+    return True
 
 
 def same(path1, path2):

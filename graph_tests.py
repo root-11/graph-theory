@@ -40,6 +40,18 @@ def graph_02():
     return Graph(from_dict=d)
 
 
+def graph03():
+    d = {1: {2: 1, 3: 9, 4: 4, 5: 13, 6: 20},
+         2: {1: 7, 3: 7, 4: 2, 5: 11, 6: 18},
+         3: {8: 20, 4: 4, 5: 4, 6: 16, 7: 16},
+         4: {8: 15, 3: 4, 5: 9, 6: 11, 7: 21},
+         5: {8: 11, 6: 2, 7: 17},
+         6: {8: 9, 7: 5},
+         7: {8: 3},
+         8: {7: 5}}
+    return Graph(from_dict=d)
+
+
 def test01():
     """
     Asserts that the shortest_path is correct
@@ -220,16 +232,16 @@ def test_tsp_larger_problem():
         g.add_link(a, b, distance=d)
         g.add_link(b, a, distance=d)
 
-    start = time.clock()
+    start = time.process_time()
     dist, path = g.solve_tsp()
-    end = time.clock()
+    end = time.process_time()
     print("Running tsp on {} points, took {:.3f} seconds".format(points, end - start))
     assert len(path) == points
 
 
 def test_shortest_path_fail():
     G = graph_02()
-    d, p = G.shortest_path(start=9, end=1)
+    d, p = G.shortest_path(start=9, end=1)  # there is no path.
     assert d == float('inf')
     assert p == []
 
@@ -240,7 +252,7 @@ def test_subgraph():
     d = {1: {2: 1, 4: 1},
          2: {3: 1},
          }
-
+    assert G2.is_subgraph(G)
     for k, v in d.items():
         for k2, d2 in v.items():
             assert G[k][k2] == G2[k][k2]
@@ -249,11 +261,16 @@ def test_subgraph():
 def test_distance():
     G = graph_02()
     p = [1, 2, 3, 6, 9]
-    assert G.distance_from_path(p) == len(p)
+    assert G.distance_from_path(p) == len(p)-1
 
 
 def test_adjacency_matrix():
-    pass
+    G = graph_02()
+    am = G.adjacency_matrix()
+    G2 = Graph(from_dict=am)
+    assert G.is_subgraph(G2)
+    assert G2._max_length == float('inf') != G._max_length
+    assert not G2.is_subgraph(G)
 
 
 def test_all_pairs_shortest_path():
