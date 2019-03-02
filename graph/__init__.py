@@ -105,6 +105,14 @@ class Graph(object):
             for n2 in dictionary[n1]:
                 self.add_link(n1, n2, dictionary[n1][n2])
 
+    def to_dict(self):
+        d = {}
+        for n1, n2, dist in self.edges():
+            if not n1 in d:
+                d[n1] = {}
+            d[n1][n2] = dist
+        return d
+
     def shortest_path(self, start, end):
         """
         :param start: start node
@@ -431,14 +439,15 @@ def all_pairs_shortest_paths(graph):
          4: {1: 2, 2: -1, 3: -5, 4: 0, 5: -2},
          5: {1: 8, 2: 5, 3: 1, 4: 6, 5: 0}}
     """
-    g = Graph(from_dict=adjacency_matrix(graph))
-    for v2 in g.nodes():
-        d = {v1: {v3: min(d[v1][v3], d[v1][v2] + d[v2][v3])
-                  for v3 in g.nodes()}
-             for v1 in g.nodes()}
-    else:
-        d = {}
-    return d
+    g = graph.adjacency_matrix()
+    assert isinstance(g, dict)
+    vertices = g.keys()
+
+    for v2 in vertices:
+        g = {v1: {v3: min(g[v1][v3], g[v1][v2] + g[v2][v3])
+                  for v3 in vertices}
+             for v1 in vertices}
+    return g
 
 
 def shortest_tree_all_pairs(graph):

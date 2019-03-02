@@ -4,6 +4,18 @@ from graph import *
 from itertools import combinations
 
 
+def test_to_from_dict():
+    d = {1: {2: 10, 3: 5},
+         2: {4: 1, 3: 2},
+         3: {2: 3, 4: 9, 5: 2},
+         4: {5: 4},
+         5: {1: 7, 4: 6}}
+    g = Graph()
+    g.update_from_dict(d)
+    d2 = g.to_dict()
+    assert d == d2
+
+
 def graph_01():
     """
     :return: Graph.
@@ -52,6 +64,18 @@ def graph03():
     return Graph(from_dict=d)
 
 
+def graph04():
+    d = {1: {2: 1, 3: 9, 4: 4, 5: 11, 6: 17},
+         2: {1: 7, 3: 7, 4: 2, 5: 9, 6: 15},
+         3: {8: 17, 4: 4, 5: 4, 6: 14, 7: 13},
+         4: {8: 12, 3: 4, 5: 9, 6: 9, 7: 18},
+         5: {8: 9, 6: 2, 7: 15},
+         6: {8: 9, 7: 5},
+         7: {8: 3},
+         8: {7: 5}}
+    return Graph(from_dict=d)
+
+
 def test01():
     """
     Asserts that the shortest_path is correct
@@ -77,43 +101,19 @@ def test02():
     assert d[3][4] == G[3][4]
 
 
-def test_graph_data():
-    """
-    g and h are two dictionaries with exactly same structure, but some distances vary
-    g triggers an error and h doesn't
-    """
-    g = {1: {2: 1, 3: 9, 4: 4, 5: 13, 6: 20},
-         2: {1: 7, 3: 7, 4: 2, 5: 11, 6: 18},
-         3: {8: 20, 4: 4, 5: 4, 6: 16, 7: 16},
-         4: {8: 15, 3: 4, 5: 9, 6: 11, 7: 21},
-         5: {8: 11, 6: 2, 7: 17},
-         6: {8: 9, 7: 5},
-         7: {8: 3},
-         8: {7: 5}}
-    h = {1: {2: 1, 3: 9, 4: 4, 5: 11, 6: 17},
-         2: {1: 7, 3: 7, 4: 2, 5: 9, 6: 15},
-         3: {8: 17, 4: 4, 5: 4, 6: 14, 7: 13},
-         4: {8: 12, 3: 4, 5: 9, 6: 9, 7: 18},
-         5: {8: 9, 6: 2, 7: 15},
-         6: {8: 9, 7: 5},
-         7: {8: 3},
-         8: {7: 5}}
+def test_shortest_path01():
+    G = graph03()
+    distG, pathG = G.shortest_path(1, 8)
+    assert pathG == [1, 2, 4, 8], pathG
 
-    G = Graph()
-    G.update_from_dict(h)
-    dist, path = G.shortest_path(1, 8)
-    assert path == [1, 2, 4, 8], path
-    G = Graph()
-    G.update_from_dict(g)
-    dist, path = G.shortest_path(1, 8)
-    assert path == [1, 2, 4, 8], path
+    H = graph04()
+    distH, pathH = H.shortest_path(1, 8)
+    assert pathH == [1, 2, 4, 8], pathH
+    pathH = pathH[2:] + pathH[:2]
+    assert pathG != pathH, (pathG, pathH)
 
-
-def test_same():
-    p1 = [1, 2, 3, 4, 5]
-    p2 = [3, 4, 5, 1, 2]
-    g = Graph()
-    assert g.same_path(p1, p2)
+    assert G.same_path(pathG, pathH)
+    assert H.same_path(pathG, pathH)
 
 
 def test_tsp():
@@ -261,7 +261,7 @@ def test_subgraph():
 def test_distance():
     G = graph_02()
     p = [1, 2, 3, 6, 9]
-    assert G.distance_from_path(p) == len(p)-1
+    assert G.distance_from_path(p) == len(p) - 1
 
 
 def test_adjacency_matrix():
@@ -274,7 +274,15 @@ def test_adjacency_matrix():
 
 
 def test_all_pairs_shortest_path():
-    pass
+    G = graph03()
+    d = G.all_pairs_shortest_paths()
+    G2 = Graph(from_dict=d)
+    for n1 in G.nodes():
+        for n2 in G.nodes():
+            if n1 == n2: continue
+            d, path = G.shortest_path(n1,n2)
+            d2 = G2[n1][n2]
+            assert d == d2
 
 
 def test_shortest_tree_all_pairs():
