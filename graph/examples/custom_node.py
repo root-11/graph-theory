@@ -8,21 +8,8 @@ Example with a custom datastrcuture for nodes.
 
 class CustomNode(object):
     """ A sample 'Custom Node' for users to copy paste
-
-    Example:
-
-    applepie = set()
-    apple_strudel = set()
-    brownie = set()
-
-    def distance(one, other):
-        return 1 / len(one.intersect(other))
-
-    G =
-
-
     """
-    ids = 0  # FIXME.
+    ids = 0  # used for pool of ids.
 
     def __init__(self, values):
         """
@@ -37,3 +24,4 @@ class CustomNode(object):
         :return: int, the node id used in all calculations.
         """
         return self._id
+

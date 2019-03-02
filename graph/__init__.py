@@ -18,7 +18,7 @@ class Graph(object):
 
     """
 
-    def __init__(self, nodes=None, links=None, from_dict=None):
+    def __init__(self, from_dict=None):
         """
         :param nodes:
         :param links:
@@ -30,11 +30,6 @@ class Graph(object):
 
         if from_dict is not None:
             self.update_from_dict(from_dict)
-        else:
-            if nodes is not None:
-                self._nodes = nodes
-            if links is not None:
-                self.links = links
 
     def __getitem__(self, item):
         return self.links.__getitem__(item)
@@ -106,6 +101,9 @@ class Graph(object):
                 self.add_link(n1, n2, dictionary[n1][n2])
 
     def to_dict(self):
+        """ creates a nested dictionary from the graph.
+        :return dict d[n1][n2] = distance
+        """
         d = {}
         for n1, n2, dist in self.edges():
             if not n1 in d:
