@@ -1,6 +1,5 @@
 
 
-
 description = """ 
 Example with a custom datastrcuture for nodes.
 """
@@ -25,3 +24,4 @@ class CustomNode(object):
         """
         return self._id
 
+    # Add your own functions here.

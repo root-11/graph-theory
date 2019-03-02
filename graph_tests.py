@@ -16,7 +16,13 @@ def test_to_from_dict():
     assert d == d2
 
 
-def graph_01():
+def test_bidrectional_link():
+    g = Graph()
+    g.add_link(node1=1, node2=2, distance=4, bidirectional=True)
+    assert g[1][2] == g[2][1]
+
+
+def graph01():
     """
     :return: Graph.
     """
@@ -28,7 +34,7 @@ def graph_01():
     return Graph(from_dict=d)
 
 
-def graph_02():
+def graph02():
     """
     1 -> 2 -> 3
     |    |    |
@@ -80,8 +86,7 @@ def test01():
     """
     Asserts that the shortest_path is correct
     """
-    G = graph_01()
-
+    G = graph01()
     dist, path = G.shortest_path(1, 4)
     assert [1, 3, 2, 4] == path, path
     assert 9 == dist, dist
@@ -114,6 +119,11 @@ def test_shortest_path01():
 
     assert G.same_path(pathG, pathH)
     assert H.same_path(pathG, pathH)
+
+    reverseG = list(reversed(pathG))
+    assert not G.same_path(pathG, reverseG)
+
+    assert G.has_path(pathG)
 
 
 def test_tsp():
@@ -240,14 +250,14 @@ def test_tsp_larger_problem():
 
 
 def test_shortest_path_fail():
-    G = graph_02()
+    G = graph02()
     d, p = G.shortest_path(start=9, end=1)  # there is no path.
     assert d == float('inf')
     assert p == []
 
 
 def test_subgraph():
-    G = graph_02()
+    G = graph02()
     G2 = G.subgraph_from_nodes([1, 2, 3, 4])
     d = {1: {2: 1, 4: 1},
          2: {3: 1},
@@ -257,15 +267,19 @@ def test_subgraph():
         for k2, d2 in v.items():
             assert G[k][k2] == G2[k][k2]
 
+    G3 = graph02()
+    G3.add_link(3,100,7)
+    assert not G3.is_subgraph(G2)
+
 
 def test_distance():
-    G = graph_02()
+    G = graph02()
     p = [1, 2, 3, 6, 9]
     assert G.distance_from_path(p) == len(p) - 1
 
 
 def test_adjacency_matrix():
-    G = graph_02()
+    G = graph02()
     am = G.adjacency_matrix()
     G2 = Graph(from_dict=am)
     assert G.is_subgraph(G2)
@@ -285,26 +299,50 @@ def test_all_pairs_shortest_path():
             assert d == d2
 
 
-def test_shortest_tree_all_pairs():
-    pass
+def test_shortest_tree_all_pairs01():
+    G = Graph()
+    links = [
+        (1, 2, 1),
+        (1, 3, 1),
+        (2, 3, 1)
+    ]
+    for L in links:
+        G.add_link(*L)
+
+    p = G.shortest_tree_all_pairs()
+    assert p == [1,2,3]
+
+
+def test_shortest_tree_all_pairs02():
+    G = Graph()
+    links = [
+        (1, 2, 1),
+        (1, 3, 2),
+        (2, 3, 3)
+    ]
+    for L in links:
+        G.add_link(*L)
+
+    p = G.shortest_tree_all_pairs()
+    assert p == [1, 2, 3]
 
 
 def test_path_permutations01():
-    G = graph_02()
+    G = graph02()
     paths = G.all_paths(1, 3)
     assert len(paths) == 1, paths
     assert paths[0] == [1, 2, 3]
 
 
 def test_path_permutations02():
-    G = graph_02()
+    G = graph02()
     paths = G.all_paths(1, 6)
     assert len(paths) == 3
     assert paths == [[1, 2, 3, 6], [1, 2, 5, 6], [1, 4, 5, 6]]
 
 
 def test_path_permutations03():
-    G = graph_02()
+    G = graph02()
     paths = G.all_paths(1, 9)
     assert len(paths) == 6
     assert paths == [[1, 2, 3, 6, 9],

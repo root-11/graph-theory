@@ -26,7 +26,6 @@ class Graph(object):
         self._nodes = {}
         self.links = {}
         self._max_length = 0
-        self._edges_cache = None
 
         if from_dict is not None:
             self.update_from_dict(from_dict)
@@ -41,9 +40,6 @@ class Graph(object):
         """
         :return: list of edges (n1, n2, distance)
         """
-        if self._edges_cache:
-            return self._edges_cache[:]
-
         L = []
         for n1 in self.links:
             for n2 in self.links[n1]:
@@ -67,8 +63,6 @@ class Graph(object):
         :param distance: numeric value (int or float)
         :param bidirectional: boolean.
         """
-        self._edges_cache = None  # Resetting the edge cache if it has been loaded.
-
         assert isinstance(distance, (float, int))
         self.add_node(node1)
         self.add_node(node2)
@@ -332,8 +326,7 @@ def tsp(graph):
         return sum(graph.links[tour[i - 1]][tour[i]] for i in range(len(tour)))
 
     def improve_tour(graph, tour):
-        if not tour:
-            raise ValueError("No tour to improve?")
+        if not tour: raise ValueError("No tour to improve?")
 
         while True:
             improvements = {reverse_segment_if_improvement(graph, tour, i, j)
@@ -357,8 +350,7 @@ def tsp(graph):
             return True
 
     # The core TSP solver:
-    if not isinstance(graph, Graph):
-        raise ValueError("Expected {} not {}".format(Graph.__class__.__name__, type(graph)))
+    if not isinstance(graph, Graph): raise ValueError("Expected {} not {}".format(Graph.__class__.__name__, type(graph)))
 
     # 1. create a path using greedy algorithm (picks nearest peer)
     new_segment = []
@@ -457,12 +449,13 @@ def shortest_tree_all_pairs(graph):
     :return: path
     """
     assert isinstance(graph, Graph)
-    g = Graph(from_dict=all_pairs_shortest_paths(graph))
+    g = all_pairs_shortest_paths(graph)
+    assert isinstance(g, dict)
 
     distance = float('inf')
     best_starting_point = -1
     # create shortest path gantt diagram.
-    for start_node in g.nodes():
+    for start_node in g.keys():
         if start_node in g:
             dist = sum(v for k, v in g[start_node].items())
             if dist < distance:
@@ -471,14 +464,15 @@ def shortest_tree_all_pairs(graph):
             print("node {} is isolated, skipping...".format(start_node))  # it's an island.
 
     g2 = g[best_starting_point]  # {1: 0, 2: 1, 3: 2, 4: 3}
-    del g
+
     inv_g2 = {}
     for k, v in g2.items():
         if v not in inv_g2:
             inv_g2[v] = set()
         inv_g2[v].add(k)
 
-    all_nodes = set(g.nodes())
+    all_nodes = set(g.keys())
+    del g
     path = []
     while all_nodes and inv_g2.keys():
         v_nearest = min(inv_g2.keys())
