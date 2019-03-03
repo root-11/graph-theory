@@ -11,14 +11,14 @@ def test_to_from_dict():
          4: {5: 4},
          5: {1: 7, 4: 6}}
     g = Graph()
-    g.update_from_dict(d)
+    g.from_dict(d)
     d2 = g.to_dict()
     assert d == d2
 
 
 def test_bidrectional_link():
     g = Graph()
-    g.add_link(node1=1, node2=2, distance=4, bidirectional=True)
+    g.add_link(node1=1, node2=2, value=4, bidirectional=True)
     assert g[1][2] == g[2][1]
 
 
@@ -173,8 +173,8 @@ def test_tsp():
     # The graph must be fully connected for the TSP to work:
     for a, b in combinations(range(len(xys)), 2):
         d = distance(xys[a], xys[b])
-        g.add_link(a, b, distance=d)
-        g.add_link(b, a, distance=d)
+        g.add_link(a, b, value=d)
+        g.add_link(b, a, value=d)
 
     dist, path = g.solve_tsp()
     expected_tour = [0, 1, 2, 3, 4, 9, 8, 7, 6, 5]
@@ -215,8 +215,8 @@ def test_tsp_perfect_problem():
     # The graph must be fully connected for the TSP to work:
     for a, b in combinations(range(len(xys)), 2):
         d = distance(xys[a], xys[b])
-        g.add_link(a, b, distance=d)
-        g.add_link(b, a, distance=d)
+        g.add_link(a, b, value=d)
+        g.add_link(b, a, value=d)
 
     dist, path = g.solve_tsp()
     expected_tour = [i for i in range(len(xys))]
@@ -239,8 +239,8 @@ def test_tsp_larger_problem():
         dx = abs(a[0] - b[0])
         dy = abs(a[1] - b[1])
         d = (dx ** 2 + dy ** 2) ** (1 / 2)
-        g.add_link(a, b, distance=d)
-        g.add_link(b, a, distance=d)
+        g.add_link(a, b, value=d)
+        g.add_link(b, a, value=d)
 
     start = time.process_time()
     dist, path = g.solve_tsp()
@@ -314,12 +314,13 @@ def test_shortest_tree_all_pairs01():
 
 
 def test_shortest_tree_all_pairs02():
-    G = Graph()
     links = [
         (1, 2, 1),
         (1, 3, 2),
         (2, 3, 3)
     ]
+    G = Graph(from_list=links)
+
     for L in links:
         G.add_link(*L)
 
@@ -351,3 +352,83 @@ def test_path_permutations03():
                      [1, 4, 5, 6, 9],
                      [1, 4, 5, 8, 9],
                      [1, 4, 7, 8, 9]], paths
+
+
+def test_maximum_flow():
+    links = [
+        (1, 2, 18),
+        (1, 3, 10),
+        (2, 4, 7),
+        (2, 5, 6),
+        (3, 4, 2),
+        (3, 6, 8),
+        (4, 5, 10),
+        (4, 6, 10),
+        (5, 6, 16),
+        (5, 7, 9),
+        (6, 7, 18)
+    ]
+    g = Graph(from_list=links)
+
+    flow, g2 = g.maximum_flow(1,2)
+
+
+def test_maximum_flow01():
+    links = [
+        (1, 2, 1)
+    ]
+    g = Graph(from_list=links)
+    flow, g2 = g.maximum_flow(start=1, end=2)
+    assert flow == 1
+
+
+def test_maximum_flow02():
+    links = [
+        (1, 2, 10),
+        (2, 3, 1),  # bottleneck.
+        (3, 4, 10)
+    ]
+    g = Graph(from_list=links)
+    flow, g2 = g.maximum_flow(start=1, end=4)
+    assert flow == 1
+
+
+def test_maximum_flow03():
+    links = [
+        (1, 2, 10),
+        (1, 3, 10),
+        (2, 4, 1),  # bottleneck 1
+        (3, 5, 1),  # bottleneck 2
+        (4, 6, 10),
+        (5, 6, 10)
+    ]
+    g = Graph(from_list=links)
+    flow, g2 = g.maximum_flow(start=1, end=6)
+    assert flow == 2
+
+
+def test_maximum_flow04():
+    links = [
+        (1, 2, 10),
+        (1, 3, 10),
+        (2, 4, 1),  # bottleneck 1
+        (2, 5, 1),  # bottleneck 2
+        (3, 5, 1),  # bottleneck 3
+        (3, 4, 1),  # bottleneck 4
+        (4, 6, 10),
+        (5, 6, 10)
+    ]
+    g = Graph(from_list=links)
+    flow, g2 = g.maximum_flow(start=1, end=6)
+    assert flow == 4
+
+
+def test_maximum_flow05():
+    links = [
+        (1, 2, 10),
+        (1, 3, 1),
+        (2, 3, 1)
+    ]
+    g = Graph(from_list=links)
+    flow, g2 = g.maximum_flow(start=1, end=3)
+    assert flow == 2

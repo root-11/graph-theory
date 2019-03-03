@@ -18,32 +18,37 @@ class Graph(object):
 
     """
 
-    def __init__(self, from_dict=None):
+    def __init__(self, from_dict=None, from_list=None):
         """
         :param nodes:
         :param links:
         """
         self._nodes = {}
-        self.links = {}
+        self._links = {}
         self._max_length = 0
 
         if from_dict is not None:
-            self.update_from_dict(from_dict)
+            self.from_dict(from_dict)
+        elif from_list is not None:
+            self.from_list(from_list)
 
     def __getitem__(self, item):
-        return self.links.__getitem__(item)
+        return self._links.__getitem__(item)
+
+    def __len__(self):
+        return len(self._nodes)
 
     def nodes(self):
         return self._nodes.keys()
 
     def edges(self):
         """
-        :return: list of edges (n1, n2, distance)
+        :return: list of edges (n1, n2, value)
         """
         L = []
-        for n1 in self.links:
-            for n2 in self.links[n1]:
-                L.append((n1, n2, self.links[n1][n2]))
+        for n1 in self._links:
+            for n2 in self._links[n1]:
+                L.append((n1, n2, self._links[n1][n2]))
         return L
 
     def add_node(self, node_id):
@@ -56,29 +61,29 @@ class Graph(object):
         """
         self._nodes[node_id] = 1
 
-    def add_link(self, node1, node2, distance=1, bidirectional=False):
+    def add_link(self, node1, node2, value=1, bidirectional=False):
         """
         :param node1: hashable node
         :param node2: hashable node
-        :param distance: numeric value (int or float)
+        :param value: numeric value (int or float)
         :param bidirectional: boolean.
         """
-        assert isinstance(distance, (float, int))
+        assert isinstance(value, (float, int))
         self.add_node(node1)
         self.add_node(node2)
-        if node1 not in self.links:
-            self.links[node1] = {}
-        if node2 not in self.links:
-            self.links[node2] = {}
-        self.links[node1][node2] = distance
-        if distance > self._max_length:
-            self._max_length = distance
+        if node1 not in self._links:
+            self._links[node1] = {}
+        if node2 not in self._links:
+            self._links[node2] = {}
+        self._links[node1][node2] = value
+        if value > self._max_length:
+            self._max_length = value
         if bidirectional:
-            self.links[node2][node1] = distance
+            self._links[node2][node1] = value
 
-    def update_from_dict(self, dictionary):
+    def from_dict(self, dictionary):
         """
-        Creates graph from dictionary
+        Updates the graph from dictionary
         :param dictionary:
 
         d = {1: {2: 10, 3: 5},
@@ -88,7 +93,7 @@ class Graph(object):
              5: {1: 7, 4: 6}}
         G = from_dict(d)
 
-        :return: class Graph.
+        :return: None
         """
         for n1 in dictionary:
             for n2 in dictionary[n1]:
@@ -105,6 +110,27 @@ class Graph(object):
             d[n1][n2] = dist
         return d
 
+    def from_list(self, links):
+        """
+        updates the graph from a list of links.
+        :param links: list
+
+        links = [
+            (1, 2, 18),
+            (1, 3, 10),
+            (2, 4, 7),
+            (2, 5, 6),
+            (3, 4, 2),
+        ]
+        """
+        assert isinstance(links, list)
+        for n1, n2, v in links:
+            self.add_link(n1, n2, v)
+
+    def to_list(self):
+        """ alias for self.edges()"""
+        return self.edges()
+
     def shortest_path(self, start, end):
         """
         :param start: start node
@@ -119,6 +145,15 @@ class Graph(object):
         :return: distance along the path.
         """
         return distance(graph=self, path=path)
+
+    def maximum_flow(self, start, end):
+        """ Determines the maximum flow of the graph between
+        start and end.
+        :param start: node (source)
+        :param end: node (sink)
+        :return: flow, graph of flow.
+        """
+        return maximum_flow(self, start, end)
 
     def solve_tsp(self):
         """ solves the traveling salesman problem for the graph
@@ -144,7 +179,8 @@ class Graph(object):
         """
         return is_subgraph(self, other)
 
-    def same_path(self, p1, p2):
+    @staticmethod
+    def same_path(p1, p2):
         """ compares two paths to determine if they're the same, despite
         being in different order.
         :param p1: list of nodes
@@ -220,10 +256,10 @@ def shortest_path(graph, start, end):
                 if v2 in visited:
                     continue
                 prev = mins.get(v2, None)
-                next = cost + dist
-                if prev is None or next < prev:
-                    mins[v2] = next
-                    heappush(q, (next, v2, path))
+                next_node = cost + dist
+                if prev is None or next_node < prev:
+                    mins[v2] = next_node
+                    heappush(q, (next_node, v2, path))
 
     return float("inf"), []
 
@@ -239,7 +275,7 @@ def distance(graph, path):
     d = 0
     for idx in range(len(path) - 1):
         n1, n2 = path[idx], path[idx + 1]
-        d += graph.links[n1][n2]
+        d += graph[n1][n2]
     return d
 
 
@@ -251,7 +287,6 @@ def subgraph(graph, nodes):
     """
     assert isinstance(graph, Graph)
     assert isinstance(nodes, list)
-    assert all(n1 in graph._nodes for n1 in nodes)
     G = Graph()
     for n1 in nodes:
         G.add_node(n1)
@@ -306,68 +341,77 @@ def tsp(graph):
     def shortest_links_first(graph):
         """ returns a list of (distance, node1, node2) with shortest on top."""
         c = combinations(graph.nodes(), 2)
-        distances = [(graph.links[a][b], a, b) for a, b in c]
+        distances = [(graph[a][b], a, b) for a, b in c]
         distances.sort()
         return distances
 
-    def join_endpoints(endpoints, A, B):
-        "Join segments [...,A] + [B,...] into one segment. Maintain `endpoints`."
-        Aseg, Bseg = endpoints[A], endpoints[B]
-        if Aseg[-1] is not A: Aseg.reverse()
-        if Bseg[0] is not B: Bseg.reverse()
-        Aseg += Bseg
-        del endpoints[A]
-        del endpoints[B]
-        endpoints[Aseg[0]] = endpoints[Aseg[-1]] = Aseg
-        return Aseg
+    def join_endpoints(endpoints, a, b):
+        """ Join segments [...,a] + [b,...] into one segment. Maintain `endpoints`.
+        :param endpoints:
+        :param a: node
+        :param b: node
+        :return:
+        """
+        a_seg, b_seg = endpoints[a], endpoints[b]
+        if a_seg[-1] is not a:
+            a_seg.reverse()
+        if b_seg[0] is not b:
+            b_seg.reverse()
+        a_seg += b_seg
+        del endpoints[a]
+        del endpoints[b]
+        endpoints[a_seg[0]] = endpoints[a_seg[-1]] = a_seg
+        return a_seg
 
     def tsp_tour_length(graph, tour):
         """ The TSP tour length WITH return to the starting point."""
-        return sum(graph.links[tour[i - 1]][tour[i]] for i in range(len(tour)))
+        return sum(graph[tour[i - 1]][tour[i]] for i in range(len(tour)))
 
     def improve_tour(graph, tour):
-        if not tour: raise ValueError("No tour to improve?")
+        if not tour:
+            raise ValueError("No tour to improve?")
 
         while True:
             improvements = {reverse_segment_if_improvement(graph, tour, i, j)
-                            for (i, j) in subsegments(len(tour))}
+                            for (i, j) in sub_segments(len(tour))}
             if improvements == {None} or len(improvements) == 0:
                 return tour
 
     @lru_cache()
-    def subsegments(N):
-        """ Return (i, j) pairs denoting tour[i:j] subsegments of a tour of length N."""
-        return [(i, i + length) for length in reversed(range(2, N))
-                for i in reversed(range(N - length + 1))]
+    def sub_segments(n):
+        """ Return (i, j) pairs denoting tour[i:j] sub_segments of a tour of length N."""
+        return [(i, i + length) for length in reversed(range(2, n))
+                for i in reversed(range(n - length + 1))]
 
     def reverse_segment_if_improvement(graph, tour, i, j):
         """If reversing tour[i:j] would make the tour shorter, then do it."""
         # Given tour [...A,B...C,D...], consider reversing B...C to get [...A,C...B,D...]
-        A, B, C, D = tour[i - 1], tour[i], tour[j - 1], tour[j % len(tour)]
-        # Are old links (AB + CD) longer than new ones (AC + BD)? If so, reverse segment.
-        if graph.links[A][B] + graph.links[C][D] > graph.links[A][C] + graph.links[B][D]:
+        a, b, c, d = tour[i - 1], tour[i], tour[j - 1], tour[j % len(tour)]
+        # are old links (ab + cd) longer than new ones (ac + bd)? if so, reverse segment.
+        if graph[a][b] + graph[c][d] > graph[a][c] + graph[b][d]:
             tour[i:j] = reversed(tour[i:j])
             return True
 
     # The core TSP solver:
-    if not isinstance(graph, Graph): raise ValueError("Expected {} not {}".format(Graph.__class__.__name__, type(graph)))
+    if not isinstance(graph, Graph):
+        raise ValueError("Expected {} not {}".format(Graph.__class__.__name__, type(graph)))
 
     # 1. create a path using greedy algorithm (picks nearest peer)
     new_segment = []
-    endpoints = {n: [n] for n in graph._nodes}
+    endpoints = {n: [n] for n in graph.nodes()}
     L = shortest_links_first(graph)
     for _, a, b in L:
         if a in endpoints and b in endpoints and endpoints[a] != endpoints[b]:
             new_segment = join_endpoints(endpoints, a, b)
-            if len(new_segment) == len(graph._nodes):
+            if len(new_segment) == len(graph):
                 break  # return new_segment
-    assert len(new_segment) == len(graph._nodes)
+    assert len(new_segment) == len(graph)
     first_tour = new_segment[:]
     first_path_length = tsp_tour_length(graph, first_tour)
 
     # 2. run improvement on the created path.
     improved_tour = improve_tour(graph, new_segment)
-    assert set(graph._nodes) == set(improved_tour)
+    assert set(graph.nodes()) == set(improved_tour)
 
     second_path_length = tsp_tour_length(graph, improved_tour)
 
@@ -519,3 +563,47 @@ def all_paths(graph, start, end):
         if has_path(graph, path):
             L.append(path)
     return L
+
+
+def maximum_flow(graph, start, end):
+    """
+    Returns the maximum flow graph
+    :param graph: instance of Graph
+    :param start: node
+    :param end: node
+    :return: flow, graph
+    """
+    assert isinstance(graph, Graph)
+
+    inlinks = {}
+    max_in_flow = {}
+    max_out_flow = {}
+    outlinks = {}
+    flow = {}
+
+    for n1 in graph.nodes():
+        outlinks[n1] = sum(graph[n1][n2] for n2 in graph[n1])
+        for n2 in graph[n1]:
+            if n2 not in inlinks:
+                inlinks[n2] = {}
+            inlinks[n2][n1] = graph[n1][n2]
+    for n2 in inlinks:
+        max_in_flow[n2] = sum(inlinks[n2][n1] for n1 in inlinks[n2])
+        max_out_flow[n2] = outlinks[n2]
+        flow[n2] = min(max_in_flow[n2], max_out_flow[n2])
+
+    # start!
+    nodes = [start]
+    G = Graph()
+    while nodes:
+        n1 = nodes.pop(0)
+        new_nodes = [n2 for n2 in graph[n1]]
+        nodes.extend(new_nodes)
+
+        if n1 == end:
+            v = sum(inlinks[n1][n2] for n2 in inlinks[n1])
+            return v,G
+
+        for n2 in graph[n1]:
+            v = min(max_in_flow[n2], max_out_flow[n2])
+            G.add_link(n1, n2, v)
