@@ -106,6 +106,14 @@ def test02():
     assert d[3][4] == G[3][4]
 
 
+def test03():
+    G = graph02()
+    all_edges = G.edges()
+    edges = G.edges(path=[1, 2, 3, 6, 9])
+    for edge in edges:
+        assert edge in all_edges, edge
+
+
 def test_shortest_path01():
     G = graph03()
     distG, pathG = G.shortest_path(1, 8)
@@ -268,7 +276,7 @@ def test_subgraph():
             assert G[k][k2] == G2[k][k2]
 
     G3 = graph02()
-    G3.add_link(3,100,7)
+    G3.add_link(3, 100, 7)
     assert not G3.is_subgraph(G2)
 
 
@@ -276,6 +284,13 @@ def test_distance():
     G = graph02()
     p = [1, 2, 3, 6, 9]
     assert G.distance_from_path(p) == len(p) - 1
+
+
+def test_bfs():
+    G = graph03()
+    d, path = G.breadth_first_search(1, 7)
+    assert d == 2, d
+    assert path == [1, 3, 7], path
 
 
 def test_adjacency_matrix():
@@ -294,7 +309,7 @@ def test_all_pairs_shortest_path():
     for n1 in G.nodes():
         for n2 in G.nodes():
             if n1 == n2: continue
-            d, path = G.shortest_path(n1,n2)
+            d, path = G.shortest_path(n1, n2)
             d2 = G2[n1][n2]
             assert d == d2
 
@@ -310,7 +325,7 @@ def test_shortest_tree_all_pairs01():
         G.add_link(*L)
 
     p = G.shortest_tree_all_pairs()
-    assert p == [1,2,3]
+    assert p == [1, 2, 3]
 
 
 def test_shortest_tree_all_pairs02():
@@ -370,7 +385,7 @@ def test_maximum_flow():
     ]
     g = Graph(from_list=links)
 
-    flow, g2 = g.maximum_flow(1,2)
+    flow, g2 = g.maximum_flow(1, 2)
 
 
 def test_maximum_flow01():

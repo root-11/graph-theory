@@ -1,6 +1,6 @@
 from functools import lru_cache
 from itertools import combinations, chain
-from collections import defaultdict
+from collections import defaultdict, deque
 from heapq import heappop, heappush
 
 __all__ = ['Graph',
@@ -20,8 +20,8 @@ class Graph(object):
 
     def __init__(self, from_dict=None, from_list=None):
         """
-        :param nodes:
-        :param links:
+        :param from_dict: creates graph for dictionary {n1:{n2:d} ...
+        :param links: creates graph from list of edges(n1,n2,d)
         """
         self._nodes = {}
         self._links = {}
@@ -41,14 +41,18 @@ class Graph(object):
     def nodes(self):
         return self._nodes.keys()
 
-    def edges(self):
+    def edges(self, path=None):
         """
+        :param: along_path (optional) list of nodes.
         :return: list of edges (n1, n2, value)
         """
-        L = []
-        for n1 in self._links:
-            for n2 in self._links[n1]:
+        if path:
+            L = []
+            for ix in range(len(path) - 1):
+                n1, n2 = path[ix], path[ix + 1]
                 L.append((n1, n2, self._links[n1][n2]))
+        else:
+            L = [(n1, n2, self._links[n1][n2]) for n1 in self._links for n2 in self._links[n1]]
         return L
 
     def add_node(self, node_id):
@@ -138,6 +142,14 @@ class Graph(object):
         :return: distance, path as list
         """
         return shortest_path(graph=self, start=start, end=end)
+
+    def breadth_first_search(self, start, end):
+        """ Determines the path with fewest nodes.
+        :param start: start node
+        :param end: end nodes
+        :return: nodes, path as list
+        """
+        return breadth_first_search(graph=self, start=start, end=end)
 
     def distance_from_path(self, path):
         """
@@ -244,7 +256,8 @@ def shortest_path(graph, start, end):
         if v1 not in visited:
             visited.add(v1)
             path = (v1, path)
-            if v1 == end:
+
+            if v1 == end: # exit criteria.
                 L = []
                 while path:
                     v, path = path[0], path[1]
@@ -257,6 +270,46 @@ def shortest_path(graph, start, end):
                     continue
                 prev = mins.get(v2, None)
                 next_node = cost + dist
+                if prev is None or next_node < prev:
+                    mins[v2] = next_node
+                    heappush(q, (next_node, v2, path))
+
+    return float("inf"), []
+
+
+def breadth_first_search(graph, start, end):
+    """ Determines the path from start to end with fewest nodes.
+    :param graph: class Graph
+    :param start: start node
+    :param end: end node
+    :return: path
+    """
+    assert isinstance(graph, Graph)
+
+    g = defaultdict(list)
+    for n1, n2, dist in graph.edges():
+        g[n1].append((dist, n2))
+
+    q, visited, mins = [(0, start, ())], set(), {start: 0}
+    while q:
+        (cost, v1, path) = heappop(q)
+        if v1 not in visited:
+            visited.add(v1)
+            path = (v1, path)
+
+            if v1 == end:  # exit criteria.
+                L = []
+                while path:
+                    v, path = path[0], path[1]
+                    L.append(v)
+                L.reverse()
+                return cost, L
+
+            for dist, v2 in g.get(v1, ()):
+                if v2 in visited:
+                    continue
+                prev = mins.get(v2, None)
+                next_node = cost + 1
                 if prev is None or next_node < prev:
                     mins[v2] = next_node
                     heappush(q, (next_node, v2, path))
@@ -574,36 +627,32 @@ def maximum_flow(graph, start, end):
     :return: flow, graph
     """
     assert isinstance(graph, Graph)
+    inflow = sum(graph[start][i] for i in graph[start])
+    outflow = sum(d for s, e, d in graph.edges() if e == end)
+    flow = min(inflow, outflow)  # anything in excess of this 'flow' is a waste of time.
 
-    inlinks = {}
-    max_in_flow = {}
-    max_out_flow = {}
-    outlinks = {}
-    flow = {}
+    d, path = breadth_first_search(graph, start, end)
 
-    for n1 in graph.nodes():
-        outlinks[n1] = sum(graph[n1][n2] for n2 in graph[n1])
-        for n2 in graph[n1]:
-            if n2 not in inlinks:
-                inlinks[n2] = {}
-            inlinks[n2][n1] = graph[n1][n2]
-    for n2 in inlinks:
-        max_in_flow[n2] = sum(inlinks[n2][n1] for n1 in inlinks[n2])
-        max_out_flow[n2] = outlinks[n2]
-        flow[n2] = min(max_in_flow[n2], max_out_flow[n2])
+    edges = graph.edges(path)
+    path_throughput = flow
+    for ix, edge in enumerate(edges):
+        n1, n2, f = edge
+        edges[ix] = n1, n2, min(f, flow)
+        path_throughput = min(f, path_throughput)
+    flow_graph = Graph(from_list=edges)
 
-    # start!
-    nodes = [start]
-    G = Graph()
-    while nodes:
-        n1 = nodes.pop(0)
-        new_nodes = [n2 for n2 in graph[n1]]
-        nodes.extend(new_nodes)
+    if path_throughput == flow:  # the "path" has enough capacity to carry the flow.
+        return flow, flow_graph
 
-        if n1 == end:
-            v = sum(inlinks[n1][n2] for n2 in inlinks[n1])
-            return v,G
+    visited = set(path)
+    excess_flow = flow - path_throughput
 
-        for n2 in graph[n1]:
-            v = min(max_in_flow[n2], max_out_flow[n2])
-            G.add_link(n1, n2, v)
+    n1 = start
+    while excess_flow:
+        for n2,f in graph[n1]:
+            if n2 in flow_graph[n1]:
+                continue
+            else:
+
+
+    return 1, graph
