@@ -24,7 +24,7 @@ def test_to_list():
 
 def test_bidrectional_link():
     g = Graph()
-    g.add_link(node1=1, node2=2, value=4, bidirectional=True)
+    g.add_edge(node1=1, node2=2, value=4, bidirectional=True)
     assert g[1][2] == g[2][1]
 
 
@@ -187,8 +187,8 @@ def test_tsp():
     # The graph must be fully connected for the TSP to work:
     for a, b in combinations(range(len(xys)), 2):
         d = distance(xys[a], xys[b])
-        g.add_link(a, b, value=d)
-        g.add_link(b, a, value=d)
+        g.add_edge(a, b, value=d)
+        g.add_edge(b, a, value=d)
 
     dist, path = g.solve_tsp()
     expected_tour = [0, 1, 2, 3, 4, 9, 8, 7, 6, 5]
@@ -229,8 +229,8 @@ def test_tsp_perfect_problem():
     # The graph must be fully connected for the TSP to work:
     for a, b in combinations(range(len(xys)), 2):
         d = distance(xys[a], xys[b])
-        g.add_link(a, b, value=d)
-        g.add_link(b, a, value=d)
+        g.add_edge(a, b, value=d)
+        g.add_edge(b, a, value=d)
 
     dist, path = g.solve_tsp()
     expected_tour = [i for i in range(len(xys))]
@@ -253,8 +253,8 @@ def test_tsp_larger_problem():
         dx = abs(a[0] - b[0])
         dy = abs(a[1] - b[1])
         d = (dx ** 2 + dy ** 2) ** (1 / 2)
-        g.add_link(a, b, value=d)
-        g.add_link(b, a, value=d)
+        g.add_edge(a, b, value=d)
+        g.add_edge(b, a, value=d)
 
     start = time.process_time()
     dist, path = g.solve_tsp()
@@ -282,7 +282,7 @@ def test_subgraph():
             assert G[k][k2] == G2[k][k2]
 
     G3 = graph02()
-    G3.add_link(3, 100, 7)
+    G3.add_edge(3, 100, 7)
     assert not G3.is_subgraph(G2)
 
 
@@ -328,7 +328,7 @@ def test_shortest_tree_all_pairs01():
         (2, 3, 1)
     ]
     for L in links:
-        G.add_link(*L)
+        G.add_edge(*L)
 
     p = G.shortest_tree_all_pairs()
     assert p == [1, 2, 3]
@@ -343,7 +343,7 @@ def test_shortest_tree_all_pairs02():
     G = Graph(from_list=links)
 
     for L in links:
-        G.add_link(*L)
+        G.add_edge(*L)
 
     p = G.shortest_tree_all_pairs()
     assert p == [1, 2, 3]

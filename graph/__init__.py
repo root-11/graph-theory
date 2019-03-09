@@ -74,7 +74,7 @@ class Graph(object):
         """
         self._nodes[node_id] = 1
 
-    def add_link(self, node1, node2, value=1, bidirectional=False):
+    def add_edge(self, node1, node2, value=1, bidirectional=False):
         """
         :param node1: hashable node
         :param node2: hashable node
@@ -110,7 +110,7 @@ class Graph(object):
         """
         for n1 in dictionary:
             for n2 in dictionary[n1]:
-                self.add_link(n1, n2, dictionary[n1][n2])
+                self.add_edge(n1, n2, dictionary[n1][n2])
 
     def to_dict(self):
         """ creates a nested dictionary from the graph.
@@ -138,7 +138,7 @@ class Graph(object):
         """
         assert isinstance(links, list)
         for n1, n2, v in links:
-            self.add_link(n1, n2, v)
+            self.add_edge(n1, n2, v)
 
     def to_list(self):
         """ alias for self.edges()"""
@@ -351,7 +351,7 @@ def subgraph(graph, nodes):
     for n1 in nodes:
         G.add_node(n1)
         for n2 in graph[n1]:
-            G.add_link(n1, n2, graph[n1][n2])
+            G.add_edge(n1, n2, graph[n1][n2])
     return G
 
 
@@ -660,7 +660,7 @@ def maximum_flow(graph, start, end):
             if n1 in flow_graph and n2 in flow_graph[n1]:
                 flow_graph[n1][n2] += path_flow
             else:
-                flow_graph.add_link(n1, n2, path_flow)
+                flow_graph.add_edge(n1, n2, path_flow)
 
             # updating:
             # if there is capacity left: update with new 1/capacity
