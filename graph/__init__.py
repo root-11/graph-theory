@@ -633,36 +633,54 @@ def maximum_flow(graph, start, end):
     assert isinstance(graph, Graph)
     inflow = sum(graph[start][i] for i in graph[start])
     outflow = sum(d for s, e, d in graph.edges() if e == end)
-    unassigned_flow = min(inflow, outflow)  # anything in excess of this 'flow' is a waste of time.
+    unassigned_flow = min(inflow, outflow)  # search in excess of this 'flow' is a waste of time.
     total_flow = 0
 
-    edges = [(n1, n2, 1 / d) for n1, n2, d in graph.edges() if d > 0]
-    inverted_graph = Graph(from_list=edges)
+    # below:
+    # I reviewed a number of algorithms, such as Ford-fulkerson algorithm,
+    # Edmonson-Karp and Dinic, but I didn't like them due to their naive usage
+    # of BFS, which leads to a lot of node visits.
+    #
+    # I therefore choose to invert the capacities of the graph so that the
+    # capacity any G[u][v] = c becomes 1/c in G_inverted.
+    # This allows me to use the shortest path method to find the path with
+    # most capacity in the first attempt, resulting in a significant reduction
+    # of unassigned flow.
+    #
+    # By updating G_inverted, with the residual capacity, I can keep using the
+    # shortest path, until the capacity is zero, whereby I remove the links
+    # When the shortest path method returns 'No path' or when unassigned flow
+    # is zero, I exit the algorithm.
 
-    flow_graph = Graph()
+    edges = [(n1, n2, 1 / d) for n1, n2, d in graph.edges() if d > 0]
+    inverted_graph = Graph(from_list=edges)  # create G_inverted.
+
+    flow_graph = Graph()  # Create structure to record flows.
 
     while unassigned_flow:
         # 1. find the best path
         d, path = shortest_path(inverted_graph, start, end)
-        if d == float('inf'):
+        if d == float('inf'):  # then there is no path, and we must exit.
             return total_flow, flow_graph
+        # else: use the path and lookup the actual flow from the capacity graph.
         path_flow = min(d for s, e, d in graph.edges(path))
 
         # 2. update the unassigned flow.
         unassigned_flow -= path_flow
         total_flow += path_flow
 
-        # 3. record the flows and update the inverted graph.
+        # 3. record the flows and update the inverted graph, so that it is
+        #    ready for the next iteration.
         edges = graph.edges(path)
         for n1, n2, d in edges:
 
-            # recording:
+            # 3.a. recording:
             if n1 in flow_graph and n2 in flow_graph[n1]:
                 flow_graph[n1][n2] += path_flow
             else:
                 flow_graph.add_edge(n1, n2, path_flow)
 
-            # updating:
+            # 3.b. updating:
             # if there is capacity left: update with new 1/capacity
             # else: remove node, as we can't do 1/zero.
             new_capacity = graph[n1][n2] - path_flow
