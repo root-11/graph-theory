@@ -16,6 +16,12 @@ def test_to_from_dict():
     assert d == d2
 
 
+def test_to_list():
+    g1 = graph01()
+    g2 = Graph(from_list=g1.to_list())
+    assert g1.edges() == g2.edges()
+
+
 def test_bidrectional_link():
     g = Graph()
     g.add_link(node1=1, node2=2, value=4, bidirectional=True)
@@ -370,6 +376,12 @@ def test_path_permutations03():
 
 
 def test_maximum_flow():
+    """ [2] ----- [5]
+       /    \   /  | \
+    [1]      [4]   |  [7]
+       \    /   \  | /
+        [3] ----- [6]
+    """
     links = [
         (1, 2, 18),
         (1, 3, 10),
@@ -385,7 +397,8 @@ def test_maximum_flow():
     ]
     g = Graph(from_list=links)
 
-    flow, g2 = g.maximum_flow(1, 2)
+    flow, g2 = g.maximum_flow(1, 7)
+    assert flow == 23, flow
 
 
 def test_maximum_flow01():
@@ -394,7 +407,7 @@ def test_maximum_flow01():
     ]
     g = Graph(from_list=links)
     flow, g2 = g.maximum_flow(start=1, end=2)
-    assert flow == 1
+    assert flow == 1, flow
 
 
 def test_maximum_flow02():
@@ -405,7 +418,7 @@ def test_maximum_flow02():
     ]
     g = Graph(from_list=links)
     flow, g2 = g.maximum_flow(start=1, end=4)
-    assert flow == 1
+    assert flow == 1, flow
 
 
 def test_maximum_flow03():
@@ -419,7 +432,7 @@ def test_maximum_flow03():
     ]
     g = Graph(from_list=links)
     flow, g2 = g.maximum_flow(start=1, end=6)
-    assert flow == 2
+    assert flow == 2, flow
 
 
 def test_maximum_flow04():
@@ -435,7 +448,7 @@ def test_maximum_flow04():
     ]
     g = Graph(from_list=links)
     flow, g2 = g.maximum_flow(start=1, end=6)
-    assert flow == 4
+    assert flow == 4, flow
 
 
 def test_maximum_flow05():
@@ -446,4 +459,5 @@ def test_maximum_flow05():
     ]
     g = Graph(from_list=links)
     flow, g2 = g.maximum_flow(start=1, end=3)
-    assert flow == 2
+    assert flow == 2, flow
+

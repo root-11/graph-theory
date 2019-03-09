@@ -1,6 +1,6 @@
 from functools import lru_cache
 from itertools import combinations, chain
-from collections import defaultdict, deque
+from collections import defaultdict
 from heapq import heappop, heappush
 
 __all__ = ['Graph',
@@ -35,8 +35,17 @@ class Graph(object):
     def __getitem__(self, item):
         return self._links.__getitem__(item)
 
+    def __delitem__(self, key):
+        self._links.__delitem__(key)
+
+    def __contains__(self, item):
+        return self._links.__contains__(item)
+
     def __len__(self):
         return len(self._nodes)
+
+    def __copy__(self):
+        return Graph(from_list=self.edges())
 
     def nodes(self):
         return self._nodes.keys()
@@ -109,7 +118,7 @@ class Graph(object):
         """
         d = {}
         for n1, n2, dist in self.edges():
-            if not n1 in d:
+            if n1 not in d:
                 d[n1] = {}
             d[n1][n2] = dist
         return d
@@ -257,7 +266,7 @@ def shortest_path(graph, start, end):
             visited.add(v1)
             path = (v1, path)
 
-            if v1 == end: # exit criteria.
+            if v1 == end:  # exit criteria.
                 L = []
                 while path:
                     v, path = path[0], path[1]
@@ -273,7 +282,6 @@ def shortest_path(graph, start, end):
                 if prev is None or next_node < prev:
                     mins[v2] = next_node
                     heappush(q, (next_node, v2, path))
-
     return float("inf"), []
 
 
@@ -313,7 +321,6 @@ def breadth_first_search(graph, start, end):
                 if prev is None or next_node < prev:
                     mins[v2] = next_node
                     heappush(q, (next_node, v2, path))
-
     return float("inf"), []
 
 
@@ -421,9 +428,7 @@ def tsp(graph):
         return sum(graph[tour[i - 1]][tour[i]] for i in range(len(tour)))
 
     def improve_tour(graph, tour):
-        if not tour:
-            raise ValueError("No tour to improve?")
-
+        assert tour, "no tour to improve?"
         while True:
             improvements = {reverse_segment_if_improvement(graph, tour, i, j)
                             for (i, j) in sub_segments(len(tour))}
@@ -446,8 +451,7 @@ def tsp(graph):
             return True
 
     # The core TSP solver:
-    if not isinstance(graph, Graph):
-        raise ValueError("Expected {} not {}".format(Graph.__class__.__name__, type(graph)))
+    assert isinstance(graph, Graph), type(graph)
 
     # 1. create a path using greedy algorithm (picks nearest peer)
     new_segment = []
@@ -629,30 +633,44 @@ def maximum_flow(graph, start, end):
     assert isinstance(graph, Graph)
     inflow = sum(graph[start][i] for i in graph[start])
     outflow = sum(d for s, e, d in graph.edges() if e == end)
-    flow = min(inflow, outflow)  # anything in excess of this 'flow' is a waste of time.
+    unassigned_flow = min(inflow, outflow)  # anything in excess of this 'flow' is a waste of time.
+    total_flow = 0
 
-    d, path = breadth_first_search(graph, start, end)
+    edges = [(n1, n2, 1 / d) for n1, n2, d in graph.edges() if d > 0]
+    inverted_graph = Graph(from_list=edges)
 
-    edges = graph.edges(path)
-    path_throughput = flow
-    for ix, edge in enumerate(edges):
-        n1, n2, f = edge
-        edges[ix] = n1, n2, min(f, flow)
-        path_throughput = min(f, path_throughput)
-    flow_graph = Graph(from_list=edges)
+    flow_graph = Graph()
 
-    if path_throughput == flow:  # the "path" has enough capacity to carry the flow.
-        return flow, flow_graph
+    while unassigned_flow:
+        # 1. find the best path
+        d, path = shortest_path(inverted_graph, start, end)
+        if d == float('inf'):
+            return total_flow, flow_graph
+        path_flow = min(d for s, e, d in graph.edges(path))
 
-    visited = set(path)
-    excess_flow = flow - path_throughput
+        # 2. update the unassigned flow.
+        unassigned_flow -= path_flow
+        total_flow += path_flow
 
-    n1 = start
-    while excess_flow:
-        for n2,f in graph[n1]:
-            if n2 in flow_graph[n1]:
-                continue
+        # 3. record the flows and update the inverted graph.
+        edges = graph.edges(path)
+        for n1, n2, d in edges:
+
+            # recording:
+            if n1 in flow_graph and n2 in flow_graph[n1]:
+                flow_graph[n1][n2] += path_flow
             else:
+                flow_graph.add_link(n1, n2, path_flow)
+
+            # updating:
+            # if there is capacity left: update with new 1/capacity
+            # else: remove node, as we can't do 1/zero.
+            new_capacity = graph[n1][n2] - path_flow
+            if new_capacity > 0:
+                inverted_graph[n1][n2] = 1/new_capacity
+            else:
+                del inverted_graph[n1][n2]
+    return total_flow, flow_graph
 
 
-    return 1, graph
+
