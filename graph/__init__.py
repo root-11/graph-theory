@@ -81,7 +81,6 @@ class Graph(object):
         :param value: numeric value (int or float)
         :param bidirectional: boolean.
         """
-        assert isinstance(value, (float, int))
         self.add_node(node1)
         self.add_node(node2)
         if node1 not in self._links:
