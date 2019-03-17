@@ -1,5 +1,5 @@
 from graph import Graph
-from fractions import Fraction
+from fractions import Fraction as F
 
 __description__ = """
 
@@ -132,5 +132,27 @@ def test01_weapons_target_assignment_problem():
 
     assignments = wtap(probabilities=g, weapons=weapons, target_values=target_values)
     assert isinstance(assignments, Graph)
-    assert set(assignments.edges()) == {(1, 7, -0.6999999999999998), (2, 7, -0.6299999999999998), (3, 6, -0.5999999999999999)}
+    assert set(assignments.edges()) == {(1, 7, -0.6999999999999998), (2, 7, -0.6299999999999998),
+                                        (3, 6, -0.5999999999999999)}
 
+
+def test02_weapons_target_assignment_problem_with_fractional_probabilities():
+    weapons = [1, 2, 3]
+    probabilities = [
+        (1, 5, F(1, 10)),
+        (1, 6, F(1, 10)),
+        (1, 7, F(1, 10)),
+        (2, 5, F(1, 10)),
+        (2, 6, F(1, 10)),
+        (2, 7, F(1, 10)),
+        (3, 5, F(1, 10)),
+        (3, 6, F(1, 10)),
+        (3, 7, F(1, 10))
+    ]
+    target_values = {5: 5, 6: 6, 7: 7}
+    g = Graph(from_list=probabilities)
+
+    assignments = wtap(probabilities=g, weapons=weapons, target_values=target_values)
+    assert isinstance(assignments, Graph)
+    assert set(assignments.edges()) == {(1, 7, F(-7/10)), (2, 7, F(-63/100)),
+                                        (3, 6, F(-3/5))}
