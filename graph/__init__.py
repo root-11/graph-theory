@@ -33,7 +33,17 @@ class Graph(object):
             self.from_list(from_list)
 
     def __getitem__(self, item):
-        return self._links.__getitem__(item)
+        out = None
+        if item in self._links:
+            out = self._links.__getitem__(item)
+        elif item in self._nodes:
+            out = self._nodes.__getitem__(item)
+        if out is None:
+            raise KeyError
+        return out
+
+    def __setitem__(self, key, value):
+        raise ValueError("Use add_edge(node1, node2, value)")
 
     def __delitem__(self, key):
         self._links.__delitem__(key)
@@ -48,7 +58,11 @@ class Graph(object):
         return Graph(from_list=self.edges())
 
     def nodes(self):
-        return self._nodes.keys()
+        """
+        :return: list of node ids.
+        PRO TIP: To retrieve the node obj use g[node id]
+        """
+        return list(self._nodes.keys())
 
     def edges(self, path=None):
         """
@@ -64,15 +78,16 @@ class Graph(object):
             L = [(n1, n2, self._links[n1][n2]) for n1 in self._links for n2 in self._links[n1]]
         return L
 
-    def add_node(self, node_id):
+    def add_node(self, node_id, obj=None):
         """
         :param node_id: any hashable node.
+        :param obj: any object that the node should refer to.
 
         PRO TIP:
         If you want to hold additional values on your node, then define
         you class with a __hash__() method. See CustomNode as example.
         """
-        self._nodes[node_id] = 1
+        self._nodes[node_id] = obj
 
     def add_edge(self, node1, node2, value=1, bidirectional=False):
         """
@@ -81,6 +96,8 @@ class Graph(object):
         :param value: numeric value (int or float)
         :param bidirectional: boolean.
         """
+        if isinstance(value, (dict, list, tuple)):
+            raise ValueError("value cannot be {}".format(type(value)))
         self.add_node(node1)
         self.add_node(node2)
         if node1 not in self._links:

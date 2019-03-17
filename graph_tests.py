@@ -16,6 +16,45 @@ def test_to_from_dict():
     assert d == d2
 
 
+def test_setitem():
+    g = Graph()
+    try:
+        g[1][2] = 3
+    except KeyError:
+        pass
+    g.add_node(1)
+    try:
+        g[1][2] = 3
+        raise Exception
+    except KeyError:
+        pass
+    g.add_edge(1, 2, 3)
+    assert g.edges() == [(1, 2, 3)]
+    link_1 = g[1][2]
+    assert link_1 == 3
+    link_1 = 4
+    assert g[1][2] != 4  # the edge is not an object.
+    g.add_edge(1, 2, 4)
+    assert g.edges() == [(1, 2, 4)]
+
+
+def test_add_node_attr():
+    g = Graph()
+    g.add_node(1, "this")
+    assert list(g.nodes()) == [1]
+    node_1 = g[1]
+    assert node_1 == "this"
+
+
+def test_add_edge_attr():
+    g = Graph()
+    try:
+        g.add_edge(1, 2, {'a': 1, 'b': 2})
+        raise Exception("Assignment of non-values is not supported.")
+    except ValueError:
+        pass
+
+
 def test_to_list():
     g1 = graph01()
     g2 = Graph(from_list=g1.to_list())
@@ -460,4 +499,3 @@ def test_maximum_flow05():
     g = Graph(from_list=links)
     flow, g2 = g.maximum_flow(start=1, end=3)
     assert flow == 2, flow
-

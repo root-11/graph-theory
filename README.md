@@ -41,4 +41,12 @@ Available methods:
 | `g.has_path` | asserts whether a path exists in g.|
 | `g.all_paths` | finds all combinations of paths between 2 nodes (start, end).|
 
+| want to | doesn't work | do instead | but why? |
+|:---|:---|:---|:---|
+| add edge | `g[1][2]=3` | `g.add_edge(1,2,3)` | `g[1][2]` retrieves the link. It's not for setting values. |
+| update edge | `g[1][2]=4` | `g.add_edge(1,2,4)` | See add edge |
+| multiple edges | `Graph(from_list=[(1,2,3), (1,2,4)]` | Add dummy nodes<br>`[(1,a,3), (a,2,0),`<br>` (1,b,4),(b,2,0)]` | Explicit is better than implicit. |
+| multiple values on edge | `g.add_edge(1,2,{'a':3, 'b':4})` | Have two graphs<br>`g_a.add_edge(1,2,3)`<br>`g_b.add_edge(1,2,4)` | Most graph algorithms don't work with multiple values |  
+| add node | `g[1]` | `g.add_node(1)` | `g[1]` retrieves the node. It's not for assignment.
+| add attribute to node | `g[1] = {'a':1, 'b':2}` | `g.add_node(1, obj={'a':1, 'b':2})` | see add_node | 
 
