@@ -127,6 +127,53 @@ def graph04():
     return Graph(from_dict=d)
 
 
+def graph05():
+    """
+    0 ---- 1 ---- 5
+     \      \---- 6 ---- 7
+      \            \     |
+       \            \---- 8
+        \
+         \- 2 ---- 3 ---- 9
+             \      \     |
+              4      \---10
+    """
+    L = [
+        (0, 1, 1),
+        (0, 2, 1),
+        (1, 5, 1),
+        (1, 6, 1),
+        (2, 3, 1),
+        (2, 4, 1),
+        (3, 9, 1),
+        (3, 10, 1),
+        (9, 10, 1),
+        (6, 7, 1),
+        (6, 8, 1),
+        (7, 8, 1),
+        (0, 1, 1),
+        (0, 1, 1),
+        (0, 1, 1),
+    ]
+    return Graph(from_list=L)
+
+
+def test_edges_with_node():
+    g = graph02()
+    edges = g.edges(node=5)
+    assert set(edges) == {(5, 6, 1), (5, 8, 1)}
+
+
+def test_nodes_from_node():
+    g = graph02()
+    nodes = g.nodes(from_node=1)
+    assert set(nodes) == {2, 4}
+    nodes = g.nodes(to_node=9)
+    assert set(nodes) == {6, 8}
+    nodes = g.nodes()
+    assert set(nodes) == set(range(1, 10))
+
+
 def test01():
     """
     Asserts that the shortest_path is correct
@@ -499,3 +546,39 @@ def test_maximum_flow05():
     g = Graph(from_list=links)
     flow, g2 = g.maximum_flow(start=1, end=3)
     assert flow == 2, flow
+
+
+def test_dfs():
+    L = [
+        (1, 2, 0),
+        (1, 3, 0),
+        (2, 3, 0),
+        (2, 4, 0),
+        (3, 4, 0)
+    ]
+    g = Graph(from_list=L)
+    path = g.depth_first_search(1, 4)
+    assert g.has_path(path)
+
+    path = g.depth_first_search(4, 1)
+    assert path is None
+
+
+def test_dfs_02():
+    L = [
+        (1, 2, 0),
+        (1, 3, 0),
+        (3, 5, 0),
+        (2, 4, 0),
+        (5, 6, 0),
+    ]
+    g = Graph(from_list=L)
+    path = g.depth_first_search(1, 4)
+    assert g.has_path(path)
+
+
+def test_dfs_03():
+    g = graph05()
+    path = g.depth_first_search(0, 10)
+    assert g.has_path(path)
+

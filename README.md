@@ -2,7 +2,7 @@
 
 A simple graph library...
 
-...A bit like networkx, just without the overhead.
+*...A bit like networkx, just without the overhead.*
 
 
 ---------------------------
@@ -11,6 +11,8 @@ A simple graph library...
     g = Graph()
     
 That's it.
+
+---------------------------
 
 Available methods:
 
@@ -21,8 +23,11 @@ Available methods:
 | `g[1][2]` | returns the distance/value/weight of vector `G[1][2]` in g |
 | `del g[1][2]` | removes edge `G[1][2]` |
 | `g.nodes()` | returns a list of nodes |
-| `g.edges([path])` | returns a list of edges (along a path if given). |
-| `g.add_node(n)` | adds a node |
+| `g.nodes(from_node=1)` | returns nodes with edges from node 1 |
+| `g.nodes(to_node=2)` | returns nodes with edges to node 2 |
+| `g.edges(path=[path])` | returns a list of edges (along a path if given). |
+| `g.edges(node=1)` | returns edges outgoing from node 1 | 
+| `g.add_node(n, [obj])` | adds a node (with a pointer to object `obj` if given) |
 | `g.add_edge(n1,n2,d)` | adds edge to g |
 | `g.from_dict` | updates the graph from a dictionary of nodes |
 | `g.to_dict` | dumps the graph as a dictionary |
@@ -30,6 +35,7 @@ Available methods:
 | `g.to_list` | dumps the graph as a list of edges |
 | `g.shortest_path` | finds shortest path between 2 nodes (start,end)|
 | `g.breadth_first_search` | finds the least number of hops between 2 nodes `(start,end)`|
+| `g.depth_first_search` | finds a path between 2 nodes (start, end) using DFS |
 | `g.distance(path)` | finds the distance following a given path. |
 | `g.maximum_flow` | finds the maximum flow between a source and a sink|
 | `g.solve_tsp` | solves the traveling salesman problem for the graph|

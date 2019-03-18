@@ -57,23 +57,36 @@ class Graph(object):
     def __copy__(self):
         return Graph(from_list=self.edges())
 
-    def nodes(self):
+    def nodes(self, from_node=None, to_node=None):
         """
-        :return: list of node ids.
+        :param from_node (optional)
+                only return nodes with edges from 'from_node'
+        :param to_node (optional)
+                only returns nodes with edges into 'to_node'
+        :return list of node ids.
+
         PRO TIP: To retrieve the node obj use g[node id]
         """
-        return list(self._nodes.keys())
+        if from_node:
+            return [n2 for n2 in self._links[from_node].keys()]
+        elif to_node:
+            return [n1 for n1, n2, d in self.edges() if n2 == to_node]
+        else:
+            return list(self._nodes.keys())
 
-    def edges(self, path=None):
+    def edges(self, path=None, node=None):
         """
-        :param: along_path (optional) list of nodes.
-        :return: list of edges (n1, n2, value)
+        :param path (optional) list of nodes for which the edges are wanted.
+        :param node (optional) for which outgoing edges are returned.
+        :return list of edges (n1, n2, value)
         """
         if path:
             L = []
             for ix in range(len(path) - 1):
                 n1, n2 = path[ix], path[ix + 1]
                 L.append((n1, n2, self._links[n1][n2]))
+        elif node:
+            return [(node,n2,self._links[node][n2]) for n2 in self._links[node]]
         else:
             L = [(n1, n2, self._links[n1][n2]) for n1 in self._links for n2 in self._links[n1]]
         return L
@@ -175,6 +188,15 @@ class Graph(object):
         :return: nodes, path as list
         """
         return breadth_first_search(graph=self, start=start, end=end)
+
+    def depth_first_search(self, start, end):
+        """
+        Finds a path from start to end using DFS.
+        :param start: start node
+        :param end: end node
+        :return: path
+        """
+        return depth_first_search(graph=self, start=start, end=end)
 
     def distance_from_path(self, path):
         """
@@ -338,6 +360,35 @@ def breadth_first_search(graph, start, end):
                     mins[v2] = next_node
                     heappush(q, (next_node, v2, path))
     return float("inf"), []
+
+
+def depth_first_search(graph, start, end):
+    """
+    Determines path from start to end using
+    'depth first search' with backtracking.
+
+    :param graph: class Graph
+    :param start: start node
+    :param end: end node
+    :return: path as list of nodes.
+    """
+    q = [start]
+    path = []
+    visited = set()
+    while q:
+        n1 = q.pop()
+        if n1 not in visited:
+            visited.add(n1)
+            path.append(n1)
+        if n1 == end:
+            return path
+        for n2 in graph.nodes(from_node=n1):
+            q.append(n2)
+            continue
+
+        if n1 in path:
+            path.remove(n1)
+    return None
 
 
 def distance(graph, path):
