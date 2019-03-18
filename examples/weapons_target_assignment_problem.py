@@ -51,7 +51,6 @@ def wtap(probabilities, weapons, target_values):
     2. followed by search for improvements.
 
     """
-
     def get_current_engagement(d, assignment):
         if d in assignment:
             for t in assignment[d]:
@@ -166,36 +165,50 @@ def test03_wtap_from_wikipedia_all_permutations():
     c = 0
     perfect_score = 4.95
     quality_score = 0
-    quality_required = 0.92
+    quality_required = 0.97
 
     variations = {}
     damages = {}
-    for perm in permutations(weapons, len(weapons)):
-        c += 1
+    perms = set(permutations(weapons, len(weapons)))
+    c = 0
+    while perms:
 
-        perm = list(perm)
-        damage1, assignment = wtap(probabilities=g, weapons=perm, target_values=target_values)
+        perm = perms.pop()
+        perm2 = tuple(reversed(perm))
+        perms.remove(perm2)
+        damage1, ass1 = wtap(probabilities=g, weapons=list(perm), target_values=target_values)
+        damage2, ass2 = wtap(probabilities=g, weapons=list(perm2), target_values=target_values)
+
+        damageN = min(damage1, damage2)
+        if damage1 == damageN:
+            assignment = ass1
+        else:
+            assignment = ass2
 
         damage = wikipedia_wtap_damage_assessment(probabilities=g, assignment=assignment, target_values=target_values)
-        assert round(damage1, 2) == round(damage, 2)
+        assert round(damageN, 2) == round(damage, 2)
+        damage = round(damage, 2)
+
         quality_score += damage
+        c += 1
 
         if damage not in damages:
             s = "{:.3f} : {}".format(damage, wikipedia_wtap_pretty_printer(assignment))
             damages[damage] = s
-            if s not in variations:
-                variations[s] = 1
+        if damage not in variations:
+            variations[damage] = 1
         else:
-            variations[s] += 1
+            variations[damage] += 1
 
-    print("tested", c, "permutations. Found", len(variations), "variation(s)")
+    print("tested", c, "permutations. Found", len(damages), "variation(s)")
     if len(variations) > 1:
-        for k, v in sorted(variations.items()):
-            print(k, "frq: {}".format(v))
+        for k, v in sorted(damages.items()):
+            print(k, "frq: {}".format(variations[k]))
 
     solution_quality = perfect_score * c / quality_score
-    if solution_quality < quality_required:
+    if solution_quality >= quality_required:
         raise AssertionError("achieved {:.0f}%".format(solution_quality*100))
+    print("achieved {:.0f}%".format(solution_quality * 100))
 
 
 def test04_wtap_from_wikipedia_exhaustive():
