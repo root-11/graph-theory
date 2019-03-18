@@ -37,6 +37,13 @@ def test_setitem():
     g.add_edge(1, 2, 4)
     assert g.edges() == [(1, 2, 4)]
 
+    g = Graph()
+    try:
+        g[1] = {2:3}
+        raise AssertionError
+    except ValueError:
+        pass
+
 
 def test_add_node_attr():
     g = Graph()
@@ -581,4 +588,22 @@ def test_dfs_03():
     g = graph05()
     path = g.depth_first_search(0, 10)
     assert g.has_path(path)
+
+
+def test_copy():
+    g = graph05()
+    g2 = g.__copy__()
+    assert set(g.edges()) == set(g2.edges())
+
+
+def test_delitem():
+    g = graph05()
+    del g[0][1]
+    try:
+        g[0][1]
+        raise AssertionError
+    except KeyError:
+        pass
+
+
 
