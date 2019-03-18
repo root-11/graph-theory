@@ -165,6 +165,34 @@ def graph05():
     return Graph(from_list=L)
 
 
+def graph_cycle_6():
+    """
+    cycle of 6 nodes
+    """
+    L = [
+        (1, 2, 1),
+        (2, 3, 1),
+        (3, 4, 1),
+        (4, 5, 1),
+        (5, 6, 1),
+        (6, 1, 1),
+    ]
+    L.extend([(n2,n1,d) for n1,n2,d in L])
+    return Graph(from_list=L)
+
+def graph_cycle_5():
+    """ cycle of 5 nodes """
+    L = [
+        (1, 2, 1),
+        (2, 3, 1),
+        (3, 4, 1),
+        (4, 5, 1),
+        (5, 1, 1),
+    ]
+    L.extend([(n2, n1, d) for n1, n2, d in L])
+    return Graph(from_list=L)
+
+
 def test_edges_with_node():
     g = graph02()
     edges = g.edges(node=5)
@@ -605,5 +633,17 @@ def test_delitem():
     except KeyError:
         pass
 
+
+def test_is_partite():
+    g = graph_cycle_6()
+    bol, partitions = g.is_partite(n=2)
+    assert bol is True
+
+    g = graph_cycle_5()
+    bol, part = g.is_partite(n=2)
+    assert bol is False
+    bol, part = g.is_partite(n=5)
+    assert bol is True
+    assert len(part) == 5
 
 
