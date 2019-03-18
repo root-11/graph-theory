@@ -241,7 +241,8 @@ class Graph(object):
     def is_partite(self, n=2):
         """ Checks if self is n-partite
         :param n: int the number of partitions.
-        :return: boolean
+        :return: tuple: boolean, partitions as dict
+                        (or None if graph isn't n-partite)
         """
         return is_partite(self, n)
 

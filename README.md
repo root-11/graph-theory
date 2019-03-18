@@ -40,6 +40,7 @@ Available methods:
 | `g.maximum_flow` | finds the maximum flow between a source and a sink|
 | `g.solve_tsp` | solves the traveling salesman problem for the graph|
 | `g.is_subgraph(g2)` | determines if graph `g2` is a subgraph in g.|
+| `g.is_partite(n)` | determines if graph is n-partite |
 | `g.same_path` | compares two paths, returns True if they're the same.|
 | `g.adjacency_matrix` | constructs the adjacency matrix for the graph.|
 | `g.all_pairs_shortest_paths` | finds the shortest path between all nodes. |
