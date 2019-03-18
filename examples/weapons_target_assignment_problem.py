@@ -2,7 +2,6 @@ from graph import Graph
 from fractions import Fraction as F
 from itertools import permutations, combinations_with_replacement
 
-
 __description__ = """
 
 Definition:
@@ -44,7 +43,7 @@ def wtap(probabilities, weapons, target_values):
     successful engagement of the device.
     :param weapons: list of devices.
     :param target_values: dict , where the d[target] = value of target.
-    :return: optimal assignment
+    :return: tuple: value of target after attack, optimal assignment
 
     Method:
 
@@ -59,59 +58,62 @@ def wtap(probabilities, weapons, target_values):
                 return t
         return None
 
+    def damages(probabilities, assignment, target_values):
+        assert isinstance(probabilities, Graph)
+        assert isinstance(assignment, Graph)
+        assert isinstance(target_values, dict)
+
+        survival_value = {target: [] for target in target_values}
+        for edge in assignment.edges():
+            weapon, target, damage = edge
+
+            p = probabilities[weapon][target]
+            survival_value[target].append(p)
+
+        total_survival_value = 0
+        for target, assigned_probabilities in survival_value.items():
+            p = 1
+            for p_ in assigned_probabilities:
+                p *= (1-p_)
+            total_survival_value += p * target_values[target]
+
+        return total_survival_value
+
     assert isinstance(probabilities, Graph)
     assert isinstance(weapons, list)
     assert isinstance(target_values, dict)
 
-    unassigned_devices = weapons[:]
     assignments = Graph()
-    cumulative_survival_prob = {t: 1 for t in target_values}  # d[target] = probability of survival.
+    current_target_values = sum(target_values.values())+1
 
     improvements = {}
-    # initial assignment using greedy algorithm
-    while unassigned_devices or sum(improvements.values()) > 0:
-        if not unassigned_devices:
-            unassigned_devices = weapons[:]
-        d = unassigned_devices.pop(0)
-        damage = [(p * target_values[t], t) for t, p in probabilities[d].items()]
-        damage.sort(reverse=True)  # most damage at the top of the list.
+    while True:
+        for w in weapons:
+            # calculate the effect of engaging in all targets.
+            effect_of_assignment = {}
+            for t, p in probabilities[w].items():
+                current_engagement = get_current_engagement(w, assignments)
+                if current_engagement != t:
+                    if w in assignments and current_engagement is not None:
+                        del assignments[w][current_engagement]
+                    assignments.add_edge(w, t, probabilities[w][t])
+                effect_of_assignment[t] = damages(probabilities=probabilities, assignment=assignments, target_values=target_values)
 
-        # calculate the effect of engaging in all targets.
-        current_engagement = get_current_engagement(d, assignments)
+            damage_and_targets = [(v, t) for t, v in effect_of_assignment.items()]
+            damage_and_targets.sort()
+            best_alt_damage, best_alt_target = damage_and_targets[0]
+            nett_effect = current_target_values - best_alt_damage
+            improvements[w] = max(0, nett_effect)
 
-        effect_of_assignment = {}
-
-        for v, t in damage:
-            if t is current_engagement:
-                p = cumulative_survival_prob[t]
-            else:
-                p = cumulative_survival_prob[t] * (1 - probabilities[d][t])  # Bayes!
-            effect_of_assignment[t] = (p - cumulative_survival_prob[t]) * target_values[t]
-
-        min_values = [(v, t) for t, v in effect_of_assignment.items()]
-        min_values.sort()
-        damage_effect, best_target = min_values[0]
-
-        if current_engagement is None:
-            assignments.add_edge(d, best_target, damage_effect)
-            cumulative_survival_prob[best_target] *= (1 - probabilities[d][best_target])
-            improvements[d] = abs(damage_effect)
-
-        elif current_engagement != best_target:
-            current_damage_effect = assignments[d][current_engagement]
-            if abs(damage_effect) > abs(current_damage_effect):
-                del assignments[d][current_engagement]
-                cumulative_survival_prob[best_target] /= (1 - probabilities[d][best_target])
-
-                assignments.add_edge(d, best_target, damage_effect)
-                cumulative_survival_prob[best_target] *= (1 - probabilities[d][best_target])
-                improvements[d] = abs(damage_effect)
-            else:
-                improvements[d] = 0
-        else:  # current_engagement == best_target:
-            improvements[d] = 0
-
-    return assignments
+            current_engagement = get_current_engagement(w, assignments)
+            if current_engagement != best_alt_target:
+                if w in assignments and current_engagement is not None:
+                    del assignments[w][current_engagement]
+                assignments.add_edge(w, best_alt_target, probabilities[w][t])
+            current_target_values = effect_of_assignment[best_alt_target]
+        if sum(improvements.values()) == 0:
+            break
+    return current_target_values, assignments
 
 
 def test01_wtap():
@@ -130,10 +132,10 @@ def test01_wtap():
     target_values = {5: 5, 6: 6, 7: 7}
     g = Graph(from_list=probabilities)
 
-    assignments = wtap(probabilities=g, weapons=weapons, target_values=target_values)
+    value, assignments = wtap(probabilities=g, weapons=weapons, target_values=target_values)
     assert isinstance(assignments, Graph)
-    assert set(assignments.edges()) == {(1, 7, -0.6999999999999998), (2, 7, -0.6299999999999998),
-                                        (3, 6, -0.5999999999999999)}
+    assert set(assignments.edges()) == {(2, 7, 0.1), (3, 6, 0.1), (1, 7, 0.1)}
+    assert value == 16.07
 
 
 def test02_wtap_with_fractional_probabilities():
@@ -152,56 +154,67 @@ def test02_wtap_with_fractional_probabilities():
     target_values = {5: 5, 6: 6, 7: 7}
     g = Graph(from_list=probabilities)
 
-    assignments = wtap(probabilities=g, weapons=weapons, target_values=target_values)
+    value, assignments = wtap(probabilities=g, weapons=weapons, target_values=target_values)
     assert isinstance(assignments, Graph)
-    assert set(assignments.edges()) == {(1, 7, F(-7 / 10)), (2, 7, F(-63 / 100)),
-                                        (3, 6, F(-3 / 5))}
+    assert set(assignments.edges()) == {(2, 7, F(1, 10)), (3, 6, F(1, 10)), (1, 7, F(1, 10))}
+    assert float(value) == 16.07
 
 
 def test03_wtap_from_wikipedia_all_permutations():
     g, weapons, target_values = wikipedia_wtap_setup()
 
     c = 0
-    expected_result = None
-    variations = {}
+    perfect_score = 4.95
+    quality_score = 0
+    quality_required = 0.92
 
+    variations = {}
+    damages = {}
     for perm in permutations(weapons, len(weapons)):
-        perm = list(perm)
         c += 1
-        assignment = wtap(probabilities=g, weapons=perm, target_values=target_values)
+
+        perm = list(perm)
+        damage1, assignment = wtap(probabilities=g, weapons=perm, target_values=target_values)
 
         damage = wikipedia_wtap_damage_assessment(probabilities=g, assignment=assignment, target_values=target_values)
+        assert round(damage1, 2) == round(damage, 2)
+        quality_score += damage
 
-        if expected_result != damage:
-            expected_result = damage
+        if damage not in damages:
             s = "{:.3f} : {}".format(damage, wikipedia_wtap_pretty_printer(assignment))
+            damages[damage] = s
             if s not in variations:
                 variations[s] = 1
-            else:
-                variations[s] += 1
+        else:
+            variations[s] += 1
 
     print("tested", c, "permutations. Found", len(variations), "variation(s)")
     if len(variations) > 1:
         for k, v in sorted(variations.items()):
             print(k, "frq: {}".format(v))
 
+    solution_quality = perfect_score * c / quality_score
+    if solution_quality < quality_required:
+        raise AssertionError("achieved {:.0f}%".format(solution_quality*100))
+
 
 def test04_wtap_from_wikipedia_exhaustive():
     g, weapons, target_values = wikipedia_wtap_setup()
 
-    best_result = 10000
+    best_result = sum(target_values.values())+1
     best_assignment = None
     c = 0
     for perm in permutations(weapons, len(weapons)):
-        for combination in combinations_with_replacement([1,2,3], len(weapons)):
-            L = [(w, t, g[w][t]) for w,t in zip(perm, combination)]
+        for combination in combinations_with_replacement([1, 2, 3], len(weapons)):
+            L = [(w, t, g[w][t]) for w, t in zip(perm, combination)]
             a = Graph(from_list=L)
             r = wikipedia_wtap_damage_assessment(probabilities=g, assignment=a, target_values=target_values)
             if r < best_result:
                 best_result = r
                 best_assignment = L
             c += 1
-    print(best_result, "out of", c, "\n", best_assignment)
+    print(best_result, "is best result out of", c, "(exhaustive search)\n", best_assignment)
+    assert best_result == 4.95, best_result
 
 
 def wikipedia_wtap_setup():
@@ -329,5 +342,5 @@ def test_to_verify_wikipedia_damage_assessment():
 
     ]
     assignment = Graph(from_list=L)
-    assert 9.915 == wikipedia_wtap_damage_assessment(probabilities=g, assignment=assignment, target_values=target_values)
-
+    assert 9.915 == wikipedia_wtap_damage_assessment(probabilities=g, assignment=assignment,
+                                                     target_values=target_values)
