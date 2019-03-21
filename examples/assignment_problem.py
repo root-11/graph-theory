@@ -45,9 +45,9 @@ def assignment_problem(agents_and_tasks, agents, tasks):
     (see Dmitri Bertsekas, MIT) which maximises the value.
     Once all agents are assigned the alternating auction halts.
 
-    :param agents_and_tasks: Graph providing a
-    :param agents:
-    :param tasks:
+    :param agents_and_tasks: Graph
+    :param agents: List of nodes that are agents.
+    :param tasks: List of nodes that are tasks.
     :return: optimal assignment as list of edges (agent, task, value)
     """
     assert isinstance(agents_and_tasks, Graph)
