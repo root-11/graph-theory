@@ -259,8 +259,6 @@ def wikipedia_wtap_setup():
         (3, 0.4)
     ]
 
-    probabilities = []
-
     category_and_probabilities = [
         (tanks, tank_probabilities),
         (aircrafts, aircraft_probabilities),
