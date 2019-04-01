@@ -265,6 +265,7 @@ def wikipedia_wtap_setup():
         (ships, sea_vessel_probabilities)
     ]
 
+    probabilities = []
     for category, probs in category_and_probabilities:
         for vehicle in category:
             for prob in probs:

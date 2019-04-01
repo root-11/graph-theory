@@ -33,14 +33,12 @@ class Graph(object):
             self.from_list(from_list)
 
     def __getitem__(self, item):
-        out = None
-        if item in self._links:
-            out = self._links.__getitem__(item)
-        elif item in self._nodes:
-            out = self._nodes.__getitem__(item)
-        if out is None:
-            raise KeyError
-        return out
+        """
+        g[node1][node2] retrieves the link (if it exists)
+        :param item:
+        :return:
+        """
+        return self._links.__getitem__(item)
 
     def __setitem__(self, key, value):
         raise ValueError("Use add_edge(node1, node2, value)")
@@ -57,22 +55,97 @@ class Graph(object):
     def __copy__(self):
         return Graph(from_list=self.edges())
 
-    def nodes(self, from_node=None, to_node=None):
+    def edge(self, node1, node2):
+        """Retrieves the edge (node1, node2)
+
+        Alias for g[node1][node2]
+
+        :param node1: node id
+        :param node2: node id
+        :return: edge(node1,node2)
         """
-        :param from_node (optional)
-                only return nodes with edges from 'from_node'
-        :param to_node (optional)
-                only returns nodes with edges into 'to_node'
+        try:
+            return self._links[node1][node2]
+        except KeyError:
+            return None
+
+    def node(self, node_id, obj=None):
+        """
+        Retrieves the node object
+        Set the value of the node object if obj is not None.
+
+        :param node_id: id of node in graph.
+        :param obj: any python object.
+        :return: node object
+        """
+        if obj is None:
+            return self._nodes.get(node_id, None)
+        if obj is not None:
+            self._nodes[node_id] = obj
+            return None
+
+    def del_node(self, node_id):
+        """
+        Deletes the node and all its connections.
+        :param node_id: node_id
+        :return: None
+        """
+        del self._nodes[node_id]
+        del self._links[node_id]
+        in_links = [n1 for n1, n2, d in self.edges() if n2 == node_id]
+        for inlink in in_links:
+            del self._links[inlink][node_id]
+        return None
+
+    def nodes(self,
+              from_node=None, to_node=None,
+              in_degree=None, out_degree=None):
+        """
+        :param from_node (optional) return nodes with edges from 'from_node'
+        :param to_node (optional) returns nodes with edges into 'to_node'
+        :param in_degree (optional) returns nodes with in_degree=N
+        :param out_degree (optional) returns nodes with out_degree=N
+
         :return list of node ids.
 
         PRO TIP: To retrieve the node obj use g[node id]
         """
-        if from_node:
-            return [n2 for n2 in self._links[from_node].keys()]
-        elif to_node:
-            return [n1 for n1, n2, d in self.edges() if n2 == to_node]
-        else:
+        inputs = sum([1 for i in (from_node, to_node, in_degree, out_degree) if i is not None])
+        if inputs > 1:
+            m = []
+            a = (from_node, to_node, in_degree, out_degree)
+            b = ("from_node", "to_node", "in_degree", "out_degree")
+            for i in zip(a, b):
+                if i is not None:
+                    m.append("{}={}".format(b, a))
+            raise ValueError("nodes({}) has too many inputs. Pick one.".format(m))
+
+        if inputs == 0:
             return list(self._nodes.keys())
+
+        if from_node is not None:
+            return [n2 for n1, n2, d in self.edges() if n1 == from_node]
+
+        if to_node is not None:
+            return [n1 for n1, n2, d in self.edges() if n2 == to_node]
+
+        if in_degree is not None:
+            if not isinstance(in_degree, int) or in_degree < 0:
+                raise ValueError("in_degree must be int >= 0")
+
+            rev = {n: set() for n in self._nodes}
+            for n1, n2, d in self.edges():
+                rev[n2].add(n1)
+            return [n for n, n_set in rev.items() if len(n_set) == in_degree]
+
+        if out_degree is not None:
+            if not isinstance(out_degree, int) or out_degree < 0:
+                raise ValueError("out_degree must be int >= 0")
+
+            rev = {n: set() for n in self._nodes}
+            for n1, n2, d in self.edges():
+                rev[n1].add(n2)
+            return [n for n, n_set in rev.items() if len(n_set) == out_degree]
 
     def edges(self, path=None, node=None):
         """
@@ -81,15 +154,15 @@ class Graph(object):
         :return list of edges (n1, n2, value)
         """
         if path:
-            L = []
-            for ix in range(len(path) - 1):
-                n1, n2 = path[ix], path[ix + 1]
-                L.append((n1, n2, self._links[n1][n2]))
-        elif node:
-            return [(node,n2,self._links[node][n2]) for n2 in self._links[node]]
-        else:
-            L = [(n1, n2, self._links[n1][n2]) for n1 in self._links for n2 in self._links[n1]]
-        return L
+            assert isinstance(path, list)
+            assert len(path) >= 2
+            return [(path[ix], path[ix + 1], self._links[path[ix]][path[ix + 1]])
+                    for ix in range(len(path)-1)]
+
+        if node:
+            return [(node, n2, self._links[node][n2]) for n2 in self._links[node]]
+
+        return [(n1, n2, self._links[n1][n2]) for n1 in self._links for n2 in self._links[n1]]
 
     def add_node(self, node_id, obj=None):
         """
@@ -111,8 +184,11 @@ class Graph(object):
         """
         if isinstance(value, (dict, list, tuple)):
             raise ValueError("value cannot be {}".format(type(value)))
-        self.add_node(node1)
-        self.add_node(node2)
+        if node1 not in self._nodes:
+            self.add_node(node1)
+        if node2 not in self._nodes:
+            self.add_node(node2)
+
         if node1 not in self._links:
             self._links[node1] = {}
         if node2 not in self._links:
@@ -245,6 +321,12 @@ class Graph(object):
                         (or None if graph isn't n-partite)
         """
         return is_partite(self, n)
+
+    def has_cycles(self):
+        """ Checks if the graph has a cycle
+        :return: bool
+        """
+        return has_cycles(graph=self)
 
     @staticmethod
     def same_path(p1, p2):
@@ -380,23 +462,33 @@ def depth_first_search(graph, start, end):
     :param end: end node
     :return: path as list of nodes.
     """
+    assert start in graph, "start not in graph"
+    assert end in graph, "end not in graph"
     q = [start]
     path = []
     visited = set()
     while q:
         n1 = q.pop()
-        if n1 not in visited:
-            visited.add(n1)
-            path.append(n1)
+        visited.add(n1)
+        path.append(n1)
         if n1 == end:
-            return path
+            return path  # <-- exit if end is found.
         for n2 in graph.nodes(from_node=n1):
+            if n2 in visited:
+                continue
             q.append(n2)
-            continue
-
-        if n1 in path:
+            break
+        else:
             path.remove(n1)
-    return None
+            while not q and path:
+                for n2 in graph.nodes(from_node=path[-1]):
+                    if n2 in visited:
+                        continue
+                    q.append(n2)
+                    break
+                else:
+                    path = path[:-1]
+    return None  # <-- exit if not path was found.
 
 
 def distance(graph, path):
@@ -407,11 +499,19 @@ def distance(graph, path):
     """
     assert isinstance(graph, Graph)
     assert isinstance(path, list)
-    d = 0
+    cache = Graph()
+    path_length = 0
     for idx in range(len(path) - 1):
         n1, n2 = path[idx], path[idx + 1]
-        d += graph[n1][n2]
-    return d
+        try:
+            d = cache[n1][n2]
+        except KeyError:
+            d, _ = graph.shortest_path(n1, n2)
+            if d == float('inf'):
+                return float('inf')
+            cache.add_edge(n1, n2, value=d)
+        path_length += d
+    return path_length
 
 
 def subgraph(graph, nodes):
@@ -486,9 +586,6 @@ def is_partite(graph, n):
                 q.append(n2)
 
     return True, colours_and_nodes
-
-
-
 
 
 def same(path1, path2):
@@ -811,4 +908,15 @@ def maximum_flow(graph, start, end):
     return total_flow, flow_graph
 
 
-
+def has_cycles(graph):
+    """ Checks whether the graph has a cycle
+    :param graph: instance of class Graph.
+    :return: bool
+    """
+    assert isinstance(graph, Graph)
+    for n1, n2, d in graph.edges():
+        if n1 == n2:
+            return True
+        if graph.depth_first_search(start=n2, end=n1):
+            return True
+    return False

@@ -20,6 +20,7 @@ def test_setitem():
     g = Graph()
     try:
         g[1][2] = 3
+        raise AssertionError("Assignment is not permitted use g.add_edge instead.")
     except KeyError:
         pass
     g.add_node(1)
@@ -32,6 +33,8 @@ def test_setitem():
     assert g.edges() == [(1, 2, 3)]
     link_1 = g[1][2]
     assert link_1 == 3
+    link_1 = g.edge(1,2)
+    assert link_1 == 3
     link_1 = 4
     assert g[1][2] != 4  # the edge is not an object.
     g.add_edge(1, 2, 4)
@@ -39,7 +42,7 @@ def test_setitem():
 
     g = Graph()
     try:
-        g[1] = {2:3}
+        g[1] = {2: 3}
         raise AssertionError
     except ValueError:
         pass
@@ -49,7 +52,7 @@ def test_add_node_attr():
     g = Graph()
     g.add_node(1, "this")
     assert list(g.nodes()) == [1]
-    node_1 = g[1]
+    node_1 = g.node(1)
     assert node_1 == "this"
 
 
@@ -68,7 +71,7 @@ def test_to_list():
     assert g1.edges() == g2.edges()
 
 
-def test_bidrectional_link():
+def test_bidirectional_link():
     g = Graph()
     g.add_edge(node1=1, node2=2, value=4, bidirectional=True)
     assert g[1][2] == g[2][1]
@@ -177,8 +180,9 @@ def graph_cycle_6():
         (5, 6, 1),
         (6, 1, 1),
     ]
-    L.extend([(n2,n1,d) for n1,n2,d in L])
+    L.extend([(n2, n1, d) for n1, n2, d in L])
     return Graph(from_list=L)
+
 
 def graph_cycle_5():
     """ cycle of 5 nodes """
@@ -596,7 +600,7 @@ def test_dfs():
     assert g.has_path(path)
 
     path = g.depth_first_search(4, 1)
-    assert path is None
+    assert path is None, path
 
 
 def test_dfs_02():
@@ -609,12 +613,14 @@ def test_dfs_02():
     ]
     g = Graph(from_list=L)
     path = g.depth_first_search(1, 4)
+    assert path == [1, 2, 4]
     assert g.has_path(path)
 
 
 def test_dfs_03():
     g = graph05()
     path = g.depth_first_search(0, 10)
+    assert path == [0, 2, 3, 9, 10]
     assert g.has_path(path)
 
 
@@ -628,7 +634,7 @@ def test_delitem():
     g = graph05()
     del g[0][1]
     try:
-        g[0][1]
+        _ = g[0][1]
         raise AssertionError
     except KeyError:
         pass
@@ -647,3 +653,11 @@ def test_is_partite():
     assert len(part) == 5
 
 
+def test_is_cyclic():
+    g = graph_cycle_5()
+    assert g.has_cycles()
+
+
+def test_is_not_cyclic():
+    g = graph02()
+    assert not g.has_cycles()
