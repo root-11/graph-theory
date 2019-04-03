@@ -54,6 +54,8 @@ Available methods:
 | `g.same_path(p1,p2)` | compares two paths, returns True if they're the same.|
 | `g.all_paths(start,end)` | finds all combinations of paths between 2 nodes.|
 
+## FAQ
+
 | want to | doesn't work | do instead | but why? |
 |:---|:---|:---|:---|
 | add edge | `g[1][2] = 3` | `g.add_edge(1,2,3)` | `g[1][2]` retrieves the link. It's not for setting values. |

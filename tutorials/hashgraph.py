@@ -1,7 +1,6 @@
 from graph import Graph
 import hashlib
 
-
 __description__ = """
 
 hash graphs are the generalised version of block chains or merkle trees.
@@ -75,7 +74,11 @@ def graph_hash(graph):
     :return: graph hash (int) and graph (Graph) with hash values
     """
     assert isinstance(graph, Graph)
-    raise NotImplementedError()  # TODO: QUICK graph_hash calculation based on the graph's edges.
+    hash_func = hashlib.sha3_256()
+    nodes = bytes("|".join(str(n) for n in sorted(graph.nodes())), 'utf-8')
+    edges = bytes("|".join(str(e) for e in sorted(graph.edges())), 'utf-8')
+    hash_func.update(nodes + edges)
+    return int(hash_func.hexdigest(), 16)
 
 
 def flow_graph_hash(graph):
@@ -133,5 +136,3 @@ def flow_graph_hash(graph):
         assert n[new_hash] is not None, n
 
     return hash_graph
-
-

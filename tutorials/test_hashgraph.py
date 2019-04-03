@@ -1,5 +1,5 @@
 from graph import Graph
-from tutorials.hashgraph import merkle_tree, flow_graph_hash
+from tutorials.hashgraph import merkle_tree, flow_graph_hash, graph_hash
 
 
 def test_merkle_tree_1_block():
@@ -93,3 +93,20 @@ def test_flow_graph_async_01():
     g = Graph(from_list=L)
     g2 = flow_graph_hash(g)
     assert len(g2) == len(g)
+
+
+def test_graph_hash():
+    """
+    Simple test of the graph hash function.
+    """
+    L = [
+        (1, 2, 1),
+        (2, 3, 1),
+        (3, 4, 1),
+        (3, 2, 1)
+    ]
+    g = Graph(from_list=L)
+    h = graph_hash(g)
+    assert isinstance(h, int)
+    assert sum((int(d) for d in str(h))) == 312
+
