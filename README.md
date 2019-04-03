@@ -23,15 +23,16 @@ Available methods:
 | `g.add_node(n, [obj])` | adds a node (with a pointer to object `obj` if given) |
 | `g.node(node1)` | returns object attached to node 1. |
 | `g.del_node(node1)` | deletes node1 and all it's links. |
-| `g.add_edge(n1,n2,d)` | adds edge to g |
-| `g[1][2]` | returns the distance/value/weight of vector `G[1][2]` in g |
-| `g.edge(node1,node2)` | (alias) for `g[1][2]` above |
-| `del g[1][2]` | removes edge `G[1][2]` |
 | `g.nodes()` | returns a list of nodes |
 | `g.nodes(from_node=1)` | returns nodes with edges from node 1 |
 | `g.nodes(to_node=2)` | returns nodes with edges to node 2 |
 | `g.nodes(in_degree=2)` | returns nodes with 2 incoming edges |
 | `g.nodes(out_degree=2)` | returns nodes with 2 outgoing edges |
+| `g.add_edge(1,2,3)` | adds edge to g for vector `(1,2)` with value `3` |
+| `g[1][2]` | returns the distance/value/weight of vector `G[1][2]` in g |
+| `g.edge(1,2)` | (alias) for `g[1][2]` above |
+| `g.edge(1,2,default=3)` | returns `default=3` if `edge(1,2)` doesn't exist. <br>Similar to `d.get(key, 3)`|
+| `g.del_edge(1,2)` | removes edge `G[1][2]` |
 | `g.edges(path=[path])` | returns a list of edges (along a path if given). |
 | `g.edges(node=1)` | returns edges outgoing from node 1 | 
 | `g.from_dict(d)` | updates the graph from a dictionary of nodes |
@@ -46,11 +47,11 @@ Available methods:
 | `g.solve_tsp()` | solves the traveling salesman problem for the graph|
 | `g.is_subgraph(g2)` | determines if graph `g2` is a subgraph in g.|
 | `g.is_partite(n)` | determines if graph is n-partite |
-| `g.same_path(p1,p2)` | compares two paths, returns True if they're the same.|
 | `g.adjacency_matrix()` | constructs the adjacency matrix for the graph.|
 | `g.all_pairs_shortest_paths()` | finds the shortest path between all nodes. |
 | `g.shortest_tree_all_pairs()` | finds the shortest tree for all pairs.|
 | `g.has_path(p)` | asserts whether a path `p` exists in g.|
+| `g.same_path(p1,p2)` | compares two paths, returns True if they're the same.|
 | `g.all_paths(start,end)` | finds all combinations of paths between 2 nodes.|
 
 | want to | doesn't work | do instead | but why? |

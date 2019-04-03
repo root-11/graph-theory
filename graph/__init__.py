@@ -44,7 +44,7 @@ class Graph(object):
         raise ValueError("Use add_edge(node1, node2, value)")
 
     def __delitem__(self, key):
-        self._links.__delitem__(key)
+        raise ValueError("Use del_edge(node1, node2)")
 
     def __contains__(self, item):
         return self._links.__contains__(item)
@@ -69,6 +69,14 @@ class Graph(object):
             return self._links[node1][node2]
         except KeyError:
             return default
+
+    def del_edge(self, node1, node2):
+        """
+        removes edge from node1 to node2
+        :param node1: node
+        :param node2: node
+        """
+        del self._links[node1][node2]
 
     def node(self, node_id, obj=None):
         """

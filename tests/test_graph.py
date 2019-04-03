@@ -690,7 +690,15 @@ def test_copy():
 
 def test_delitem():
     g = graph05()
-    del g[0][1]
+
+    try:
+        g.__delitem__(key=1)
+        assert False
+    except ValueError:
+        assert True
+
+    g.del_edge(node1=0,node2=1)
+
     try:
         _ = g[0][1]
         raise AssertionError
