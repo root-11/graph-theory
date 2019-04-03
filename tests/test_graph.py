@@ -4,79 +4,6 @@ from graph import *
 from itertools import combinations
 
 
-def test_to_from_dict():
-    d = {1: {2: 10, 3: 5},
-         2: {4: 1, 3: 2},
-         3: {2: 3, 4: 9, 5: 2},
-         4: {5: 4},
-         5: {1: 7, 4: 6}}
-    g = Graph()
-    g.from_dict(d)
-    d2 = g.to_dict()
-    assert d == d2
-
-
-def test_setitem():
-    g = Graph()
-    try:
-        g[1][2] = 3
-        raise AssertionError("Assignment is not permitted use g.add_edge instead.")
-    except KeyError:
-        pass
-    g.add_node(1)
-    try:
-        g[1][2] = 3
-        raise Exception
-    except KeyError:
-        pass
-    g.add_edge(1, 2, 3)
-    assert g.edges() == [(1, 2, 3)]
-    link_1 = g[1][2]
-    assert link_1 == 3
-    link_1 = g.edge(1,2)
-    assert link_1 == 3
-    link_1 = 4
-    assert g[1][2] != 4  # the edge is not an object.
-    g.add_edge(1, 2, 4)
-    assert g.edges() == [(1, 2, 4)]
-
-    g = Graph()
-    try:
-        g[1] = {2: 3}
-        raise AssertionError
-    except ValueError:
-        pass
-
-
-def test_add_node_attr():
-    g = Graph()
-    g.add_node(1, "this")
-    assert list(g.nodes()) == [1]
-    node_1 = g.node(1)
-    assert node_1 == "this"
-
-
-def test_add_edge_attr():
-    g = Graph()
-    try:
-        g.add_edge(1, 2, {'a': 1, 'b': 2})
-        raise Exception("Assignment of non-values is not supported.")
-    except ValueError:
-        pass
-
-
-def test_to_list():
-    g1 = graph01()
-    g2 = Graph(from_list=g1.to_list())
-    assert g1.edges() == g2.edges()
-
-
-def test_bidirectional_link():
-    g = Graph()
-    g.add_edge(node1=1, node2=2, value=4, bidirectional=True)
-    assert g[1][2] == g[2][1]
-
-
 def graph01():
     """
     :return: Graph.
@@ -197,10 +124,95 @@ def graph_cycle_5():
     return Graph(from_list=L)
 
 
+def test_to_from_dict():
+    d = {1: {2: 10, 3: 5},
+         2: {4: 1, 3: 2},
+         3: {2: 3, 4: 9, 5: 2},
+         4: {5: 4},
+         5: {1: 7, 4: 6}}
+    g = Graph()
+    g.from_dict(d)
+    d2 = g.to_dict()
+    assert d == d2
+
+
+def test_setitem():
+    g = Graph()
+    try:
+        g[1][2] = 3
+        raise AssertionError("Assignment is not permitted use g.add_edge instead.")
+    except KeyError:
+        pass
+    g.add_node(1)
+    try:
+        g[1][2] = 3
+        raise Exception
+    except KeyError:
+        pass
+    g.add_edge(1, 2, 3)
+    assert g.edges() == [(1, 2, 3)]
+    link_1 = g[1][2]
+    assert link_1 == 3
+    link_1 = g.edge(1, 2)
+    assert link_1 == 3
+    link_1 = 4
+    assert g[1][2] != 4  # the edge is not an object.
+    g.add_edge(1, 2, 4)
+    assert g.edges() == [(1, 2, 4)]
+
+    g = Graph()
+    try:
+        g[1] = {2: 3}
+        raise AssertionError
+    except ValueError:
+        pass
+
+
+def test_add_node_attr():
+    g = graph02()
+    g.add_node(1, "this")
+    assert set(g.nodes()) == set(range(1, 10))
+    node_1 = g.node(1)
+    assert node_1 == "this"
+
+    d = {"This": 1, "That": 2}
+    g.node(1, obj=d)
+    assert g.node(1) == d
+
+    rm = 5
+    g.del_node(rm)
+    for n1, n2, d in g.edges():
+        assert n1 != rm and n2 != rm
+    g.del_node(rm)  # try again for a node that doesn't exist.
+
+
+def test_add_edge_attr():
+    g = Graph()
+    try:
+        g.add_edge(1, 2, {'a': 1, 'b': 2})
+        raise Exception("Assignment of non-values is not supported.")
+    except ValueError:
+        pass
+
+
+def test_to_list():
+    g1 = graph01()
+    g2 = Graph(from_list=g1.to_list())
+    assert g1.edges() == g2.edges()
+
+
+def test_bidirectional_link():
+    g = Graph()
+    g.add_edge(node1=1, node2=2, value=4, bidirectional=True)
+    assert g[1][2] == g[2][1]
+
+
 def test_edges_with_node():
     g = graph02()
     edges = g.edges(node=5)
     assert set(edges) == {(5, 6, 1), (5, 8, 1)}
+    assert g.edge(5, 6) == 1
+    assert g.edge(5, 600) is None  # 600 doesn't exist.
 
 
 def test_nodes_from_node():
@@ -211,6 +223,42 @@ def test_nodes_from_node():
     assert set(nodes) == {6, 8}
     nodes = g.nodes()
     assert set(nodes) == set(range(1, 10))
+
+    try:
+        nodes = g.nodes(in_degree=-1)
+        assert False
+    except ValueError:
+        assert True
+
+    nodes = g.nodes(in_degree=0)
+    assert set(nodes) == {1}
+    nodes = g.nodes(in_degree=1)
+    assert set(nodes) == {2, 3, 4, 7}
+    nodes = g.nodes(in_degree=2)
+    assert set(nodes) == {5, 6, 8, 9}
+    nodes = g.nodes(in_degree=3)
+    assert nodes == []
+
+    try:
+        nodes = g.nodes(out_degree=-1)
+        assert False
+    except ValueError:
+        assert True
+
+    nodes = g.nodes(out_degree=0)
+    assert set(nodes) == {9}
+    nodes = g.nodes(out_degree=1)
+    assert set(nodes) == {3, 6, 7, 8}
+    nodes = g.nodes(out_degree=2)
+    assert set(nodes) == {1, 2, 4, 5}
+    nodes = g.nodes(out_degree=3)
+    assert nodes == []
+
+    try:
+        nodes = g.nodes(in_degree=1, out_degree=1)
+        assert False
+    except ValueError:
+        assert True
 
 
 def test01():
@@ -416,12 +464,18 @@ def test_distance():
     p = [1, 2, 3, 6, 9]
     assert G.distance_from_path(p) == len(p) - 1
 
+    assert float('inf') == G.distance_from_path([1, 2, 3, 900])  # 900 doesn't exist.
+
 
 def test_bfs():
     G = graph03()
     d, path = G.breadth_first_search(1, 7)
     assert d == 2, d
     assert path == [1, 3, 7], path
+
+    d, path = G.breadth_first_search(1, 900)  # 900 doesn't exit.
+    assert d == float('inf')
+    assert path == []
 
 
 def test_adjacency_matrix():
@@ -443,6 +497,10 @@ def test_all_pairs_shortest_path():
             d, path = G.shortest_path(n1, n2)
             d2 = G2[n1][n2]
             assert d == d2
+
+    G2.add_node(100)
+    d = G2.all_pairs_shortest_paths()
+    # should trigger print of isolated node.
 
 
 def test_shortest_tree_all_pairs01():
@@ -661,3 +719,8 @@ def test_is_cyclic():
 def test_is_not_cyclic():
     g = graph02()
     assert not g.has_cycles()
+
+
+def test_is_really_cyclic():
+    g = Graph(from_list=[(1, 1, 1), (2, 2, 1)])  # two loops onto themselves.
+    assert g.has_cycles()

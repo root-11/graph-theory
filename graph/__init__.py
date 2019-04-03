@@ -55,19 +55,20 @@ class Graph(object):
     def __copy__(self):
         return Graph(from_list=self.edges())
 
-    def edge(self, node1, node2):
+    def edge(self, node1, node2, default=None):
         """Retrieves the edge (node1, node2)
 
         Alias for g[node1][node2]
 
         :param node1: node id
         :param node2: node id
+        :param default: returned value if edge doesn't exist.
         :return: edge(node1,node2)
         """
         try:
             return self._links[node1][node2]
         except KeyError:
-            return None
+            return default
 
     def node(self, node_id, obj=None):
         """
@@ -90,8 +91,14 @@ class Graph(object):
         :param node_id: node_id
         :return: None
         """
-        del self._nodes[node_id]
-        del self._links[node_id]
+        try:
+            del self._nodes[node_id]
+        except KeyError:
+            pass
+        try:
+            del self._links[node_id]
+        except KeyError:
+            pass
         in_links = [n1 for n1, n2, d in self.edges() if n2 == node_id]
         for inlink in in_links:
             del self._links[inlink][node_id]
@@ -576,8 +583,7 @@ def is_partite(graph, n):
             if n2 in nodes_and_colours:
                 if nodes_and_colours[n2] == colour:
                     return False, None
-                else:
-                    pass  # it already has a colour and there is no conflict.
+                # else:  pass  # it already has a colour and there is no conflict.
             else:  # if n2 not in nodes_and_colours:
                 colours_and_nodes[next_colour].add(n2)
                 nodes_and_colours[n2] = next_colour
@@ -718,8 +724,9 @@ def adjacency_matrix(graph):
          5: {1: inf, 2: inf, 3: inf, 4: 6, 5: 0}}
     """
     assert isinstance(graph, Graph)
-    return {v1: {v2: 0 if v1 == v2 else graph[v1].get(v2, float('inf')) for v2 in graph.nodes()} for v1 in
-            graph.nodes()}
+    return {v1: {v2: 0 if v1 == v2 else graph.edge(v1, v2, default=float('inf'))
+                 for v2 in graph.nodes()}
+            for v1 in graph.nodes()}
 
 
 def all_pairs_shortest_paths(graph):
