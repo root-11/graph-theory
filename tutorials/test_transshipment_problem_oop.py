@@ -1,5 +1,5 @@
 from graph import Graph
-from tutorials.transshipment_problem_oop import Traveller, Shuttle, schedule_all_trips
+from tutorials.transshipment_problem_oop import Traveller, Transporter, schedule_all_trips
 
 
 def single_cross_network():
@@ -66,6 +66,29 @@ def airport_model():
     return Graph(from_list=paths)
 
 
+def test_transports_fifo():
+    """
+    passengers must exit in the same order as they board.
+    """
+    pass
+
+
+def test_transports_filo():
+    """
+    passengers must move to the back of the bus to let other passengers on
+    board. If a passenger at the rear of the bus wants to get out, all
+    passengers in front of him/her must get off the bus first.
+    """
+    pass
+
+
+def test_transports_no_order():
+    """
+    passengers can board and exit the bus with no requirement for order.
+    """
+    pass
+
+
 def test_single_traveller_a_to_b():
     """
     Assures that a single traveller can travel from A to B
@@ -73,16 +96,16 @@ def test_single_traveller_a_to_b():
     """
     network = single_cross_network()
 
-    travellers = [
+    passengers = [
         Traveller(network=network, trips=[(1, 2, 0, float('inf'))]),
     ]
 
-    shuttles = [
-        Shuttle(network=network, start=1, stops={1, '+', 3}),
-        Shuttle(network=network, start=2, stops={2, '+', 4})
+    transports = [
+        Transporter(network=network, start=1, stops={1, '+', 3}),
+        Transporter(network=network, start=2, stops={2, '+', 4})
     ]
 
-    schedule_all_trips(shuttles=shuttles, travellers=travellers)
+    schedule_all_trips(transports=transports, passengers=passengers)
 
 
 def test_two_travellers_a_to_b():
@@ -92,17 +115,17 @@ def test_two_travellers_a_to_b():
     """
     network = single_cross_network()
 
-    travellers = [
+    passengers = [
         Traveller(network=network, trips=[(1, 2, 0, float('inf'))]),
         Traveller(network=network, trips=[(2, 3, 0, float('inf'))]),
     ]
 
-    shuttles = [
-        Shuttle(network=network, start=1, stops={1, '+', 3}),
-        Shuttle(network=network, start=2, stops={2, '+', 4})
+    transports = [
+        Transporter(network=network, start=1, stops={1, '+', 3}),
+        Transporter(network=network, start=2, stops={2, '+', 4})
     ]
 
-    schedule_all_trips(shuttles=shuttles, travellers=travellers)
+    schedule_all_trips(transports=transports, passengers=passengers)
 
 
 def test_four_travellers_a_to_b():
@@ -111,19 +134,19 @@ def test_four_travellers_a_to_b():
     """
     network = single_cross_network()
 
-    travellers = [
+    passengers = [
         Traveller(network=network, trips=[(1, 2, 0, float('inf'))]),
         Traveller(network=network, trips=[(2, 3, 0, float('inf'))]),
         Traveller(network=network, trips=[(3, 4, 0, float('inf'))]),
         Traveller(network=network, trips=[(4, 1, 0, float('inf'))])
     ]
 
-    shuttles = [
-        Shuttle(network=network, start=1, stops={1, '+', 3}),
-        Shuttle(network=network, start=2, stops={2, '+', 4})
+    transports = [
+        Transporter(network=network, start=1, stops={1, '+', 3}),
+        Transporter(network=network, start=2, stops={2, '+', 4})
     ]
 
-    schedule_all_trips(shuttles=shuttles, travellers=travellers)
+    schedule_all_trips(transports=transports, passengers=passengers)
 
 
 def test_airport_shuttle_problem():
@@ -136,17 +159,17 @@ def test_airport_shuttle_problem():
     """
     network = airport_model()
 
-    travellers = [
+    passengers = [
         Traveller(network=network, trips=[('airport', 1, 0, float('inf'))]),
         Traveller(network=network, trips=[('airport', 2, 0, float('inf'))]),
         Traveller(network=network, trips=[('airport', 3, 0, float('inf'))]),
     ]
 
-    shuttles = [
-        Shuttle(network=network, start='airport', stops=set(network.nodes())),
+    transports = [
+        Transporter(network=network, start='airport', stops=set(network.nodes())),
     ]
 
-    schedule_all_trips(shuttles=shuttles, travellers=travellers)
+    schedule_all_trips(transports=transports, passengers=passengers)
 
 
 def test_airport_shuttle_problem_reverse():
@@ -155,17 +178,17 @@ def test_airport_shuttle_problem_reverse():
     """
     network = airport_model()
 
-    travellers = [
+    passengers = [
         Traveller(network=network, trips=[(1, 'airport', 0, float('inf'))]),
         Traveller(network=network, trips=[(2, 'airport', 0, float('inf'))]),
         Traveller(network=network, trips=[(3, 'airport', 0, float('inf'))]),
     ]
 
-    shuttles = [
-        Shuttle(network=network, start='airport', stops=set(network.nodes())),
+    transports = [
+        Transporter(network=network, start='airport', stops=set(network.nodes())),
     ]
 
-    schedule_all_trips(shuttles=shuttles, travellers=travellers)
+    schedule_all_trips(transports=transports, passengers=passengers)
 
 
 def test_airport_shuttle_problem_out_and_back():
@@ -175,16 +198,16 @@ def test_airport_shuttle_problem_out_and_back():
     """
     network = airport_model()
 
-    travellers = [
+    passengers = [
         Traveller(network=network, trips=[(1, 'airport', 0, float('inf'))]),
         Traveller(network=network, trips=[('airport', 1, 0, float('inf'))]),
     ]
 
-    shuttles = [
-        Shuttle(network=network, start='airport', stops=set(network.nodes())),
+    transports = [
+        Transporter(network=network, start='airport', stops=set(network.nodes())),
     ]
 
-    schedule_all_trips(shuttles=shuttles, travellers=travellers)
+    schedule_all_trips(transports=transports, passengers=passengers)
 
 
 def test_airport_shuttle_problem_independent_passengers():
@@ -199,7 +222,7 @@ def test_airport_shuttle_problem_independent_passengers():
     """
     network = airport_model()
 
-    travellers = [
+    passengers = [
         Traveller(network=network, trips=[('airport', 1, 0, float('inf'))]),
         Traveller(network=network, trips=[('airport', 2, 0, float('inf'))]),
         Traveller(network=network, trips=[('airport', 3, 0, float('inf'))]),
@@ -208,11 +231,11 @@ def test_airport_shuttle_problem_independent_passengers():
         Traveller(network=network, trips=[(3, 'airport', 0, float('inf'))]),
     ]
 
-    shuttles = [
-        Shuttle(network=network, start='airport', stops=set(network.nodes())),
+    transports = [
+        Transporter(network=network, start='airport', stops=set(network.nodes())),
     ]
 
-    schedule_all_trips(shuttles=shuttles, travellers=travellers)
+    schedule_all_trips(transports=transports, passengers=passengers)
 
 
 def test_gold_delivery_to_surface():

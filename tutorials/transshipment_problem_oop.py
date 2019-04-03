@@ -44,19 +44,26 @@ Boston: The trip contains a number of route options:
     2. drive to the airport or take train, taxi, ...
     3. rent a car, take a taxi, ... at the destination airport.
 
-A job is thereby a path through a number of waypoints.
+A job is thereby a path through a number of way points.
 The job will face resource constraints (travel time, time windows)
 
 Likewise the machinery involved will face a number of constraints, and if
 it's completely utilised, it will not care one bit whether it handles one
 job or another. A taxi driver however will care if one job provides the
-opportunity for a return trip whilst another doesn't.
+opportunity for a return trip whilst another doesn't. 
 
 However attempting to let the Taxi determine the optimal schedule, in
 contrast to the travel, seems intuitively like a bad a idea. Yet that is
 what many scheduling methods attempt to do.
 
-Conclusion: Jobs are actors, not objects.
+Conclusion: Passengers are actors, not objects.
+
+Finally some vehicles, vessels, etc (generally transports) have constraints with
+regard to loading and unloading. A container ship is an obvious example:
+
+To get to a container lower in the ship, the containers above must be removed.
+For a bus, train or other public transport this contraints may not apply.
+
 """
 
 
@@ -115,7 +122,7 @@ class Trip(object):
         self.deadline = deadline    # latest arrival
 
 
-class Shuttle(object):
+class Transporter(object):
     FILO = 1
     FIFO = 2
 
@@ -123,8 +130,8 @@ class Shuttle(object):
         """
         :param network: graph of the network
         :param start: a (location) node in the network.
-        :param stops: Set of nodes to which this shuttle has access.
-                      if `None`, then shuttle can stop at all nodes.
+        :param stops: Set of nodes where the transporter stops.
+                      if `stops=None` then the transporter can stop at all nodes.
         :param capacity: the number of passengers that can board.
         :param order: the dis-/embarkation order for passengers. Options:
                       None: No ordering.
@@ -148,9 +155,10 @@ class Shuttle(object):
         """
 
 
-def schedule_all_trips(shuttles, travellers):
+def schedule_all_trips(transports, passengers):
     """
-    Iterative over the trains until a feasible schedule is found.
+    Iterative over the transports and passengesr until all have a feasible
+    schedule .
 
     1. Each device loop through the jobs:
         select all relevant jobs.
