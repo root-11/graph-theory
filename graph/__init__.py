@@ -162,10 +162,10 @@ class Graph(object):
                 rev[n1].add(n2)
             return [n for n, n_set in rev.items() if len(n_set) == out_degree]
 
-    def edges(self, path=None, node=None):
+    def edges(self, path=None, from_node=None):
         """
         :param path (optional) list of nodes for which the edges are wanted.
-        :param node (optional) for which outgoing edges are returned.
+        :param from_node (optional) for which outgoing edges are returned.
         :return list of edges (n1, n2, value)
         """
         if path:
@@ -174,8 +174,8 @@ class Graph(object):
             return [(path[ix], path[ix + 1], self._links[path[ix]][path[ix + 1]])
                     for ix in range(len(path)-1)]
 
-        if node:
-            return [(node, n2, self._links[node][n2]) for n2 in self._links[node]]
+        if from_node:
+            return [(from_node, n2, self._links[from_node][n2]) for n2 in self._links[from_node]]
 
         return [(n1, n2, self._links[n1][n2]) for n1 in self._links for n2 in self._links[n1]]
 

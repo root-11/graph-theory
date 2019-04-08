@@ -31,10 +31,10 @@ Available methods:
 | `g.add_edge(1,2,3)` | adds edge to g for vector `(1,2)` with value `3` |
 | `g[1][2]` | returns the distance/value/weight of vector `G[1][2]` in g |
 | `g.edge(1,2)` | (alias) for `g[1][2]` above |
-| `g.edge(1,2,default=3)` | returns `default=3` if `edge(1,2)` doesn't exist. <br>Similar to `d.get(key, 3)`|
+| `g.edge(1,2,default=3)` | returns `default=3` if `edge(1,2)` doesn't exist. <br>similar to `d.get(key, 3)`|
 | `g.del_edge(1,2)` | removes edge `G[1][2]` |
 | `g.edges(path=[path])` | returns a list of edges (along a path if given). |
-| `g.edges(node=1)` | returns edges outgoing from node 1 | 
+| `g.edges(from_node=1)` | returns edges outgoing from node 1 | 
 | `g.from_dict(d)` | updates the graph from a dictionary of nodes |
 | `g.to_dict()` | dumps the graph as a dictionary |
 | `g.from_list(L)` | updates the graph from a list of edges `L=[(n1,n2,d), ...]` |

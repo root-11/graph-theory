@@ -209,7 +209,7 @@ def test_bidirectional_link():
 
 def test_edges_with_node():
     g = graph02()
-    edges = g.edges(node=5)
+    edges = g.edges(from_node=5)
     assert set(edges) == {(5, 6, 1), (5, 8, 1)}
     assert g.edge(5, 6) == 1
     assert g.edge(5, 600) is None  # 600 doesn't exist.
