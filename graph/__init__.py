@@ -139,7 +139,7 @@ class Graph(object):
             return list(self._nodes.keys())
 
         if from_node is not None:
-            return [n2 for n1, n2, d in self.edges() if n1 == from_node]
+            return [n2 for n1, n2, d in self.edges(from_node=from_node)]
 
         if to_node is not None:
             return [n1 for n1, n2, d in self.edges() if n2 == to_node]
@@ -175,7 +175,10 @@ class Graph(object):
                     for ix in range(len(path)-1)]
 
         if from_node:
-            return [(from_node, n2, self._links[from_node][n2]) for n2 in self._links[from_node]]
+            if from_node in self._links:
+                return [(from_node, n2, self._links[from_node][n2]) for n2 in self._links[from_node]]
+            else:
+                return []
 
         return [(n1, n2, self._links[n1][n2]) for n1 in self._links for n2 in self._links[n1]]
 
@@ -886,7 +889,7 @@ def maximum_flow(graph, start, end):
 
     edges = [(n1, n2, 1 / d) for n1, n2, d in graph.edges() if d > 0]
     inverted_graph = Graph(from_list=edges)  # create G_inverted.
-
+    capacity_graph = Graph()  # Create structure to record capacity left.
     flow_graph = Graph()  # Create structure to record flows.
 
     while unassigned_flow:
@@ -895,7 +898,10 @@ def maximum_flow(graph, start, end):
         if d == float('inf'):  # then there is no path, and we must exit.
             return total_flow, flow_graph
         # else: use the path and lookup the actual flow from the capacity graph.
-        path_flow = min(d for s, e, d in graph.edges(path))
+        path_flow = float('inf')
+        for s, e, d in graph.edges(path=path):
+            c = capacity_graph.edge(s, e, default=float('inf'))
+            path_flow = min((d, c, path_flow))
 
         # 2. update the unassigned flow.
         unassigned_flow -= path_flow
@@ -908,18 +914,21 @@ def maximum_flow(graph, start, end):
 
             # 3.a. recording:
             if n1 in flow_graph and n2 in flow_graph[n1]:
-                flow_graph[n1][n2] += path_flow
+                v = flow_graph.edge(n1, n2)
+                flow_graph.add_edge(n1, n2, value=v + path_flow)
+                c = graph.edge(n1, n2) - (v + path_flow)
             else:
                 flow_graph.add_edge(n1, n2, path_flow)
+                c = graph.edge(n1, n2) - path_flow
+            capacity_graph.add_edge(n1, n2, c)
 
             # 3.b. updating:
             # if there is capacity left: update with new 1/capacity
             # else: remove node, as we can't do 1/zero.
-            new_capacity = graph[n1][n2] - path_flow
-            if new_capacity > 0:
-                inverted_graph[n1][n2] = 1/new_capacity
+            if c > 0:
+                inverted_graph.add_edge(n1, n2, 1 / c)
             else:
-                del inverted_graph[n1][n2]
+                inverted_graph.del_edge(n1, n2)
     return total_flow, flow_graph
 
 
