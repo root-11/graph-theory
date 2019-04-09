@@ -923,10 +923,6 @@ def maximum_flow(graph, start, end):
         if d == float('inf'):  # then there is no path, and we must exit.
             return total_flow, flow_graph
         # else: use the path and lookup the actual flow from the capacity graph.
-        # path_flow = float('inf')
-        # for s, e, d in graph.edges(path=path):
-        #     c = capacity_graph.edge(s, e, default=float('inf'))
-        #     path_flow = min((d, c, path_flow))
 
         path_flow = min([min(d, capacity_graph.edge(s, e, default=float('inf')))
                          for s, e, d in graph.edges(path=path)])
