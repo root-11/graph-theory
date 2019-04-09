@@ -24,8 +24,8 @@ class Graph(object):
         :param links: creates graph from list of edges(n1,n2,d)
         """
         self._nodes = {}
-        self._links = {}
-        self._max_length = 0
+        self._edges = {}
+        self._max_edge_value = 0
 
         if from_dict is not None:
             self.from_dict(from_dict)
@@ -33,12 +33,7 @@ class Graph(object):
             self.from_list(from_list)
 
     def __getitem__(self, item):
-        """
-        g[node1][node2] retrieves the link (if it exists)
-        :param item:
-        :return:
-        """
-        return self._links.__getitem__(item)
+        raise ValueError("Use g.node(n1) or g.edge(n1,n2)")
 
     def __setitem__(self, key, value):
         raise ValueError("Use add_edge(node1, node2, value)")
@@ -47,13 +42,45 @@ class Graph(object):
         raise ValueError("Use del_edge(node1, node2)")
 
     def __contains__(self, item):
-        return self._links.__contains__(item)
+        """
+        :returns bool: True if node in Graph.
+        """
+        return item in self._nodes
 
     def __len__(self):
-        return len(self._nodes)
+        raise ValueError("Use len(g.nodes()) or len(g.edges())")
 
     def __copy__(self):
-        return Graph(from_list=self.edges())
+        g = Graph()
+        for n in self._nodes:
+            g.add_node(n, obj=self._nodes[n])
+        for s, e, d in self.edges():
+            g.add_edge(s, e, d)
+        return g
+
+    def add_edge(self, node1, node2, value=1, bidirectional=False):
+        """
+        :param node1: hashable node
+        :param node2: hashable node
+        :param value: numeric value (int or float)
+        :param bidirectional: boolean.
+        """
+        if isinstance(value, (dict, list, tuple)):
+            raise ValueError("value cannot be {}".format(type(value)))
+        if node1 not in self._nodes:
+            self.add_node(node1)
+        if node2 not in self._nodes:
+            self.add_node(node2)
+
+        if node1 not in self._edges:
+            self._edges[node1] = {}
+        if node2 not in self._edges:
+            self._edges[node2] = {}
+        self._edges[node1][node2] = value
+        if value > self._max_edge_value:
+            self._max_edge_value = value
+        if bidirectional:
+            self._edges[node2][node1] = value
 
     def edge(self, node1, node2, default=None):
         """Retrieves the edge (node1, node2)
@@ -66,7 +93,7 @@ class Graph(object):
         :return: edge(node1,node2)
         """
         try:
-            return self._links[node1][node2]
+            return self._edges[node1][node2]
         except KeyError:
             return default
 
@@ -76,22 +103,27 @@ class Graph(object):
         :param node1: node
         :param node2: node
         """
-        del self._links[node1][node2]
+        del self._edges[node1][node2]
 
-    def node(self, node_id, obj=None):
+    def add_node(self, node_id, obj=None):
+        """
+        :param node_id: any hashable node.
+        :param obj: any object that the node should refer to.
+
+        PRO TIP:
+        If you want to hold additional values on your node, then define
+        you class with a __hash__() method. See CustomNode as example.
+        """
+        self._nodes[node_id] = obj
+
+    def node(self, node_id):
         """
         Retrieves the node object
-        Set the value of the node object if obj is not None.
 
         :param node_id: id of node in graph.
-        :param obj: any python object.
         :return: node object
         """
-        if obj is None:
-            return self._nodes.get(node_id, None)
-        if obj is not None:
-            self._nodes[node_id] = obj
-            return None
+        return self._nodes.get(node_id, None)
 
     def del_node(self, node_id):
         """
@@ -104,12 +136,12 @@ class Graph(object):
         except KeyError:
             pass
         try:
-            del self._links[node_id]
+            del self._edges[node_id]
         except KeyError:
             pass
         in_links = [n1 for n1, n2, d in self.edges() if n2 == node_id]
         for inlink in in_links:
-            del self._links[inlink][node_id]
+            del self._edges[inlink][node_id]
         return None
 
     def nodes(self,
@@ -162,60 +194,42 @@ class Graph(object):
                 rev[n1].add(n2)
             return [n for n, n_set in rev.items() if len(n_set) == out_degree]
 
-    def edges(self, path=None, from_node=None):
+    def edges(self, path=None, from_node=None, to_node=None):
         """
         :param path (optional) list of nodes for which the edges are wanted.
         :param from_node (optional) for which outgoing edges are returned.
+        :param to_node (optiona) for which incoming edges are returned.
         :return list of edges (n1, n2, value)
         """
+        inputs = sum([1 for i in (from_node, to_node, path) if i is not None])
+        if inputs > 1:
+            m = []
+            a = (path, from_node, to_node)
+            b = ("path", "from_node", "to_node")
+            for i in zip(a, b):
+                if i is not None:
+                    m.append("{}={}".format(b, a))
+            raise ValueError("edges({}) has too many inputs. Pick one.".format(m))
+
         if path:
             assert isinstance(path, list)
             assert len(path) >= 2
-            return [(path[ix], path[ix + 1], self._links[path[ix]][path[ix + 1]])
+            return [(path[ix], path[ix + 1], self._edges[path[ix]][path[ix + 1]])
                     for ix in range(len(path)-1)]
 
         if from_node:
-            if from_node in self._links:
-                return [(from_node, n2, self._links[from_node][n2]) for n2 in self._links[from_node]]
+            if from_node in self._edges:
+                return [(from_node, n2, self._edges[from_node][n2]) for n2 in self._edges[from_node]]
             else:
                 return []
 
-        return [(n1, n2, self._links[n1][n2]) for n1 in self._links for n2 in self._links[n1]]
+        if to_node:
+            return [(n1, n2, self._edges[n1][n2])
+                    for n1 in self._edges
+                    for n2 in self._edges[n1]
+                    if n2 == to_node]
 
-    def add_node(self, node_id, obj=None):
-        """
-        :param node_id: any hashable node.
-        :param obj: any object that the node should refer to.
-
-        PRO TIP:
-        If you want to hold additional values on your node, then define
-        you class with a __hash__() method. See CustomNode as example.
-        """
-        self._nodes[node_id] = obj
-
-    def add_edge(self, node1, node2, value=1, bidirectional=False):
-        """
-        :param node1: hashable node
-        :param node2: hashable node
-        :param value: numeric value (int or float)
-        :param bidirectional: boolean.
-        """
-        if isinstance(value, (dict, list, tuple)):
-            raise ValueError("value cannot be {}".format(type(value)))
-        if node1 not in self._nodes:
-            self.add_node(node1)
-        if node2 not in self._nodes:
-            self.add_node(node2)
-
-        if node1 not in self._links:
-            self._links[node1] = {}
-        if node2 not in self._links:
-            self._links[node2] = {}
-        self._links[node1][node2] = value
-        if value > self._max_length:
-            self._max_length = value
-        if bidirectional:
-            self._links[node2][node1] = value
+        return [(n1, n2, self._edges[n1][n2]) for n1 in self._edges for n2 in self._edges[n1]]
 
     def from_dict(self, dictionary):
         """
@@ -521,9 +535,8 @@ def distance(graph, path):
     path_length = 0
     for idx in range(len(path) - 1):
         n1, n2 = path[idx], path[idx + 1]
-        try:
-            d = cache[n1][n2]
-        except KeyError:
+        d = cache.edge(n1, n2, default=None)
+        if d is None:
             d, _ = graph.shortest_path(n1, n2)
             if d == float('inf'):
                 return float('inf')
@@ -543,8 +556,8 @@ def subgraph(graph, nodes):
     G = Graph()
     for n1 in nodes:
         G.add_node(n1)
-        for n2 in graph[n1]:
-            G.add_edge(n1, n2, graph[n1][n2])
+        for n2 in graph.nodes(from_node=n1):
+            G.add_edge(n1, n2, graph.edge(n1,n2))
     return G
 
 
@@ -635,7 +648,7 @@ def tsp(graph):
     def shortest_links_first(graph):
         """ returns a list of (distance, node1, node2) with shortest on top."""
         c = combinations(graph.nodes(), 2)
-        distances = [(graph[a][b], a, b) for a, b in c]
+        distances = [(graph.edge(a,b), a, b) for a, b in c]
         distances.sort()
         return distances
 
@@ -659,7 +672,7 @@ def tsp(graph):
 
     def tsp_tour_length(graph, tour):
         """ The TSP tour length WITH return to the starting point."""
-        return sum(graph[tour[i - 1]][tour[i]] for i in range(len(tour)))
+        return sum(graph.edge(tour[i - 1], tour[i]) for i in range(len(tour)))
 
     def improve_tour(graph, tour):
         assert tour, "no tour to improve?"
@@ -680,7 +693,7 @@ def tsp(graph):
         # Given tour [...A,B...C,D...], consider reversing B...C to get [...A,C...B,D...]
         a, b, c, d = tour[i - 1], tour[i], tour[j - 1], tour[j % len(tour)]
         # are old links (ab + cd) longer than new ones (ac + bd)? if so, reverse segment.
-        if graph[a][b] + graph[c][d] > graph[a][c] + graph[b][d]:
+        if graph.edge(a, b) + graph.edge(c, d) > graph.edge(a, c) + graph.edge(b, d):
             tour[i:j] = reversed(tour[i:j])
             return True
 
@@ -694,9 +707,9 @@ def tsp(graph):
     for _, a, b in L:
         if a in endpoints and b in endpoints and endpoints[a] != endpoints[b]:
             new_segment = join_endpoints(endpoints, a, b)
-            if len(new_segment) == len(graph):
+            if len(new_segment) == len(graph.nodes()):
                 break  # return new_segment
-    assert len(new_segment) == len(graph)
+    assert len(new_segment) == len(graph.nodes())
     first_tour = new_segment[:]
     first_path_length = tsp_tour_length(graph, first_tour)
 
@@ -829,11 +842,10 @@ def has_path(graph, path):
     assert isinstance(path, list)
     v1 = path[0]
     for v2 in path[1:]:
-        try:
-            _ = graph[v1][v2]
-            v1 = v2
-        except KeyError:
+        if graph.edge(v1, v2) is None:
             return False
+        else:
+            v1 = v2
     return True
 
 
@@ -866,8 +878,8 @@ def maximum_flow(graph, start, end):
     :return: flow, graph
     """
     assert isinstance(graph, Graph)
-    inflow = sum(graph[start][i] for i in graph[start])
-    outflow = sum(d for s, e, d in graph.edges() if e == end)
+    inflow = sum(d for s, e, d in graph.edges(from_node=start))
+    outflow = sum(d for s, e, d in graph.edges(to_node=end))
     unassigned_flow = min(inflow, outflow)  # search in excess of this 'flow' is a waste of time.
     total_flow = 0
 
@@ -898,10 +910,13 @@ def maximum_flow(graph, start, end):
         if d == float('inf'):  # then there is no path, and we must exit.
             return total_flow, flow_graph
         # else: use the path and lookup the actual flow from the capacity graph.
-        path_flow = float('inf')
-        for s, e, d in graph.edges(path=path):
-            c = capacity_graph.edge(s, e, default=float('inf'))
-            path_flow = min((d, c, path_flow))
+        # path_flow = float('inf')
+        # for s, e, d in graph.edges(path=path):
+        #     c = capacity_graph.edge(s, e, default=float('inf'))
+        #     path_flow = min((d, c, path_flow))
+
+        path_flow = min([min(d, capacity_graph.edge(s, e, default=float('inf')))
+                         for s, e, d in graph.edges(path=path)])
 
         # 2. update the unassigned flow.
         unassigned_flow -= path_flow
@@ -913,8 +928,8 @@ def maximum_flow(graph, start, end):
         for n1, n2, d in edges:
 
             # 3.a. recording:
-            if n1 in flow_graph and n2 in flow_graph[n1]:
-                v = flow_graph.edge(n1, n2)
+            v = flow_graph.edge(n1,n1, default=None)
+            if v is not None:
                 flow_graph.add_edge(n1, n2, value=v + path_flow)
                 c = graph.edge(n1, n2) - (v + path_flow)
             else:

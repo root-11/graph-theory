@@ -67,15 +67,15 @@ def graph04():
 def graph05():
     """
     0 ---- 1 ---- 5
-     \      \---- 6 ---- 7
-      \            \     |
-       \            \---- 8
-        \
-         \- 2 ---- 3 ---- 9
-             \      \     |
-              4      \---10
+     +      +---- 6 ---- 7
+      +            +     |
+       +            +---- 8
+        +
+         +- 2 ---- 3 ---- 9
+             +      +     |
+              4      +---10
     """
-    L = [
+    links = [
         (0, 1, 1),
         (0, 2, 1),
         (1, 5, 1),
@@ -92,14 +92,14 @@ def graph05():
         (0, 1, 1),
         (0, 1, 1),
     ]
-    return Graph(from_list=L)
+    return Graph(from_list=links)
 
 
 def graph_cycle_6():
     """
     cycle of 6 nodes
     """
-    L = [
+    links = [
         (1, 2, 1),
         (2, 3, 1),
         (3, 4, 1),
@@ -107,21 +107,21 @@ def graph_cycle_6():
         (5, 6, 1),
         (6, 1, 1),
     ]
-    L.extend([(n2, n1, d) for n1, n2, d in L])
-    return Graph(from_list=L)
+    links.extend([(n2, n1, d) for n1, n2, d in links])
+    return Graph(from_list=links)
 
 
 def graph_cycle_5():
     """ cycle of 5 nodes """
-    L = [
+    links = [
         (1, 2, 1),
         (2, 3, 1),
         (3, 4, 1),
         (4, 5, 1),
         (5, 1, 1),
     ]
-    L.extend([(n2, n1, d) for n1, n2, d in L])
-    return Graph(from_list=L)
+    links.extend([(n2, n1, d) for n1, n2, d in links])
+    return Graph(from_list=links)
 
 
 def test_to_from_dict():
@@ -140,30 +140,30 @@ def test_setitem():
     g = Graph()
     try:
         g[1][2] = 3
-        raise AssertionError("Assignment is not permitted use g.add_edge instead.")
-    except KeyError:
+        raise ValueError("Assignment is not permitted use g.add_edge instead.")
+    except ValueError:
         pass
     g.add_node(1)
     try:
         g[1][2] = 3
-        raise Exception
-    except KeyError:
+        raise ValueError
+    except ValueError:
         pass
     g.add_edge(1, 2, 3)
     assert g.edges() == [(1, 2, 3)]
-    link_1 = g[1][2]
+    link_1 = g.edge(1, 2)
     assert link_1 == 3
     link_1 = g.edge(1, 2)
     assert link_1 == 3
-    link_1 = 4
-    assert g[1][2] != 4  # the edge is not an object.
+    link_1 = 4  # attempt setattr.
+    assert g.edge(1, 2) != 4  # the edge is not an object.
     g.add_edge(1, 2, 4)
     assert g.edges() == [(1, 2, 4)]
 
     g = Graph()
     try:
         g[1] = {2: 3}
-        raise AssertionError
+        raise ValueError
     except ValueError:
         pass
 
@@ -176,7 +176,7 @@ def test_add_node_attr():
     assert node_1 == "this"
 
     d = {"This": 1, "That": 2}
-    g.node(1, obj=d)
+    g.add_node(1, obj=d)
     assert g.node(1) == d
 
     rm = 5
@@ -204,7 +204,7 @@ def test_to_list():
 def test_bidirectional_link():
     g = Graph()
     g.add_edge(node1=1, node2=2, value=4, bidirectional=True)
-    assert g[1][2] == g[2][1]
+    assert g.edge(1, 2) == g.edge(2, 1)
 
 
 def test_edges_with_node():
@@ -225,7 +225,7 @@ def test_nodes_from_node():
     assert set(nodes) == set(range(1, 10))
 
     try:
-        nodes = g.nodes(in_degree=-1)
+        _ = g.nodes(in_degree=-1)
         assert False
     except ValueError:
         assert True
@@ -240,7 +240,7 @@ def test_nodes_from_node():
     assert nodes == []
 
     try:
-        nodes = g.nodes(out_degree=-1)
+        _ = g.nodes(out_degree=-1)
         assert False
     except ValueError:
         assert True
@@ -255,7 +255,7 @@ def test_nodes_from_node():
     assert nodes == []
 
     try:
-        nodes = g.nodes(in_degree=1, out_degree=1)
+        _ = g.nodes(in_degree=1, out_degree=1)
         assert False
     except ValueError:
         assert True
@@ -265,8 +265,8 @@ def test01():
     """
     Asserts that the shortest_path is correct
     """
-    G = graph01()
-    dist, path = G.shortest_path(1, 4)
+    g = graph01()
+    dist, path = g.shortest_path(1, 4)
     assert [1, 3, 2, 4] == path, path
     assert 9 == dist, dist
 
@@ -280,37 +280,37 @@ def test02():
          3: {2: 3, 4: 9, 5: 2},
          4: {5: 4},
          5: {1: 7, 4: 6}}
-    G = Graph(from_dict=d)
-    assert d[3] == G[3]
-    assert d[3][4] == G[3][4]
+    g = Graph(from_dict=d)
+    assert 3 in g
+    assert d[3][4] == g.edge(3, 4)
 
 
 def test03():
-    G = graph02()
-    all_edges = G.edges()
-    edges = G.edges(path=[1, 2, 3, 6, 9])
+    g = graph02()
+    all_edges = g.edges()
+    edges = g.edges(path=[1, 2, 3, 6, 9])
     for edge in edges:
         assert edge in all_edges, edge
 
 
 def test_shortest_path01():
-    G = graph03()
-    distG, pathG = G.shortest_path(1, 8)
-    assert pathG == [1, 2, 4, 8], pathG
+    g = graph03()
+    dist_g, path_g = g.shortest_path(1, 8)
+    assert path_g == [1, 2, 4, 8], path_g
 
-    H = graph04()
-    distH, pathH = H.shortest_path(1, 8)
+    h = graph04()
+    distH, pathH = h.shortest_path(1, 8)
     assert pathH == [1, 2, 4, 8], pathH
     pathH = pathH[2:] + pathH[:2]
-    assert pathG != pathH, (pathG, pathH)
+    assert path_g != pathH, (path_g, pathH)
 
-    assert G.same_path(pathG, pathH)
-    assert H.same_path(pathG, pathH)
+    assert g.same_path(path_g, pathH)
+    assert h.same_path(path_g, pathH)
 
-    reverseG = list(reversed(pathG))
-    assert not G.same_path(pathG, reverseG)
+    reverseG = list(reversed(path_g))
+    assert not g.same_path(path_g, reverseG)
 
-    assert G.has_path(pathG)
+    assert g.has_path(path_g)
 
 
 def test_tsp():
@@ -321,20 +321,20 @@ def test_tsp():
     will build this graph:
 
     (0)---(1)---(2)---(3)---(4)
-       \                     /
+       +                     /
         ----------------------------------------
-                          /                     \
+                          /                     +
                         (5)---(6)---(7)---(8)---(9)
 
     The method 'improve tour' will then reverse segments
     if they improve the overall tour length. This leads to
     this result:
 
-    (0)---(1)---(2)---(3)---(4)--------------\
-       \                                      \
-        \                                      \
-          \                                     \
-            \-----------(5)---(6)---(7)---(8)---(9)
+    (0)---(1)---(2)---(3)---(4)--------------+
+       +                                      +
+        +                                      +
+          +                                     +
+            +-----------(5)---(6)---(7)---(8)---(9)
 
     which is a fraction shorter.
     """
@@ -352,14 +352,14 @@ def test_tsp():
         (1, 7)
     ]
 
-    def distance(a, b):
+    def _distance(a, b):
         dx = abs(a[0] - b[0])
         dy = abs(a[1] - b[1])
         return (dx ** 2 + dy ** 2) ** (1 / 2)
 
     # The graph must be fully connected for the TSP to work:
     for a, b in combinations(range(len(xys)), 2):
-        d = distance(xys[a], xys[b])
+        d = _distance(xys[a], xys[b])
         g.add_edge(a, b, value=d)
         g.add_edge(b, a, value=d)
 
@@ -394,14 +394,14 @@ def test_tsp_perfect_problem():
         (5, 1), (4, 1), (3, 1), (2, 1), (1, 1),
     ]
 
-    def distance(a, b):
+    def _distance(a, b):
         dx = abs(a[0] - b[0])
         dy = abs(a[1] - b[1])
         return (dx ** 2 + dy ** 2) ** (1 / 2)
 
     # The graph must be fully connected for the TSP to work:
     for a, b in combinations(range(len(xys)), 2):
-        d = distance(xys[a], xys[b])
+        d = _distance(xys[a], xys[b])
         g.add_edge(a, b, value=d)
         g.add_edge(b, a, value=d)
 
@@ -437,26 +437,26 @@ def test_tsp_larger_problem():
 
 
 def test_shortest_path_fail():
-    G = graph02()
-    d, p = G.shortest_path(start=9, end=1)  # there is no path.
+    g = graph02()
+    d, p = g.shortest_path(start=9, end=1)  # there is no path.
     assert d == float('inf')
     assert p == []
 
 
 def test_subgraph():
-    G = graph02()
-    G2 = G.subgraph_from_nodes([1, 2, 3, 4])
+    g = graph02()
+    g2 = g.subgraph_from_nodes([1, 2, 3, 4])
     d = {1: {2: 1, 4: 1},
          2: {3: 1},
          }
-    assert G2.is_subgraph(G)
+    assert g2.is_subgraph(g)
     for k, v in d.items():
         for k2, d2 in v.items():
-            assert G[k][k2] == G2[k][k2]
+            assert g.edge(k, k2) == g2.edge(k, k2)
 
-    G3 = graph02()
-    G3.add_edge(3, 100, 7)
-    assert not G3.is_subgraph(G2)
+    g3 = graph02()
+    g3.add_edge(3, 100, 7)
+    assert not g3.is_subgraph(g2)
 
 
 def test_distance():
@@ -468,52 +468,53 @@ def test_distance():
 
 
 def test_bfs():
-    G = graph03()
-    d, path = G.breadth_first_search(1, 7)
+    g = graph03()
+    d, path = g.breadth_first_search(1, 7)
     assert d == 2, d
     assert path == [1, 3, 7], path
 
-    d, path = G.breadth_first_search(1, 900)  # 900 doesn't exit.
+    d, path = g.breadth_first_search(1, 900)  # 900 doesn't exit.
     assert d == float('inf')
     assert path == []
 
 
 def test_adjacency_matrix():
-    G = graph02()
-    am = G.adjacency_matrix()
-    G2 = Graph(from_dict=am)
-    assert G.is_subgraph(G2)
-    assert G2._max_length == float('inf') != G._max_length
-    assert not G2.is_subgraph(G)
+    g = graph02()
+    am = g.adjacency_matrix()
+    g2 = Graph(from_dict=am)
+    assert g.is_subgraph(g2)
+    assert g2._max_edge_value == float('inf') != g._max_edge_value
+    assert not g2.is_subgraph(g)
 
 
 def test_all_pairs_shortest_path():
-    G = graph03()
-    d = G.all_pairs_shortest_paths()
-    G2 = Graph(from_dict=d)
-    for n1 in G.nodes():
-        for n2 in G.nodes():
-            if n1 == n2: continue
-            d, path = G.shortest_path(n1, n2)
-            d2 = G2[n1][n2]
+    g = graph03()
+    d = g.all_pairs_shortest_paths()
+    g2 = Graph(from_dict=d)
+    for n1 in g.nodes():
+        for n2 in g.nodes():
+            if n1 == n2:
+                continue
+            d, path = g.shortest_path(n1, n2)
+            d2 = g2.edge(n1, n2)
             assert d == d2
 
-    G2.add_node(100)
-    d = G2.all_pairs_shortest_paths()
+    g2.add_node(100)
+    d = g2.all_pairs_shortest_paths()
     # should trigger print of isolated node.
 
 
 def test_shortest_tree_all_pairs01():
-    G = Graph()
+    g = Graph()
     links = [
         (1, 2, 1),
         (1, 3, 1),
         (2, 3, 1)
     ]
     for L in links:
-        G.add_edge(*L)
+        g.add_edge(*L)
 
-    p = G.shortest_tree_all_pairs()
+    p = g.shortest_tree_all_pairs()
     assert p == [1, 2, 3]
 
 
@@ -523,32 +524,32 @@ def test_shortest_tree_all_pairs02():
         (1, 3, 2),
         (2, 3, 3)
     ]
-    G = Graph(from_list=links)
+    g = Graph(from_list=links)
 
     for L in links:
-        G.add_edge(*L)
+        g.add_edge(*L)
 
-    p = G.shortest_tree_all_pairs()
+    p = g.shortest_tree_all_pairs()
     assert p == [1, 2, 3]
 
 
 def test_path_permutations01():
-    G = graph02()
-    paths = G.all_paths(1, 3)
+    g = graph02()
+    paths = g.all_paths(1, 3)
     assert len(paths) == 1, paths
     assert paths[0] == [1, 2, 3]
 
 
 def test_path_permutations02():
-    G = graph02()
-    paths = G.all_paths(1, 6)
+    g = graph02()
+    paths = g.all_paths(1, 6)
     assert len(paths) == 3
     assert paths == [[1, 2, 3, 6], [1, 2, 5, 6], [1, 4, 5, 6]]
 
 
 def test_path_permutations03():
-    G = graph02()
-    paths = G.all_paths(1, 9)
+    g = graph02()
+    paths = g.all_paths(1, 9)
     assert len(paths) == 6
     assert paths == [[1, 2, 3, 6, 9],
                      [1, 2, 5, 6, 9],
@@ -560,9 +561,9 @@ def test_path_permutations03():
 
 def test_maximum_flow():
     """ [2] ----- [5]
-       /    \   /  | \
+       /    +   /  | +
     [1]      [4]   |  [7]
-       \    /   \  | /
+       +    /   +  | /
         [3] ----- [6]
     """
     links = [
@@ -646,14 +647,14 @@ def test_maximum_flow05():
 
 
 def test_dfs():
-    L = [
+    links = [
         (1, 2, 0),
         (1, 3, 0),
         (2, 3, 0),
         (2, 4, 0),
         (3, 4, 0)
     ]
-    g = Graph(from_list=L)
+    g = Graph(from_list=links)
     path = g.depth_first_search(1, 4)
     assert g.has_path(path)
 
@@ -662,14 +663,14 @@ def test_dfs():
 
 
 def test_dfs_02():
-    L = [
+    links = [
         (1, 2, 0),
         (1, 3, 0),
         (3, 5, 0),
         (2, 4, 0),
         (5, 6, 0),
     ]
-    g = Graph(from_list=L)
+    g = Graph(from_list=links)
     path = g.depth_first_search(1, 4)
     assert path == [1, 2, 4]
     assert g.has_path(path)
@@ -697,13 +698,14 @@ def test_delitem():
     except ValueError:
         assert True
 
-    g.del_edge(node1=0,node2=1)
+    g.del_edge(node1=0, node2=1)
 
-    try:
-        _ = g[0][1]
-        raise AssertionError
-    except KeyError:
-        pass
+    v = g.edge(0, 1)
+    if v is not None:
+        raise ValueError
+    v = g.edge(0, 1, default=44)
+    if v != 44:
+        raise ValueError
 
 
 def test_is_partite():
