@@ -78,15 +78,14 @@ def assignment_problem(agents_and_tasks, agents, tasks):
         value_and_task_for_n.sort(reverse=True)
 
         for v, t in value_and_task_for_n:  # for each opportunity (in ranked order)
-            v_n2_t = v_null
-            if t in assignments:  # if connected get whoever it is connected to.
-                for n2 in assignments[t]:  # and lookup the value.
-                    v_n2_t = assignments[t][n2]
-                    break
-            if v > v_n2_t:  # if the opportunity is better.
+            d = v_null
+            for s, e, d in assignments.edges(from_node=t):  # if connected, get whoever it is connected to.
+                break
+
+            if v > d:  # if the opportunity is better.
                 if t in assignments:  # and if there is a previous relationship.
-                    unassigned_agents.append(n2)  # add the removed node to unassigned.
-                    del assignments[t]  # erase any previous relationship.
+                    unassigned_agents.append(e)  # add the removed node to unassigned.
+                    assignments.del_edge(t, e)  # erase any previous relationship.
                 else:
                     unassigned_tasks.remove(t)
                 assignments.add_edge(t, n, v)  # record the new relationship.
