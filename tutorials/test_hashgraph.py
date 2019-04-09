@@ -51,7 +51,7 @@ def test_flow_graph_hash_01():
  (hash I1+E1)    (hash I1+I2+E2)
 
     """
-    L = [
+    links = [
         ('s-1', 'i-1', 1),
         ('s-2', 'i-1', 1),
         ('i-1', 'e-1', 1),
@@ -60,22 +60,22 @@ def test_flow_graph_hash_01():
         ('i-2', 'i-2', 1),
         ('i-2', 'e-2', 1),
     ]
-    g = Graph(from_list=L)
+    g = Graph(from_list=links)
     g.add_node('s-4')
     g2 = flow_graph_hash(g)
-    assert len(g2) == len(g)
+    assert len(g2.nodes()) == len(g.nodes())
 
 
 def test_flow_graph_loop_01():
-    L = [
+    links = [
         (1, 2, 1),
         (2, 3, 1),
         (3, 4, 1),
         (3, 2, 1)
     ]
-    g = Graph(from_list=L)
+    g = Graph(from_list=links)
     g2 = flow_graph_hash(g)
-    assert len(g2) == len(g)
+    assert len(g2.nodes()) == len(g.nodes())
 
 
 def test_flow_graph_async_01():
@@ -85,27 +85,27 @@ def test_flow_graph_async_01():
                       /
              (s3) -->/
     """
-    L = [
+    links = [
         (1, 2, 1),
         (2, 4, 1),
         (3, 4, 1)
     ]
-    g = Graph(from_list=L)
+    g = Graph(from_list=links)
     g2 = flow_graph_hash(g)
-    assert len(g2) == len(g)
+    assert len(g2.nodes()) == len(g.nodes())
 
 
 def test_graph_hash():
     """
     Simple test of the graph hash function.
     """
-    L = [
+    links = [
         (1, 2, 1),
         (2, 3, 1),
         (3, 4, 1),
         (3, 2, 1)
     ]
-    g = Graph(from_list=L)
+    g = Graph(from_list=links)
     h = graph_hash(g)
     assert isinstance(h, int)
     assert sum((int(d) for d in str(h))) == 312
