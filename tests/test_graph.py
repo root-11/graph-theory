@@ -129,7 +129,8 @@ def test_to_from_dict():
          2: {4: 1, 3: 2},
          3: {2: 3, 4: 9, 5: 2},
          4: {5: 4},
-         5: {1: 7, 4: 6}}
+         5: {1: 7, 4: 6},
+         6: {}}
     g = Graph()
     g.from_dict(d)
     d2 = g.to_dict()
@@ -197,8 +198,10 @@ def test_add_edge_attr():
 
 def test_to_list():
     g1 = graph01()
+    g1.add_node(44)
     g2 = Graph(from_list=g1.to_list())
     assert g1.edges() == g2.edges()
+    assert g1.nodes() == g2.nodes()
 
 
 def test_bidirectional_link():

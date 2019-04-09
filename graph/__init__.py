@@ -245,9 +245,13 @@ class Graph(object):
 
         :return: None
         """
-        for n1 in dictionary:
-            for n2 in dictionary[n1]:
-                self.add_edge(n1, n2, dictionary[n1][n2])
+        assert isinstance(dictionary, dict)
+        for n1, e in dictionary.items():
+            if not e:
+                self.add_node(n1)
+            else:
+                for n2,v in e.items():
+                    self.add_edge(n1, n2, v)
 
     def to_dict(self):
         """ creates a nested dictionary from the graph.
@@ -258,6 +262,10 @@ class Graph(object):
             if n1 not in d:
                 d[n1] = {}
             d[n1][n2] = dist
+
+        for n in self.nodes():
+            if n not in d:
+                d[n] = {}
         return d
 
     def from_list(self, links):
@@ -271,15 +279,20 @@ class Graph(object):
             (2, 4, 7),
             (2, 5, 6),
             (3, 4, 2),
+            (11,)      # node with no links.
         ]
         """
         assert isinstance(links, list)
-        for n1, n2, v in links:
-            self.add_edge(n1, n2, v)
+        for item in links:
+            assert isinstance(item, tuple)
+            if len(item) == 3:
+                self.add_edge(*item)
+            else:
+                self.add_node(item[0])
 
     def to_list(self):
         """ alias for self.edges()"""
-        return self.edges()
+        return self.edges() + [(i,) for i in self.nodes()]
 
     def shortest_path(self, start, end):
         """
@@ -928,7 +941,7 @@ def maximum_flow(graph, start, end):
         for n1, n2, d in edges:
 
             # 3.a. recording:
-            v = flow_graph.edge(n1,n1, default=None)
+            v = flow_graph.edge(n1, n1, default=None)
             if v is not None:
                 flow_graph.add_edge(n1, n2, value=v + path_flow)
                 c = graph.edge(n1, n2) - (v + path_flow)
