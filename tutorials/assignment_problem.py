@@ -38,7 +38,7 @@ def assignment_problem(agents_and_tasks, agents, tasks):
     with agents, tasks and the value/cost of each task, as links,
     so that the relationship is explicit as:
 
-        G[agent 1][task 1] = value.
+        value = g.edge(agent 1, task 1)
 
     The optimal assignment is determined as an alternating auction
     (see Dmitri Bertsekas, MIT) which maximises the value.
@@ -72,11 +72,9 @@ def assignment_problem(agents_and_tasks, agents, tasks):
     assignments = Graph()
 
     while unassigned_agents:
-        n = unassigned_agents.pop(0)
-        # select phase:
-        value_and_task_for_n = [(v, t) for a, t, v in agents_and_tasks.edges() if a == n]
+        n = unassigned_agents.pop(0)  # select phase:
+        value_and_task_for_n = [(v, t) for a, t, v in agents_and_tasks.edges(from_node=n)]
         value_and_task_for_n.sort(reverse=True)
-
         for v, t in value_and_task_for_n:  # for each opportunity (in ranked order)
             d = v_null
             for s, e, d in assignments.edges(from_node=t):  # if connected, get whoever it is connected to.
@@ -92,5 +90,4 @@ def assignment_problem(agents_and_tasks, agents, tasks):
                 break
 
     return [(a, t, v) for t, a, v in assignments.edges() if t not in dummy_tasks]
-
 

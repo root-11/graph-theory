@@ -661,7 +661,7 @@ def tsp(graph):
     def shortest_links_first(graph):
         """ returns a list of (distance, node1, node2) with shortest on top."""
         c = combinations(graph.nodes(), 2)
-        distances = [(graph.edge(a,b), a, b) for a, b in c]
+        distances = [(graph.edge(a, b), a, b) for a, b in c]
         distances.sort()
         return distances
 
