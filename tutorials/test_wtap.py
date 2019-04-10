@@ -5,6 +5,26 @@ from graph import Graph
 from tutorials.wtap import wtap
 
 
+def test_to_damage_assessment_calculation():
+    g, weapons, target_values = wikipedia_wtap_setup()
+
+    edges = [
+        ("tank-0", 1, 0.3),
+        ("tank-1", 1, 0.3),
+        ("tank-2", 1, 0.3),
+        ("tank-3", 2, 0.2),
+        ("tank-4", 2, 0.2),
+        ("aircraft-0", 3, 0.5),
+        ("aircraft-1", 3, 0.5),
+        ("ship-0", 2, 0.5)
+
+    ]
+    assignment = Graph(from_list=edges)
+    assert 9.915 == wtap_damage_assessment(probabilities=g,
+                                           assignment=assignment,
+                                           target_values=target_values)
+
+
 def test01_wtap():
     weapons = [1, 2, 3]
     probabilities = [
@@ -21,7 +41,9 @@ def test01_wtap():
     target_values = {5: 5, 6: 6, 7: 7}
     g = Graph(from_list=probabilities)
 
-    value, assignments = wtap(probabilities=g, weapons=weapons, target_values=target_values)
+    value, assignments = wtap(probabilities=g,
+                              weapons=weapons,
+                              target_values=target_values)
     assert isinstance(assignments, Graph)
     assert set(assignments.edges()) == {(2, 7, 0.1), (3, 6, 0.1), (1, 7, 0.1)}
     assert value == 16.07
@@ -43,16 +65,18 @@ def test02_wtap_with_fractional_probabilities():
     target_values = {5: 5, 6: 6, 7: 7}
     g = Graph(from_list=probabilities)
 
-    value, assignments = wtap(probabilities=g, weapons=weapons, target_values=target_values)
+    value, assignments = wtap(probabilities=g,
+                              weapons=weapons,
+                              target_values=target_values)
     assert isinstance(assignments, Graph)
     assert set(assignments.edges()) == {(2, 7, F(1, 10)), (3, 6, F(1, 10)), (1, 7, F(1, 10))}
     assert float(value) == 16.07
 
 
-def test03_wtap_from_wikipedia_all_permutations():
+def test03_wtap_all_permutations_of_initialisations():
+    """ Uses the wikipedia WTAP setup. """
     g, weapons, target_values = wikipedia_wtap_setup()
 
-    c = 0
     perfect_score = 4.95
     quality_score = 0
     quality_required = 0.97
@@ -66,17 +90,23 @@ def test03_wtap_from_wikipedia_all_permutations():
         perm = perms.pop()
         perm2 = tuple(reversed(perm))
         perms.remove(perm2)
-        damage1, ass1 = wtap(probabilities=g, weapons=list(perm), target_values=target_values)
-        damage2, ass2 = wtap(probabilities=g, weapons=list(perm2), target_values=target_values)
+        damage1, ass1 = wtap(probabilities=g,
+                             weapons=list(perm),
+                             target_values=target_values)
+        damage2, ass2 = wtap(probabilities=g,
+                             weapons=list(perm2),
+                             target_values=target_values)
 
-        damageN = min(damage1, damage2)
-        if damage1 == damageN:
+        damage_n = min(damage1, damage2)
+        if damage1 == damage_n:
             assignment = ass1
         else:
             assignment = ass2
 
-        damage = wikipedia_wtap_damage_assessment(probabilities=g, assignment=assignment, target_values=target_values)
-        assert round(damageN, 2) == round(damage, 2)
+        damage = wtap_damage_assessment(probabilities=g,
+                                        assignment=assignment,
+                                        target_values=target_values)
+        assert round(damage_n, 2) == round(damage, 2)
         damage = round(damage, 2)
 
         quality_score += damage
@@ -97,24 +127,27 @@ def test03_wtap_from_wikipedia_all_permutations():
 
     solution_quality = perfect_score * c / quality_score
     if solution_quality >= quality_required:
-        raise AssertionError("achieved {:.0f}%".format(solution_quality*100))
+        raise AssertionError("achieved {:.0f}%".format(solution_quality * 100))
     print("achieved {:.0f}%".format(solution_quality * 100))
 
 
-def test04_wtap_from_wikipedia_exhaustive():
+def test04_wtap_using_exhaustive_search():
+    """ Uses the wikipedia WTAP setup. """
     g, weapons, target_values = wikipedia_wtap_setup()
 
-    best_result = sum(target_values.values())+1
+    best_result = sum(target_values.values()) + 1
     best_assignment = None
     c = 0
     for perm in permutations(weapons, len(weapons)):
         for combination in combinations_with_replacement([1, 2, 3], len(weapons)):
-            L = [(w, t, g[w][t]) for w, t in zip(perm, combination)]
-            a = Graph(from_list=L)
-            r = wikipedia_wtap_damage_assessment(probabilities=g, assignment=a, target_values=target_values)
+            edges = [(w, t, g.edge(w, t)) for w, t in zip(perm, combination)]
+            a = Graph(from_list=edges)
+            r = wtap_damage_assessment(probabilities=g,
+                                       assignment=a,
+                                       target_values=target_values)
             if r < best_result:
                 best_result = r
-                best_assignment = L
+                best_assignment = edges
             c += 1
     print(best_result, "is best result out of", c, "(exhaustive search)\n", best_assignment)
     assert best_result == 4.95, best_result
@@ -165,9 +198,14 @@ def wikipedia_wtap_setup():
     return g, weapons, target_values
 
 
-def wikipedia_wtap_damage_assessment(probabilities, assignment, target_values):
+def wtap_damage_assessment(probabilities, assignment, target_values):
+    """
+    :param probabilities: graph.
+    :param assignment: graph
+    :param target_values: dictionary
+    :return: total survival value of the targets.
+    """
     assert isinstance(probabilities, Graph)
-
     assert isinstance(assignment, Graph)
     result = assignment.edges()
     assert isinstance(target_values, dict)
@@ -187,7 +225,7 @@ def wikipedia_wtap_damage_assessment(probabilities, assignment, target_values):
         p = 1
         for wtype, quantity in assigned_weapons.items():
             weapon = wtype + "-0"
-            p_base = (1 - probabilities[weapon][target])
+            p_base = (1 - probabilities.edge(weapon, target))
             p *= p_base ** quantity
 
         total_survival_value += p * target_values[target]
@@ -200,6 +238,10 @@ def wikipedia_wtap_damage_assessment(probabilities, assignment, target_values):
 
 
 def wikipedia_wtap_pretty_printer(assignment):
+    """ Produces a human readable print out of the assignment
+    :param assignment: graph
+    :return: str
+    """
     assert isinstance(assignment, Graph)
     result = assignment.edges()
     survival_value = {}
@@ -212,37 +254,32 @@ def wikipedia_wtap_pretty_printer(assignment):
             survival_value[target][wtype] = 0
         survival_value[target][wtype] += 1
 
-    L = []
+    lines = []
     for target, wtypes in sorted(survival_value.items()):
-        L.append("T-{}: ".format(target))
+        lines.append("T-{}: ".format(target))
         _and = " + "
         for wtype, qty in sorted(wtypes.items()):
             if qty > 1:
                 _wtype = wtype + "s"
             else:
                 _wtype = wtype
-            L.append("{} {}".format(qty, _wtype))
-            L.append(_and)
-        L.pop(-1)
-        L.append(", ")
-    s = "".join(L)
+            lines.append("{} {}".format(qty, _wtype))
+            lines.append(_and)
+        lines.pop(-1)
+        lines.append(", ")
+    s = "".join(lines)
     return s
 
 
-def test_to_verify_wikipedia_damage_assessment():
-    g, weapons, target_values = wikipedia_wtap_setup()
+def doall():
+    import time
+    for k, v in sorted(globals().items()):
+        if callable(v) and k.startswith('test'):
+            start = time.time()
+            v()
+            duration = time.time() - start
+            print(k, "done.", "({:.3f} sec)".format(duration))
 
-    L = [
-        ("tank-0", 1, 0.3),
-        ("tank-1", 1, 0.3),
-        ("tank-2", 1, 0.3),
-        ("tank-3", 2, 0.2),
-        ("tank-4", 2, 0.2),
-        ("aircraft-0", 3, 0.5),
-        ("aircraft-1", 3, 0.5),
-        ("ship-0", 2, 0.5)
 
-    ]
-    assignment = Graph(from_list=L)
-    assert 9.915 == wikipedia_wtap_damage_assessment(probabilities=g, assignment=assignment,
-                                                     target_values=target_values)
+if __name__ == "__main__":
+    doall()

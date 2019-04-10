@@ -33,7 +33,6 @@ Solution methods:
 [1] https://en.wikipedia.org/wiki/Weapon_target_assignment_problem
 """
 
-
 __all__ = ["wtap"]
 
 
@@ -57,20 +56,22 @@ def wtap(probabilities, weapons, target_values):
     assert isinstance(target_values, dict)
 
     assignments = Graph()
-    current_target_values = sum(target_values.values())+1
+    current_target_values = sum(target_values.values()) + 1
 
     improvements = {}
     while True:
         for w in weapons:
             # calculate the effect of engaging in all targets.
             effect_of_assignment = {}
-            for t, p in probabilities[w].items():
+            for _, t, p in probabilities.edges(from_node=w):
                 current_engagement = get_current_engagement(w, assignments)
                 if current_engagement != t:
                     if w in assignments and current_engagement is not None:
-                        del assignments[w][current_engagement]
-                    assignments.add_edge(w, t, probabilities[w][t])
-                effect_of_assignment[t] = damages(probabilities=probabilities, assignment=assignments, target_values=target_values)
+                        assignments.del_edge(w, current_engagement)
+                    assignments.add_edge(w, t, value=probabilities.edge(w, t))
+                effect_of_assignment[t] = damages(probabilities=probabilities,
+                                                  assignment=assignments,
+                                                  target_values=target_values)
 
             damage_and_targets = [(v, t) for t, v in effect_of_assignment.items()]
             damage_and_targets.sort()
@@ -81,8 +82,8 @@ def wtap(probabilities, weapons, target_values):
             current_engagement = get_current_engagement(w, assignments)
             if current_engagement != best_alt_target:
                 if w in assignments and current_engagement is not None:
-                    del assignments[w][current_engagement]
-                assignments.add_edge(w, best_alt_target, probabilities[w][t])
+                    assignments.del_edge(w, current_engagement)
+                assignments.add_edge(w, best_alt_target, probabilities.edge(w, best_alt_target))
             current_target_values = effect_of_assignment[best_alt_target]
         if sum(improvements.values()) == 0:
             break
@@ -97,7 +98,7 @@ def get_current_engagement(d, assignment):
     :return:
     """
     if d in assignment:
-        for t in assignment[d]:
+        for d, t, v in assignment.edges(from_node=d):
             return t
     return None
 
@@ -117,14 +118,14 @@ def damages(probabilities, assignment, target_values):
     for edge in assignment.edges():
         weapon, target, damage = edge
 
-        p = probabilities[weapon][target]
+        p = probabilities.edge(weapon, target)
         survival_value[target].append(p)
 
     total_survival_value = 0
     for target, assigned_probabilities in survival_value.items():
         p = 1
         for p_ in assigned_probabilities:
-            p *= (1-p_)
+            p *= (1 - p_)
         total_survival_value += p * target_values[target]
 
     return total_survival_value
