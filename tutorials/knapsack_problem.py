@@ -51,20 +51,17 @@ def _combinatorial_knapsack_solver(sacks, items):
     values = items.copy()  # I make a copy as I'm changing the structure.
     assert isinstance(sacks, dict)
 
-    all_assignments = unique_powerset(list(values.values()))
-
     unassigned_values = [v for v in values.values()]
 
     assignment = Graph()
     for sack_id, capacity in sacks.items():
 
         candidate_solutions = [(capacity - sum(c), c)
-                               for c in all_assignments
+                               for c in unique_powerset(list(values.values()))
                                if sum(c) <= capacity]
         candidate_solutions.sort()
         for waste, combo in candidate_solutions:
             if not all(combo.count(i) <= unassigned_values.count(i) for i in combo):
-                all_assignments.remove(combo)
                 continue
 
             for value in combo:
@@ -146,7 +143,6 @@ def unique_powerset(iterable):
             blocks[k].append([k] * i)
 
     # Next we generate the powersets of the unique values only:
-    results = []
     for r in range(1, len(blocks) + 1):
         for clusters in combinations(blocks, r):
             # each 'cluster' is now an element from the powerset of the
@@ -169,7 +165,7 @@ def unique_powerset(iterable):
                     value_idx = c_index[idx]  # [0,0,0]
                     value = values[value_idx]
                     result.extend(value)
-                results.append(tuple(result))
+                yield tuple(result)
 
                 # update the indices:
                 reset_idx = None
@@ -187,5 +183,4 @@ def unique_powerset(iterable):
                 if reset_idx is not None and reset_idx + 1 < len(clusters):
                     for j in range(reset_idx + 1):
                         c_index[j] = 0
-    return results
 

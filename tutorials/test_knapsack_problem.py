@@ -165,11 +165,17 @@ def test_multiple_powersets():
 
 
 def doall():
-    for k,v in sorted(globals().items()):
-        if callable(v) and k.startswith("test"):
-            print(k, "started")
-            v()
-            print(k, "done")
+    L = [
+        test_unique_powerset,
+        test_multiple_powersets,
+        test_1_d_stock_cutting_problem_light,
+        test_1_d_stock_cutting_problem
+    ]
+
+    for f in L:
+        print('starting', f.__name__)
+        f()
+        print(f.__name__, 'done')
 
 
 if __name__ == "__main__":
