@@ -102,7 +102,6 @@ def test_1_d_stock_cutting_problem():
         assert set(assignments_1).isdisjoint(set(assignments_2))
 
 
-
 def test_1_d_stock_cutting_problem_light():
     master_roll_length = 5600
 
@@ -204,7 +203,6 @@ def doall():
     ]
 
     for f in L:
-        print('starting', f.__name__)
         start = time.time()
         f()
         print(f.__name__, 'done in ', time.time()-start, "secs")

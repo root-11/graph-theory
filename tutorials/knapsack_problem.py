@@ -20,6 +20,7 @@ Variations:
 
 """
 
+__all__ = ["knapsack_solver"]
 
 def knapsack_solver(sacks_and_capacity, items_and_values):
     """
