@@ -54,13 +54,19 @@ def _combinatorial_knapsack_solver(sacks, items):
     unassigned_values = [v for v in values.values()]
 
     assignment = Graph()
-    for sack_id, capacity in sacks.items():
 
+    max_capacity = max(sacks.values())
+    item_combinations = []
+    for i in unique_powerset(list(values.values()), max_value=max_capacity):
+        if sum(i) <= max_capacity:
+            item_combinations.append(i)
+
+    for sack_id, capacity in sacks.items():
         candidate_solutions = [(capacity - sum(c), c)
-                               for c in unique_powerset(list(values.values()))
+                               for c in item_combinations
                                if sum(c) <= capacity]
         candidate_solutions.sort()
-        for waste, combo in candidate_solutions:
+        for waste, combo in sorted(candidate_solutions):
             if not all(combo.count(i) <= unassigned_values.count(i) for i in combo):
                 continue
 
@@ -75,7 +81,7 @@ def _combinatorial_knapsack_solver(sacks, items):
     return assignment
 
 
-def unique_powerset(iterable):
+def unique_powerset(iterable, max_value=None):
     """
     The unique_powerset(iterable) returns the unique combinations of values
     when presented with repeated values:
@@ -140,7 +146,12 @@ def unique_powerset(iterable):
     blocks = {i: [] for i in set(iterable)}
     for k, v in d.items():
         for i in range(1, v + 1):
+            if max_value and k*i > max_value:
+                break
             blocks[k].append([k] * i)
+
+    if max_value is None:
+        max_value = sum(iterable)+1
 
     # Next we generate the powersets of the unique values only:
     for r in range(1, len(blocks) + 1):
@@ -161,11 +172,24 @@ def unique_powerset(iterable):
                 # harvest combination
                 result = []
                 for idx, grp in enumerate(clusters):  # (1,2,3)
-                    values = blocks[grp]  # v = 1:[[1],[1,1]. [1,1,1]]
+                    values = blocks[grp]  # v = 1:[[1],[1,1],[1,1,1]]
                     value_idx = c_index[idx]  # [0,0,0]
                     value = values[value_idx]
                     result.extend(value)
-                yield tuple(result)
+                if sum(result) < max_value:
+                    yield tuple(result)
+                else:
+                    max_ix = 0
+                    for ix in range(len(c_index)):
+                        if c_index[ix] != 0:
+                            max_ix = ix
+                    if max_ix + 1 < len(c_index):
+                        c_index[max_ix + 1] += 1
+                        for j in range(max_ix + 1):
+                            c_index[j] = 0
+                        continue
+                    else:
+                        break
 
                 # update the indices:
                 reset_idx = None
@@ -174,6 +198,7 @@ def unique_powerset(iterable):
                         c_index[i] += 1  # counter value
 
                     if c_index[i] == c_limit[i]:
+                        # if reset_idx is None or i > reset_idx:
                         reset_idx = i
                     else:
                         break
@@ -183,4 +208,5 @@ def unique_powerset(iterable):
                 if reset_idx is not None and reset_idx + 1 < len(clusters):
                     for j in range(reset_idx + 1):
                         c_index[j] = 0
+
 

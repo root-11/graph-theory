@@ -1,6 +1,7 @@
 import math
 from tutorials.knapsack_problem import knapsack_solver, unique_powerset
 import itertools
+import time
 
 
 def test_1_d_stock_cutting_problem():
@@ -114,7 +115,7 @@ def test_unique_powerset():
 
     assert len(pss) == 23
 
-    ups = unique_powerset(elements)
+    ups = list(unique_powerset(elements))
 
     assert len(ups) == 23
     assert set(pss) == set(ups)
@@ -160,7 +161,7 @@ def test_multiple_powersets():
     ]
 
     for i in s:
-        ups = unique_powerset(i)
+        ups = list(unique_powerset(i))
         assert ups is not None
 
 
@@ -174,8 +175,9 @@ def doall():
 
     for f in L:
         print('starting', f.__name__)
+        start = time.time()
         f()
-        print(f.__name__, 'done')
+        print(f.__name__, 'done in ', time.time()-start, "secs")
 
 
 if __name__ == "__main__":
