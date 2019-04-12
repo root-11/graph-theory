@@ -59,6 +59,35 @@ def test_1_d_stock_cutting_problem():
 
     assert sum(v for a, b, v in solution.edges()) < lower_bound * 1.01
 
+    summary = {}
+    for sack in solution.nodes(in_degree=0):
+        contents = []
+        for item in solution.nodes(from_node=sack):
+            length = items[item]
+            contents.append(length)
+        pack = tuple(contents)
+        if pack not in summary:
+            summary[pack] = 0
+        summary[pack] += 1
+
+    expected_summary = {
+        (1710, 2000, 1880): 10,
+        (1930, 2100, 1560): 12,
+        (1930, 2140, 1520): 8,
+        (1380, 2100, 2100): 1,
+        (1880, 1880, 1820): 4,
+        (2050, 1380, 2150): 12,
+        (2150, 1710, 1710): 2,
+        (1520, 1820, 2200): 14,
+        (1380, 1380, 1380, 1380): 2,
+        (1520, 1520, 2200): 1,
+        (1380, 1520, 2200): 1,
+        (2200, 2200): 2,
+        (2150, 2150): 2,
+        (2140, 2140): 2,
+    }
+    assert summary == expected_summary
+
     # check that there's no breach of max length in assignments.
     for sack in knapsacks:
         assignments = solution.nodes(from_node=sack)
@@ -71,6 +100,7 @@ def test_1_d_stock_cutting_problem():
         assignments_1 = solution.nodes(from_node=a)
         assignments_2 = solution.nodes(from_node=b)
         assert set(assignments_1).isdisjoint(set(assignments_2))
+
 
 
 def test_1_d_stock_cutting_problem_light():
