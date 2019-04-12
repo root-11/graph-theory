@@ -212,8 +212,11 @@ class Graph(object):
             raise ValueError("edges({}) has too many inputs. Pick one.".format(m))
 
         if path:
-            assert isinstance(path, list)
-            assert len(path) >= 2
+            if not isinstance(path, list):
+                raise ValueError("expects a list")
+            if len(path) < 2:
+                raise ValueError("path of length 1 is not a path.")
+
             return [(path[ix], path[ix + 1], self._edges[path[ix]][path[ix + 1]])
                     for ix in range(len(path)-1)]
 
@@ -822,9 +825,7 @@ def shortest_tree_all_pairs(graph):
             dist = sum(v for k, v in g[start_node].items())
             if dist < distance:
                 best_starting_point = start_node
-        else:
-            print("node {} is isolated, skipping...".format(start_node))  # it's an island.
-
+            # else: skip the node as it's isolated.
     g2 = g[best_starting_point]  # {1: 0, 2: 1, 3: 2, 4: 3}
 
     inv_g2 = {}
@@ -938,12 +939,12 @@ def maximum_flow(graph, start, end):
 
             # 3.a. recording:
             v = flow_graph.edge(n1, n1, default=None)
-            if v is not None:
-                flow_graph.add_edge(n1, n2, value=v + path_flow)
-                c = graph.edge(n1, n2) - (v + path_flow)
-            else:
+            if v is None:
                 flow_graph.add_edge(n1, n2, path_flow)
                 c = graph.edge(n1, n2) - path_flow
+            # else:  <-- Note I doubt this path is ever reached.
+            #     flow_graph.add_edge(n1, n2, value=v + path_flow)
+            #     c = graph.edge(n1, n2) - (v + path_flow)
             capacity_graph.add_edge(n1, n2, c)
 
             # 3.b. updating:

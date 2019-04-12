@@ -692,6 +692,36 @@ def test_copy():
     assert set(g.edges()) == set(g2.edges())
 
 
+def test_errors():
+    g = graph05()
+    try:
+        len(g)
+        raise AssertionError
+    except ValueError:
+        assert True
+
+    try:
+        g.edges(from_node=1, to_node=1)
+        raise AssertionError
+    except ValueError:
+        assert True
+
+    try:
+        g.edges(path=[1])
+        raise AssertionError
+    except ValueError:
+        assert True
+
+    try:
+        g.edges(path="this")
+        raise AssertionError
+    except ValueError:
+        assert True
+
+    e = g.edges(from_node=77)
+    assert e == []
+
+
 def test_delitem():
     g = graph05()
 
