@@ -33,7 +33,7 @@ Solution methods:
 """
 
 
-def assignment_problem(agents_and_tasks, agents, tasks):
+def assignment_problem(graph):
     """ The assignment problem solver expects a bi-partite graph
     with agents, tasks and the value/cost of each task, as links,
     so that the relationship is explicit as:
@@ -44,17 +44,15 @@ def assignment_problem(agents_and_tasks, agents, tasks):
     (see Dmitri Bertsekas, MIT) which maximises the value.
     Once all agents are assigned the alternating auction halts.
 
-    :param agents_and_tasks: Graph
-    :param agents: List of nodes that are agents.
-    :param tasks: List of nodes that are tasks.
+    :param graph: Graph
     :return: optimal assignment as list of edges (agent, task, value)
     """
-    assert isinstance(agents_and_tasks, Graph)
-    assert isinstance(agents, list)
-    assert isinstance(tasks, list)
+    assert isinstance(graph, Graph)
+    agents = [n for n in graph.nodes(in_degree=0)]
+    tasks = [n for n in graph.nodes(out_degree=0)]
 
     unassigned_agents = agents
-    v_null = min(v for a, t, v in agents_and_tasks.edges()) - 1
+    v_null = min(v for a, t, v in graph.edges()) - 1
 
     dummy_tasks = set()
     if len(agents) > len(tasks):  # make dummy tasks.
@@ -65,7 +63,7 @@ def assignment_problem(agents_and_tasks, agents, tasks):
             dummy_tasks.add(task)
             tasks.append(task)
             for agent in agents:
-                agents_and_tasks.add_edge(agent, task, v_null)
+                graph.add_edge(agent, task, v_null)
         v_null -= 1
 
     unassigned_tasks = set(tasks)
@@ -73,7 +71,7 @@ def assignment_problem(agents_and_tasks, agents, tasks):
 
     while unassigned_agents:
         n = unassigned_agents.pop(0)  # select phase:
-        value_and_task_for_n = [(v, t) for a, t, v in agents_and_tasks.edges(from_node=n)]
+        value_and_task_for_n = [(v, t) for a, t, v in graph.edges(from_node=n)]
         value_and_task_for_n.sort(reverse=True)
         for v, t in value_and_task_for_n:  # for each opportunity (in ranked order)
             d = v_null
