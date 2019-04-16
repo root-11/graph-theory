@@ -251,7 +251,7 @@ def find_perfect_circuit(graph, start, jobs):
     g = Graph()
     for A, B in jobs:
         try:
-            g[A][B]
+            g.edge(A,B)
         except KeyError:
             d, p = graph.shortest_path(A, B)
             g.add_edge(A, B, d)
