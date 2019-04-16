@@ -1,7 +1,7 @@
 from itertools import permutations
 
 from graph import Graph
-from tutorials.assignment_problem import assignment_problem
+from solvers.assignment_problem import assignment_problem
 
 
 def test_01_taxis_and_customers():

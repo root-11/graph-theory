@@ -767,3 +767,6 @@ def test_is_not_cyclic():
 def test_is_really_cyclic():
     g = Graph(from_list=[(1, 1, 1), (2, 2, 1)])  # two loops onto themselves.
     assert g.has_cycles()
+
+
+

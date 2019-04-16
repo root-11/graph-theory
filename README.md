@@ -2,7 +2,8 @@
 
 A simple graph library...
 
-*...A bit like networkx, just without the overhead.*
+- A bit like networkx, just without the overhead... 
+- similar to graph-tool, without the Python2.7 legacy...
 
 
 ---------------------------
@@ -19,12 +20,11 @@ Available methods:
 | methods | description |
 |:---|:---|
 | `a in g` | assert if g contains node a |
-| `len(g.nodes())` | returns the number of nodes |
-| `len(g.edges())` | returns the number of edges |
 | `g.add_node(n, [obj])` | adds a node (with a pointer to object `obj` if given) |
 | `g.node(node1)` | returns object attached to node 1. |
 | `g.del_node(node1)` | deletes node1 and all it's edges. |
 | `g.nodes()` | returns a list of nodes |
+| `len(g.nodes())` | returns the number of nodes |
 | `g.nodes(from_node=1)` | returns nodes with edges from node 1 |
 | `g.nodes(to_node=2)` | returns nodes with edges to node 2 |
 | `g.nodes(in_degree=2)` | returns nodes with 2 incoming edges |
@@ -36,6 +36,7 @@ Available methods:
 | `g.edges(path=[path])` | returns a list of edges (along a path if given). |
 | `g.edges(from_node=1)` | returns edges outgoing from node 1 |
 | `g.edges(to_node=2)` | returns edges incoming to node 2 |
+| `len(g.edges())` | returns the number of edges |
 | `g.from_dict(d)` | updates the graph from a dictionary |
 | `g.to_dict()` | dumps the graph as a dictionary |
 | `g.from_list(L)` | updates the graph from a list |
@@ -63,5 +64,17 @@ Available methods:
 | have multiple edges between two nodes | `Graph(from_list=[(1,2,3), (1,2,4)]` | Add dummy nodes<br>`[(1,a,3), (a,2,0),`<br>` (1,b,4),(b,2,0)]` | Explicit is better than implicit. |
 | multiple values on an edge | `g.add_edge(1,2,{'a':3, 'b':4})` | Have two graphs<br>`g_a.add_edge(1,2,3)`<br>`g_b.add_edge(1,2,4)` | Most graph algorithms don't work with multiple values |   
 
- 
+## Solvers
+
+Solvers contains a number of tutorial solutions to common OR/CS problems, 
+which are made simple when treated as a graph.
+
+| module | function | description |
+|:---|:---|:---|
+| assignment_problem.py | assignment_problem |  solves the assignment problem |
+| hashgraph.py | merkle_tree | datablocks |
+| hashgraph.py | graph_hash | computes the sha256 of a graphs nodes and edges |
+| hashgraph.py | flow_graph_hash | computes the sha256 of a graph with multiple sources and sinks |
+| knapsack_problem.py | knapsack problem | solves the knapsack problem |
+| wtap.py | weapons-target assignment problem | solves the WTAP problem. | 
 

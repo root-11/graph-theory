@@ -1,7 +1,8 @@
 import math
-from tutorials.knapsack_problem import knapsack_solver, unique_powerset
+from solvers.knapsack_problem import knapsack_solver, unique_powerset
 import itertools
 import time
+from graph import Graph
 
 
 def test_1_d_stock_cutting_problem():
@@ -192,6 +193,31 @@ def test_multiple_powersets():
     for i in s:
         ups = list(unique_powerset(i))
         assert ups is not None
+
+
+def test_auction_based_solver():
+    start = "s"
+    end = "e"
+    s = lambda x: "sack-{}".format(x)
+    i = lambda x: "item-{}".format(x)
+    e = [
+        (start, s(1), 7),  # sack 1 has budget 7
+        (start, s(2), 5),  # sack 2 has budget 5
+        (s(1), i(1), 4),
+        (s(1), i(2), 3),  # sack 1 finds the value of item 2 to value 3.
+        (s(1), i(3), 2),
+        (s(2), i(2), 4),  # sack 3 finds the value of item 2 to value 4.
+        (s(2), i(3), 3),
+        (s(2), i(4), 1),
+        (i(1), end, 0),  # item 1 points to the end.,
+        (i(2), end, 0),
+        (i(3), end, 0),
+        (i(4), end, 0)
+    ]
+    g = Graph(from_list=e)
+    assert g.nodes(from_node=s(1)) == [i(1), i(2)]  # value 4+3
+    assert g.nodes(from_node=s(2)) == [i(3), i(4)]  # value 3+1
+    assert sum([d for s, e, d in g.edges()]) == 11  # 4+3+3+1 = 11.
 
 
 def doall():
