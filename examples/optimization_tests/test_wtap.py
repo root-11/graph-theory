@@ -5,7 +5,7 @@ from graph import Graph
 from examples.optimization.wtap import wtap
 
 
-def test_to_damage_assessment_calculation():
+def test_damage_assessment_calculation():
     g, weapons, target_values = wikipedia_wtap_setup()
 
     edges = [
@@ -25,7 +25,7 @@ def test_to_damage_assessment_calculation():
                                            target_values=target_values)
 
 
-def test01_wtap():
+def test_basic_wtap():
     weapons = [1, 2, 3]
     probabilities = [
         (1, 5, 0.1),
@@ -49,7 +49,7 @@ def test01_wtap():
     assert value == 16.07
 
 
-def test02_wtap_with_fractional_probabilities():
+def test_wtap_with_fractional_probabilities():
     weapons = [1, 2, 3]
     probabilities = [
         (1, 5, F(1, 10)),
@@ -73,7 +73,7 @@ def test02_wtap_with_fractional_probabilities():
     assert float(value) == 16.07
 
 
-def test03_wtap_all_permutations_of_initialisations():
+def test_exhaust_all_initialisation_permutations():
     """ Uses the wikipedia WTAP setup. """
     g, weapons, target_values = wikipedia_wtap_setup()
 
@@ -131,7 +131,7 @@ def test03_wtap_all_permutations_of_initialisations():
     print("achieved {:.0f}%".format(solution_quality * 100))
 
 
-def test04_wtap_using_exhaustive_search():
+def test_exhaustive_search_to_verify_wtap():
     """ Uses the wikipedia WTAP setup. """
     g, weapons, target_values = wikipedia_wtap_setup()
 
