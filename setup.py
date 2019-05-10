@@ -28,7 +28,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     keywords="graph graphs optimization tsp shortest-path",
-    packages=["graph"],
+    packages=["graph", "examples.optimization"],
     include_package_data=True,
     data_files=[(".", ["LICENSE", "README.md"])],
     platforms="any",
@@ -38,7 +38,6 @@ setup(
         "Intended Audience :: Science/Research",
         "Natural Language :: English",
         "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
     ],
 )
