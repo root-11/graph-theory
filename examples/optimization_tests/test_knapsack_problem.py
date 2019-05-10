@@ -1,8 +1,8 @@
-import math
-from solvers.knapsack_problem import knapsack_solver, unique_powerset
-import itertools
 import time
+import math
+import itertools
 from graph import Graph
+from examples.optimization.knapsack_problem import knapsack_solver, unique_powerset
 
 
 def test_1_d_stock_cutting_problem():

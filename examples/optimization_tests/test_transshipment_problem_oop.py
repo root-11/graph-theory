@@ -1,5 +1,5 @@
 from graph import Graph
-from solvers.transshipment_problem_oop import *
+from examples.optimization.transshipment_problem_oop import *
 
 
 def single_cross_network():

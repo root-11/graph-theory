@@ -1,5 +1,5 @@
 from graph import Graph
-from solvers.transshipment_problem import clondike_transshipment_problem, Train, schedule_rail_system
+from examples.optimization.transshipment_problem import clondike_transshipment_problem, Train, schedule_rail_system
 
 
 def test_mining_train():

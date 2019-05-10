@@ -2,7 +2,7 @@ from fractions import Fraction as F
 from itertools import permutations, combinations_with_replacement
 
 from graph import Graph
-from solvers.wtap import wtap
+from examples.optimization.wtap import wtap
 
 
 def test_to_damage_assessment_calculation():
