@@ -1,9 +1,8 @@
 # graph
 
-A simple graph library...
-
-- A bit like networkx, just without the overhead... 
-- similar to graph-tool, without the Python2.7 legacy...
+A simple graph library...<br>
+*... A bit like networkx, just without the overhead...*<br> 
+*... similar to graph-tool, without the Python 2.7 legacy...*<br>
 
 
 ---------------------------
@@ -64,10 +63,10 @@ Available methods:
 | have multiple edges between two nodes | `Graph(from_list=[(1,2,3), (1,2,4)]` | Add dummy nodes<br>`[(1,a,3), (a,2,0),`<br>` (1,b,4),(b,2,0)]` | Explicit is better than implicit. |
 | multiple values on an edge | `g.add_edge(1,2,{'a':3, 'b':4})` | Have two graphs<br>`g_a.add_edge(1,2,3)`<br>`g_b.add_edge(1,2,4)` | Most graph algorithms don't work with multiple values |   
 
-## Solvers
+## Examples
 
-Solvers contains a number of tutorial solutions to common OR/CS problems, 
-which are made simple when treated as a graph.
+Examples contains a number of tutorial/solutions to common operations research
+and computer science problems, which are made simple when treated as a graph.
 
 | module | function | description |
 |:---|:---|:---|
