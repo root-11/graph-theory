@@ -1,12 +1,10 @@
 """
 graph-theory
 """
-from datetime import datetime
+build_tag = "89a2dc692f93f7568f3080c5c6d1b442e1796151b80e49aef3c59d0c39a64042"
 from setuptools import setup
 from pathlib import Path
 
-v = datetime.now()
-__version__ = "{}.{}.{}.{}".format(v.year, v.month, v.day, v.hour * 3600 + v.minute*60 + v.second)
 
 folder = Path(__file__).parent
 file = "README.md"
@@ -19,7 +17,7 @@ with open(str(readme), encoding='utf-8') as f:
 
 setup(
     name="graph-theory",
-    version=__version__,
+    version="2019.5.20.52321",
     url="https://github.com/root-11/graph-theory",
     license="MIT",
     author="Bjorn Madsen",
