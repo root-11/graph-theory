@@ -3,10 +3,21 @@ from itertools import combinations, chain
 from collections import defaultdict
 from heapq import heappop, heappush
 
-__all__ = ['Graph',
-           'subgraph',
-           'shortest_path', 'distance', 'same',
-           'tsp', 'all_paths']
+__all__ = [
+    'Graph',
+    'subgraph',
+    'shortest_path',
+    'distance',
+    'same',
+    'tsp',
+    'has_path',
+    'has_cycles',
+    'all_paths',
+    'adjacency_matrix',
+    'all_pairs_shortest_paths',
+    'maximum_flow',
+    'shortest_tree_all_pairs',
+]
 
 
 class Graph(object):
@@ -110,9 +121,8 @@ class Graph(object):
         :param node_id: any hashable node.
         :param obj: any object that the node should refer to.
 
-        PRO TIP:
-        If you want to hold additional values on your node, then define
-        you class with a __hash__() method. See CustomNode as example.
+        PRO TIP: To retrieve the node obj use g.node(node_id)
+
         """
         self._nodes[node_id] = obj
 
@@ -154,8 +164,6 @@ class Graph(object):
         :param out_degree (optional) returns nodes with out_degree=N
 
         :return list of node ids.
-
-        PRO TIP: To retrieve the node obj use g[node id]
         """
         inputs = sum([1 for i in (from_node, to_node, in_degree, out_degree) if i is not None])
         if inputs > 1:
