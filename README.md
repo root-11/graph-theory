@@ -1,4 +1,7 @@
 # graph
+[![Build Status](https://travis-ci.org/root-11/graph-theory.svg?branch=master)](https://travis-ci.org/root-11/graph-theory.svg?branch=master)
+
+
 
 A simple graph library...<br>
 *... A bit like networkx, just without the overhead...*<br> 
@@ -6,14 +9,17 @@ A simple graph library...<br>
 
 
 ---------------------------
+Install:
+
+    pip install graph-theory
+
+---------------------------
+Import:
 
     import Graph
     g = Graph()
-    
-That's it.
 
 ---------------------------
-
 Available methods:
 
 | methods | description |
