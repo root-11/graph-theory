@@ -2,7 +2,7 @@ from fractions import Fraction as F
 from itertools import permutations, combinations_with_replacement
 
 from graph import Graph
-from examples.optimization.wtap import wtap
+from graph.assignment_problem import wtap_solver
 
 
 def test_damage_assessment_calculation():
@@ -41,9 +41,9 @@ def test_basic_wtap():
     target_values = {5: 5, 6: 6, 7: 7}
     g = Graph(from_list=probabilities)
 
-    value, assignments = wtap(probabilities=g,
-                              weapons=weapons,
-                              target_values=target_values)
+    value, assignments = wtap_solver(probabilities=g,
+                                     weapons=weapons,
+                                     target_values=target_values)
     assert isinstance(assignments, Graph)
     assert set(assignments.edges()) == {(2, 7, 0.1), (3, 6, 0.1), (1, 7, 0.1)}
     assert value == 16.07
@@ -65,9 +65,9 @@ def test_wtap_with_fractional_probabilities():
     target_values = {5: 5, 6: 6, 7: 7}
     g = Graph(from_list=probabilities)
 
-    value, assignments = wtap(probabilities=g,
-                              weapons=weapons,
-                              target_values=target_values)
+    value, assignments = wtap_solver(probabilities=g,
+                                     weapons=weapons,
+                                     target_values=target_values)
     assert isinstance(assignments, Graph)
     assert set(assignments.edges()) == {(2, 7, F(1, 10)), (3, 6, F(1, 10)), (1, 7, F(1, 10))}
     assert float(value) == 16.07
@@ -90,12 +90,12 @@ def test_exhaust_all_initialisation_permutations():
         perm = perms.pop()
         perm2 = tuple(reversed(perm))
         perms.remove(perm2)
-        damage1, ass1 = wtap(probabilities=g,
-                             weapons=list(perm),
-                             target_values=target_values)
-        damage2, ass2 = wtap(probabilities=g,
-                             weapons=list(perm2),
-                             target_values=target_values)
+        damage1, ass1 = wtap_solver(probabilities=g,
+                                    weapons=list(perm),
+                                    target_values=target_values)
+        damage2, ass2 = wtap_solver(probabilities=g,
+                                    weapons=list(perm2),
+                                    target_values=target_values)
 
         damage_n = min(damage1, damage2)
         if damage1 == damage_n:
@@ -271,15 +271,3 @@ def wikipedia_wtap_pretty_printer(assignment):
     return s
 
 
-def doall():
-    import time
-    for k, v in sorted(globals().items()):
-        if callable(v) and k.startswith('test'):
-            start = time.time()
-            v()
-            duration = time.time() - start
-            print(k, "done.", "({:.3f} sec)".format(duration))
-
-
-if __name__ == "__main__":
-    doall()

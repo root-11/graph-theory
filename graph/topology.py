@@ -1,0 +1,146 @@
+from graph.graphs import BasicGraph
+
+
+def subgraph(graph, nodes):
+    """ Creates a subgraph as a copy from the graph
+    :param graph: class Graph
+    :param nodes: list of nodes
+    :return: new instance of Graph.
+    """
+    assert isinstance(graph, BasicGraph)
+    assert isinstance(nodes, list)
+    G = object.__new__(graph.__class__)
+    G.__init__()
+    for n1 in nodes:
+        G.add_node(n1)
+        for n2 in graph.nodes(from_node=n1):
+            G.add_edge(n1, n2, graph.edge(n1,n2))
+    return G
+
+
+def is_subgraph(graph1, graph2):
+    """
+    Checks is graph1 is subgraph in graph2
+    :param graph1: instance of Graph
+    :param graph2: instance of Graph
+    :return: boolean
+    """
+    assert isinstance(graph1, BasicGraph)
+    assert isinstance(graph2, BasicGraph)
+    if not set(graph1.nodes()).issubset(set(graph2.nodes())):
+        return False
+    if not set(graph1.edges()).issubset(set(graph2.edges())):
+        return False
+    return True
+
+
+def is_partite(graph, n):
+    """ Checks if graph is n-partite
+    :param graph: class Graph
+    :param n: int, number of partitions.
+    :return: boolean and partitions as dict[colour] = set(nodes) or None.
+    """
+    assert isinstance(graph, BasicGraph)
+    assert isinstance(n, int)
+    colours_and_nodes = {i: set() for i in range(n)}
+    nodes_and_colours = {}
+    n1 = set(graph.nodes()).pop()
+    q = [n1]
+    visited = set()
+    colour = 0
+    while q:
+        n1 = q.pop()
+        visited.add(n1)
+
+        if n1 in nodes_and_colours:
+            colour = nodes_and_colours[n1]
+        else:
+            colours_and_nodes[colour].add(n1)
+            nodes_and_colours[n1] = colour
+
+        next_colour = (colour + 1) % n
+        neighbours = graph.nodes(from_node=n1) + graph.nodes(to_node=n1)
+        for n2 in neighbours:
+            if n2 in nodes_and_colours:
+                if nodes_and_colours[n2] == colour:
+                    return False, None
+                # else:  pass  # it already has a colour and there is no conflict.
+            else:  # if n2 not in nodes_and_colours:
+                colours_and_nodes[next_colour].add(n2)
+                nodes_and_colours[n2] = next_colour
+                continue
+            if n2 not in visited:
+                q.append(n2)
+
+    return True, colours_and_nodes
+
+
+def same(path1, path2):
+    """ Compares two paths to verify whether they're the same.
+    :param path1: list of nodes.
+    :param path2: list of nodes.
+    :return: boolean.
+    """
+    start1 = path2.index(path1[0])
+    checks = [
+        path1[:len(path1) - start1] == path2[start1:],
+        path1[len(path1) - start1:] == path2[:start1]
+    ]
+    if all(checks):
+        return True
+    return False
+
+
+def has_path(graph, path):
+    """ checks if path exists is graph
+    :param graph: instance of Graph
+    :param path: list of nodes
+    :return: boolean
+    """
+    assert isinstance(graph, BasicGraph)
+    assert isinstance(path, list)
+    v1 = path[0]
+    for v2 in path[1:]:
+        if graph.edge(v1, v2) is None:
+            return False
+        else:
+            v1 = v2
+    return True
+
+
+def has_cycles(graph):
+    """ Checks whether the graph has a cycle
+    :param graph: instance of class Graph.
+    :return: bool
+    """
+    assert isinstance(graph, BasicGraph)
+    for n1, n2, d in graph.edges():
+        if n1 == n2:
+            return True
+        if graph.depth_first_search(start=n2, end=n1):
+            return True
+    return False
+
+
+def social_network_size(graph, n1, degrees_of_separation=None):
+    """ Determines the nodes within a degree of separation range
+    :param graph: Graph
+    :param n1: start node
+    :param degrees_of_separation: integer
+    :return: set of nodes within given range
+    """
+    assert isinstance(graph, BasicGraph)
+    assert n1 in graph.nodes()
+    assert isinstance(degrees_of_separation, int)
+    social_network = set(graph.nodes(from_node=n1))
+    peer1 = social_network.copy()
+    peer2 = set()
+    scan_depth = 1
+    while scan_depth < degrees_of_separation:
+        scan_depth += 1
+        for peer in peer1:
+            new_peers = set(graph.nodes(from_node=peer)) - social_network
+            peer2.update(new_peers)
+            social_network.update(new_peers)
+        peer1 = peer2
+    return social_network

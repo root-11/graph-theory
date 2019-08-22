@@ -1,7 +1,7 @@
 from itertools import permutations
 
 from graph import Graph
-from examples.optimization.assignment_problem import assignment_problem
+from graph.assignment_problem import ap_solver
 
 
 def test_01_taxis_and_customers():
@@ -34,7 +34,7 @@ def test_01_taxis_and_customers():
         for customers_ in permutations(customers, len(customers)):
             permutations_checked += 1
             print(permutations_checked, taxis_, customers_)
-            assignment = assignment_problem(graph=relationships)
+            assignment = ap_solver(graph=relationships)
             assert set(assignment) == {(1, 4, -11), (2, 5, -17), (3, 6, -13)}
             assert sum(v for a, t, v in assignment) == sum([-11, -17, -13])
     print("The assignment problem solver is insensitive to initial conditions.")
@@ -63,7 +63,7 @@ def test_02_taxis_and_more_customers():
         (3, 7, -10)
     ]
     relationships = Graph(from_list=L)
-    assignment = assignment_problem(graph=relationships)
+    assignment = ap_solver(graph=relationships)
     assert set(assignment) == {(1, 7, -10), (2, 4, -14), (3, 6, -13)}
     assert sum(v for a, t, v in assignment) > sum([-11, -17, -13])
 
@@ -90,6 +90,6 @@ def test_03_taxis_but_fewer_customers():
         (7, 6, -11),
     ]
     relationships = Graph(from_list=L)
-    assignment = assignment_problem(graph=relationships)
+    assignment = ap_solver(graph=relationships)
     assert set(assignment) == {(1, 4, -11), (2, 5, -17), (7, 6, -11)}
     assert sum(v for a, t, v in assignment) > sum([-11, -17, -13])

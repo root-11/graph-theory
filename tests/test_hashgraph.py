@@ -1,5 +1,5 @@
 from graph import Graph
-from examples.optimization.hashgraph import merkle_tree, flow_graph_hash, graph_hash
+from graph.hash import graph_hash, flow_graph_hash, merkle_tree
 
 
 def test_merkle_tree_1_block():

@@ -20,7 +20,22 @@ Import:
     g = Graph()
 
 ---------------------------
-Available methods:
+
+Modules:
+
+|module|description|
+|:---|:---|
+| `from graph import Graph, Graph2D, Graph3D` | Elementary methods (see basic methods below), 2D and 3D graphs.|
+| `from graph.assignment_problem import ...` | solvers for assignment problem, the Weapons-Target Assignment Problem, ... |
+| `from graph.flow_problem import ...` | maximum flow |
+| `from graph.hash import ...` | graph hash functions: graph hash, merkle tree, flow graph hash | 
+| `from graph.random import ...` | graph generators for random, 2D and 3D graphs. |
+| `from graph.scheduling import sp_solver` | Scheduling problem solver. |
+| `from graph.search import ...` | shortest path, breadth-first, depth-first |
+| `from graph.topology import ...` | Topological comparisons and operators: make/assert subgraph, detect partitions, path comparisons, cycle detection, path verification, network range |
+| `from graph.transform import ...` | Isomorphic transformation methods like adjacency matrix, all-pairs-shortest path, etc. | 
+
+All module functions are available from Graph, Graph2D and Graph3D (where applicable).
 
 | methods | description |
 |:---|:---|
@@ -56,7 +71,7 @@ Available methods:
 | `g.is_partite(n)` | determines if graph is n-partite |
 | `g.has_cycles()` | determines if there are cycles in the graph |
 | `g.same_path(p1,p2)` | compares two paths, returns True if they're the same.|
-| `g.adjacency_matrix()` | constructs the adjacency matrix for the graph.|
+| `g.adjacency_matrix()` | returns the adjacency matrix for the graph.|
 | `g.all_pairs_shortest_paths()` | finds the shortest path between all nodes. |
 | `g.shortest_tree_all_pairs()` | finds the shortest tree for all pairs.|
 | `g.has_path(p)` | asserts whether a path `p` exists in g.|
@@ -69,7 +84,16 @@ Available methods:
 | have multiple edges between two nodes | `Graph(from_list=[(1,2,3), (1,2,4)]` | Add dummy nodes<br>`[(1,a,3), (a,2,0),`<br>` (1,b,4),(b,2,0)]` | Explicit is better than implicit. |
 | multiple values on an edge | `g.add_edge(1,2,{'a':3, 'b':4})` | Have two graphs<br>`g_a.add_edge(1,2,3)`<br>`g_b.add_edge(1,2,4)` | Most graph algorithms don't work with multiple values |   
 
-## Examples
+## Specialised modules:
+
+    from graph import Graph
+    from graph import Graph2D
+    from graph import Graph3D
+    from graph.hashing import merkle_tree
+    from graph.assignment_problem import ap_solver
+    from graph.assignment_problem import wtap_solver
+    from graph.scheduling_problem import sp_solver
+
 
 Examples contains a number of tutorial/solutions to common operations research
 and computer science problems, which are made simple when treated as a graph.

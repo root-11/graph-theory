@@ -1,71 +1,6 @@
-from graph import Graph
 import hashlib
 
-__description__ = """
-
-hash graphs are the generalised version of block chains or merkle trees.
-
-"""
-
-
-def merkle_tree(data_blocks):
-    """
-
-A hash tree or Merkle tree is a tree in which every leaf node is labelled with
-the hash of a data block, and every non-leaf node is labelled with the
-cryptographic hash of the labels of its child nodes. Hash trees allow efficient
-and secure verification of the contents of large data structures. Hash trees
-are a generalization of hash lists and hash chains.
-
-                    Top Hash
-                 hash ( 0 + 1 )
-                   ^      ^
-                   |      |
-           +------->      +---------+
-           ^                        ^
-           |                        |
-           +                        +
-        Hash 0                    Hash 1
-  hash ( 0-0 + 0-1 )        hash ( 1-0 + 1-1 )
-     ^           ^           ^           ^
-     |           |           |           |
-     +           +           +           +
-  Hash 0-0    Hash 0-1    Hash 1-0     Hash 1-1
-  hash(L1)    hash(L2)    hash(L3)     hash(L4)
-     ^           ^           ^           ^
-     |           |           |           |
-+----------------------------------------------+
-|    L1          L2          L3          L4    | Data blocks
-+----------------------------------------------+
-
-    """
-    g = Graph()
-
-    # initial hash:
-    leaves = []
-    for block in data_blocks:
-        assert isinstance(block, bytes)
-        hash_func = hashlib.sha3_256()
-        hash_func.update(block)
-        uuid = hash_func.hexdigest()
-        leaves.append(uuid)
-        g.add_node(node_id=uuid)
-
-    # populate graph
-    while leaves:
-        if len(leaves) == 1:
-            return g  # <--- point of return.
-
-        c1, c2 = leaves[:2]
-        leaves = leaves[2:]
-
-        hash_func = hashlib.sha3_256()
-        hash_func.update(bytes(c1, 'utf-8') + bytes(c2, 'utf-8'))
-        uuid = hash_func.hexdigest()
-        leaves.append(uuid)
-        g.add_node(node_id=uuid)
-        g.add_edge(c1, uuid)
-        g.add_edge(c2, uuid)
+from graph import Graph
 
 
 def graph_hash(graph):
@@ -136,3 +71,63 @@ def flow_graph_hash(graph):
         assert n[new_hash] is not None, n
 
     return hash_graph
+
+
+def merkle_tree(data_blocks):
+    """
+
+A hash tree or Merkle tree is a tree in which every leaf node is labelled with
+the hash of a data block, and every non-leaf node is labelled with the
+cryptographic hash of the labels of its child nodes. Hash trees allow efficient
+and secure verification of the contents of large data structures. Hash trees
+are a generalization of hash lists and hash chains.
+
+                    Top Hash
+                 hash ( 0 + 1 )
+                   ^      ^
+                   |      |
+           +------->      +---------+
+           ^                        ^
+           |                        |
+           +                        +
+        Hash 0                    Hash 1
+  hash ( 0-0 + 0-1 )        hash ( 1-0 + 1-1 )
+     ^           ^           ^           ^
+     |           |           |           |
+     +           +           +           +
+  Hash 0-0    Hash 0-1    Hash 1-0     Hash 1-1
+  hash(L1)    hash(L2)    hash(L3)     hash(L4)
+     ^           ^           ^           ^
+     |           |           |           |
++----------------------------------------------+
+|    L1          L2          L3          L4    | Data blocks
++----------------------------------------------+
+
+    """
+    g = Graph()
+
+    # initial hash:
+    leaves = []
+    for block in data_blocks:
+        assert isinstance(block, bytes)
+        hash_func = hashlib.sha3_256()
+        hash_func.update(block)
+        uuid = hash_func.hexdigest()
+        leaves.append(uuid)
+        g.add_node(node_id=uuid)
+
+    # populate graph
+    while leaves:
+        if len(leaves) == 1:
+            return g  # <--- point of return.
+
+        c1, c2 = leaves[:2]
+        leaves = leaves[2:]
+
+        hash_func = hashlib.sha3_256()
+        hash_func.update(bytes(c1, 'utf-8') + bytes(c2, 'utf-8'))
+        uuid = hash_func.hexdigest()
+        leaves.append(uuid)
+        g.add_node(node_id=uuid)
+        g.add_edge(c1, uuid)
+        g.add_edge(c2, uuid)

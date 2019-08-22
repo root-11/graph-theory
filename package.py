@@ -8,20 +8,17 @@ folder = Path(__file__).parent
 # Step 1. find the sha256 of the files used for this build.
 packages = [
     folder / 'graph' / "__init__.py",
+    folder / 'graph' / "assignment_problem.py",
+    folder / 'graph' / "flow_problem.py",
+    folder / 'graph' / "graphs.py",
+    folder / 'graph' / "hash.py",
+    folder / 'graph' / "random.py",
+    folder / 'graph' / "scheduling_problem.py",
+    folder / 'graph' / "search.py",
+    folder / 'graph' / "topology.py",
+    folder / 'graph' / "transform.py",
     folder / 'LICENSE',
     folder / 'README.md',
-    folder / 'examples' / "__init__.py",
-    folder / 'examples' / "optimization" / "__init__.py",
-    folder / 'examples' / "optimization" / "assignment_problem.py",
-    folder / 'examples' / "optimization" / "hashgraph.py",
-    folder / 'examples' / "optimization" / "scheduling_problem.py",
-    folder / 'examples' / "optimization" / "transshipment_problem.py",
-    folder / 'examples' / "optimization" / "wtap.py",
-    folder / 'examples' / "optimization_tests" / "__init__.py",
-    folder / 'examples' / "optimization_tests" / "test_assignment_problem.py",
-    folder / 'examples' / "optimization_tests" / "test_hashgraph.py",
-    folder / 'examples' / "optimization_tests" / "test_transshipment_problem.py",
-    folder / 'examples' / "optimization_tests" / "test_wtap.py",
 ]
 
 sha = hashlib.sha3_256()
