@@ -1,4 +1,4 @@
-from graph import BasicGraph, Graph
+from graph import BasicGraph
 
 
 def subgraph(graph, nodes):
@@ -113,7 +113,6 @@ def has_cycles(graph):
     :param graph: instance of class Graph.
     :return: bool
     """
-    assert isinstance(graph, Graph)
     for n1, n2, d in graph.edges():
         if n1 == n2:
             return True
