@@ -149,7 +149,7 @@ def test_exhaustive_search_to_verify_wtap():
                 best_result = r
                 best_assignment = edges
             c += 1
-    print(best_result, "is best result out of", c, "(exhaustive search)\n", best_assignment)
+    print("{} is best result out of {:,} options(exhaustive search):\n{}".format(best_result, c, best_assignment))
     assert best_result == 4.95, best_result
 
 

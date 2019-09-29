@@ -291,7 +291,3 @@ class BasicGraph(object):
         """ returns list of edges and nodes."""
         return self.edges() + [(i,) for i in self.nodes()]
 
-
-
-
-

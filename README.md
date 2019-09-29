@@ -23,7 +23,7 @@ Import:
 
 Modules:
 
-|module|description|
+| module | description |
 |:---|:---|
 | `from graph import Graph, Graph2D, Graph3D` | Elementary methods (see basic methods below), 2D and 3D graphs.|
 | `from graph.assignment_problem import ...` | solvers for assignment problem, the Weapons-Target Assignment Problem, ... |
@@ -34,6 +34,7 @@ Modules:
 | `from graph.search import ...` | shortest path, breadth-first, depth-first |
 | `from graph.topology import ...` | Topological comparisons and operators: make/assert subgraph, detect partitions, path comparisons, cycle detection, path verification, network range |
 | `from graph.transform import ...` | Isomorphic transformation methods like adjacency matrix, all-pairs-shortest path, etc. | 
+
 
 All module functions are available from Graph, Graph2D and Graph3D (where applicable).
 
