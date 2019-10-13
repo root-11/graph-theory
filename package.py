@@ -56,13 +56,13 @@ if current_build_tag == last_build_tag:
 
 else:  # Step 4. make a new setup.py.
     v = datetime.now()
-    version = "\"{}.{}.{}.{}\"".format(v.year, v.month, v.day, v.hour * 3600 + v.minute * 60 + v.second)
+    version = '\"{}.{}.{}.{}\"'.format(v.year, v.month, v.day, v.hour * 3600 + v.minute * 60 + v.second)
 
     # update the setup.py file.
     with open(str(setup), encoding='utf-8') as fi:
         old_setup = fi.readlines()
-        old_setup[build_tag_idx] = "build_tag = \"{}\"\n".format(current_build_tag)
-        old_setup[version_idx] = "    version={},\n".format(version)
+        old_setup[build_tag_idx] = 'build_tag = "{}"\n'.format(current_build_tag)
+        old_setup[version_idx] = '    version={},\n'.format(version)
 
     script = "".join(old_setup)
     with open(str(setup), mode='w', encoding='utf-8') as f:
@@ -75,4 +75,5 @@ else:  # Step 4. make a new setup.py.
         print(response.stdout.read().decode())
     else:
         print("new setup.py created with build_tag {}".format(current_build_tag))
-        print("next: run: twine upload dist\MASlite-<THE SPECIFIC PACKAGE>")
+        print(r"next: run: twine upload dist\graph-theory-{}.tar.gz".format(version))
+
