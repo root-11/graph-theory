@@ -2,7 +2,7 @@ __all__ = ['Graph']
 from itertools import count
 
 from graph.graphs import BasicGraph
-from graph.topology import subgraph, is_subgraph, is_partite, same, has_path, has_cycles
+from graph.topology import subgraph, is_subgraph, is_partite, same, has_path, has_cycles, components
 from graph.flow_problem import maximum_flow
 from graph.search import (
     shortest_path,
@@ -114,6 +114,12 @@ class Graph(BasicGraph):
         """
         return has_cycles(graph=self)
 
+    def components(self):
+        """ Determines the number of components
+        :return: list of sets of nodes. Each set is a component.
+        """
+        return components(graph=self)
+
     @staticmethod
     def same_path(p1, p2):
         """ compares two paths to determine if they're the same, despite
@@ -126,13 +132,19 @@ class Graph(BasicGraph):
 
     def adjacency_matrix(self):
         """
-        :return:
+        Converts directed graph to an adjacency matrix.
+        Note: The distance from a node to itself is 0 and distance from a node to
+        an unconnected node is defined to be infinite. This does not mean that there
+        is no path from a node to another via other nodes.
+        :return: dict
         """
         return adjacency_matrix(graph=self)
 
     def all_pairs_shortest_paths(self):
         """
-        :return:
+        Find the cost of the shortest path between every pair of vertices in a
+        weighted graph. Uses the Floyd-Warshall algorithm.
+        :return: dict {node 1: {node 2: distance}, ...}
         """
         return all_pairs_shortest_paths(graph=self)
 

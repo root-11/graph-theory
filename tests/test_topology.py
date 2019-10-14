@@ -44,3 +44,29 @@ def test_is_not_cyclic():
 def test_is_really_cyclic():
     g = Graph(from_list=[(1, 1, 1), (2, 2, 1)])  # two loops onto themselves.
     assert g.has_cycles()
+
+
+def test_components():
+    g = Graph(from_list=[
+        (1, 2, 1),  # component 1
+        (2, 1, 1),
+        (3, 3, 1),  # component 2
+        (4, 5, 1),
+        (5, 6, 1),  # component 3
+        (5, 7, 1),
+        (6, 8, 1),
+        (7, 8, 1),
+        (8, 9, 1),
+    ])
+    g.add_node(10)  # component 4
+    components = g.components()
+    assert len(components) == 4
+    assert {1,2} in components
+    assert {3} in components
+    assert {4,5,6,7,8,9} in components
+    assert {10} in components
+
+
+
+
+

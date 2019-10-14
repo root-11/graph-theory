@@ -121,6 +121,31 @@ def has_cycles(graph):
     return False
 
 
+def components(graph):
+    """ Determines the components of the graph
+    :param graph: instance of class Graph
+    :return: list of sets of nodes. Each set is a component.
+    """
+    assert isinstance(graph, BasicGraph)
+    nodes = set(graph.nodes())
+    sets_of_components = []
+    while nodes:
+        new_component = set()
+        sets_of_components.append(new_component)
+        n = nodes.pop()  # select random node
+        new_component.add(n)  # add it to the new component.
+
+        new_nodes = set(graph.nodes(from_node=n))
+        new_nodes.update(set(graph.nodes(to_node=n)))
+        while new_nodes:
+            n = new_nodes.pop()
+            new_component.add(n)
+            new_nodes.update(set(n for n in graph.nodes(from_node=n) if n not in new_component))
+            new_nodes.update(set(n for n in graph.nodes(to_node=n) if n not in new_component))
+        nodes = nodes - new_component
+    return sets_of_components
+
+
 def social_network_size(graph, n1, degrees_of_separation=None):
     """ Determines the nodes within a degree of separation range
     :param graph: Graph
