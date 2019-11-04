@@ -14,7 +14,7 @@ def subgraph(graph, nodes):
     for n1 in nodes:
         G.add_node(n1)
         for n2 in graph.nodes(from_node=n1):
-            G.add_edge(n1, n2, graph.edge(n1,n2))
+            G.add_edge(n1, n2, graph.edge(n1, n2))
     return G
 
 
@@ -168,3 +168,30 @@ def social_network_size(graph, n1, degrees_of_separation=None):
             social_network.update(new_peers)
         peer1 = peer2
     return social_network
+
+
+def phase_lines(graph):
+    """ Determines the phase lines of a graph.
+    :param graph: Graph
+    :return: dictionary with node id : phase in cut.
+    """
+    if has_cycles(graph):
+        raise ValueError("a cyclic graph will not have phaselines.")
+    phases = {n: 0 for n in graph.nodes()}
+    q = graph.nodes(in_degree=0)
+    while q:
+        n = q.pop(0)
+        level = phases[n]
+        children = graph.nodes(from_node=n)
+        for c in children:
+            if phases[c] <= level:
+                phases[c] = level + 1
+            q.append(c)
+    return phases
+
+
+
+
+
+
+

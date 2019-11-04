@@ -61,12 +61,33 @@ def test_components():
     g.add_node(10)  # component 4
     components = g.components()
     assert len(components) == 4
-    assert {1,2} in components
+    assert {1, 2} in components
     assert {3} in components
-    assert {4,5,6,7,8,9} in components
+    assert {4, 5, 6, 7, 8, 9} in components
     assert {10} in components
 
 
+def test_phaselines():
+    """
+     1 +---> 3 +--> 5 +---> 6          [7]
+                    ^       ^
+       +------------+       |
+       |
+     2 +---> 4 +----------> +
+    """
+    g = Graph(from_list=[
+        (1, 3, 1),
+        (2, 4, 1),
+        (2, 5, 1),
+        (3, 5, 1),
+        (4, 6, 1),
+        (5, 6, 1),
+    ])
+    g.add_node(7)
 
+    p = g.phase_lines()
+    assert set(g.nodes()) == set(p.keys())
+    expects = {1: 0, 2: 0, 7: 0, 3: 1, 4: 1, 5: 2, 6: 3}
+    assert p == expects, (p, expects)
 
 
