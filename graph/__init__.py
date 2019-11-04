@@ -2,7 +2,16 @@ __all__ = ['Graph']
 from itertools import count
 
 from graph.graphs import BasicGraph
-from graph.topology import subgraph, is_subgraph, is_partite, same, has_path, has_cycles, components
+from graph.topology import (
+    subgraph,
+    is_subgraph,
+    is_partite,
+    same,
+    has_path,
+    has_cycles,
+    components,
+    phase_lines
+)
 from graph.flow_problem import maximum_flow
 from graph.search import (
     shortest_path,
@@ -119,6 +128,12 @@ class Graph(BasicGraph):
         :return: list of sets of nodes. Each set is a component.
         """
         return components(graph=self)
+
+    def phase_lines(self):
+        """ Determines the phase lines (cuts) of the graph
+        :returns: dictionary with phase: nodes in phase
+        """
+        return phase_lines(self)
 
     @staticmethod
     def same_path(p1, p2):
