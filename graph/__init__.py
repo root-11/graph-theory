@@ -10,7 +10,8 @@ from graph.topology import (
     has_path,
     has_cycles,
     components,
-    phase_lines
+    phase_lines,
+    sources
 )
 from graph.flow_problem import maximum_flow
 from graph.search import (
@@ -134,6 +135,10 @@ class Graph(BasicGraph):
         :returns: dictionary with phase: nodes in phase
         """
         return phase_lines(self)
+
+    def sources(self, n):
+        """ Determines the DAG sources of node n """
+        return sources(graph=self, n=n)
 
     @staticmethod
     def same_path(p1, p2):

@@ -190,7 +190,22 @@ def phase_lines(graph):
     return phases
 
 
-
+def sources(graph, n):
+    """ Determines the set of sources of 'node' in a DAG
+    :param graph: Graph
+    :return: set of nodes
+    """
+    nodes = {n}
+    q = [n]
+    while q:
+        new = q.pop(0)
+        for src in graph.nodes(to_node=new):
+            if src not in nodes:
+                nodes.add(src)
+            if src not in q:
+                q.append(src)
+    nodes.remove(n)
+    return nodes
 
 
 

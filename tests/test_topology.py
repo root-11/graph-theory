@@ -91,3 +91,35 @@ def test_phaselines():
     assert p == expects, (p, expects)
 
 
+def test_sources():
+    """
+         1 +---> 3 +--> 5 +---> 6          [7]
+                        ^       ^
+           +------------+       |
+           |
+         2 +---> 4 +----------> +
+        """
+    g = Graph(from_list=[
+        (1, 3, 1),
+        (2, 4, 1),
+        (2, 5, 1),
+        (3, 5, 1),
+        (4, 6, 1),
+        (5, 6, 1),
+    ])
+    g.add_node(7)
+    s = g.sources(5)
+    e = {1, 2, 3}
+    assert s == e
+
+    s2 = g.sources(1)
+    e2 = set()
+    assert s2 == e2, s2
+
+    s3 = g.sources(6)
+    e3 = {1, 2, 3, 4, 5}
+    assert s3 == e3
+
+    s4 = g.sources(7)
+    e4 = set()
+    assert s4 == e4
