@@ -1,7 +1,7 @@
 """
 graph-theory
 """
-build_tag = "4a22586eab02b6a13a8585646af4087667933f7ac865866da19b684e4a7ff50c"
+build_tag = "6c59337faf0af510c60cea4ddda0730d3f1c67f40c2438f9fd3b75c159bf8c76"
 from setuptools import setup
 from pathlib import Path
 
@@ -14,10 +14,20 @@ assert readme.exists(), readme
 with open(str(readme), encoding='utf-8') as f:
     long_description = f.read()
 
+keywords = list({
+    'complex-networks', 'discrete mathematics', 'graph', 'Graph Theory', 'graph-algorithms', 'graph-analysis',
+    'graph-generation', 'graph-theory', 'graph-visualization', 'graphs', 'math', 'Mathematics', 'maths',
+    'minimum-spanning-trees', 'network', 'Networks', 'optimization', 'python', 'shortest-path', 'tsp', 'tsp-solver',
+    'assignment problem', 'flow-problem', 'hash', 'graph-hash', 'random graph', 'search', 'cycle', 'path',
+    'component', 'components', 'adjacency', 'matrix', 'all pairs shortest path'
+})
+
+keywords.sort(key=lambda x: x.lower())
+
 
 setup(
     name="graph-theory",
-    version="2019.8.14.33649",
+    version="2019.11.17.49973",
     url="https://github.com/root-11/graph-theory",
     license="MIT",
     author="Bjorn Madsen",
@@ -25,7 +35,7 @@ setup(
     description="A graph library",
     long_description=long_description,
     long_description_content_type='text/markdown',
-    keywords="graph graphs optimization tsp shortest-path",
+    keywords=keywords,
     packages=["graph", "examples.optimization"],
     include_package_data=True,
     data_files=[(".", ["LICENSE", "README.md"])],
