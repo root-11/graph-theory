@@ -177,16 +177,21 @@ def phase_lines(graph):
     """
     if has_cycles(graph):
         raise ValueError("a cyclic graph will not have phaselines.")
+
     phases = {n: 0 for n in graph.nodes()}
     q = graph.nodes(in_degree=0)
+    q_set = set(q)
     while q:
         n = q.pop(0)
+        q_set.remove(n)
         level = phases[n]
         children = graph.nodes(from_node=n)
         for c in children:
             if phases[c] <= level:
                 phases[c] = level + 1
-            q.append(c)
+            if c not in q_set:
+                q.append(c)
+                q_set.add(c)
     return phases
 
 
