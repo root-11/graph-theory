@@ -15,8 +15,8 @@ def maximum_flow(graph, start, end):
     outflow = sum(d for s, e, d in graph.edges(to_node=end))
     unassigned_flow = min(inflow, outflow)  # search in excess of this 'flow' is a waste of time.
     total_flow = 0
-
-    # below:
+    # -----------------------------------------------------------------------
+    # The algorithm
     # I reviewed a number of algorithms, such as Ford-fulkerson algorithm,
     # Edmonson-Karp and Dinic, but I didn't like them due to their naive usage
     # of BFS, which leads to a lot of node visits.
@@ -31,6 +31,11 @@ def maximum_flow(graph, start, end):
     # shortest path, until the capacity is zero, whereby I remove the links
     # When the shortest path method returns 'No path' or when unassigned flow
     # is zero, I exit the algorithm.
+    #
+    # Even on small graphs, this method is very efficient, despite the overhead
+    # of using shortest path. For very large graphs, this method outperforms
+    # all other algorithms by orders of magnitude.
+    # -----------------------------------------------------------------------
 
     edges = [(n1, n2, 1 / d) for n1, n2, d in graph.edges() if d > 0]
     inverted_graph = BasicGraph(from_list=edges)  # create G_inverted.
@@ -74,3 +79,4 @@ def maximum_flow(graph, start, end):
             else:
                 inverted_graph.del_edge(n1, n2)
     return total_flow, flow_graph
+
