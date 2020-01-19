@@ -333,8 +333,3 @@ class Graph2D(BasicGraph):
         """ plots nodes and links using matplotlib3"""
         raise NotImplementedError  # TODO see test_graph\test_random_graph_3 for plotting.
 
-
-class Graph3D(BasicGraph):
-    def __init__(self):
-        super().__init__()
-        # TODO
