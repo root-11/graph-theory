@@ -62,13 +62,13 @@ def maximum_flow(graph, start, end):
         for n1, n2, d in edges:
 
             # 3.a. recording:
-            v = flow_graph.edge(n1, n1, default=None)
+            v = flow_graph.edge(n1, n2, default=None)
             if v is None:
                 flow_graph.add_edge(n1, n2, path_flow)
                 c = graph.edge(n1, n2) - path_flow
-            # else:  <-- Note I doubt this path is ever reached.
-            #     flow_graph.add_edge(n1, n2, value=v + path_flow)
-            #     c = graph.edge(n1, n2) - (v + path_flow)
+            else:
+                flow_graph.add_edge(n1, n2, value=v + path_flow)
+                c = graph.edge(n1, n2) - (v + path_flow)
             capacity_graph.add_edge(n1, n2, c)
 
             # 3.b. updating:
