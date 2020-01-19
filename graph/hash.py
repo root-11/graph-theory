@@ -4,7 +4,7 @@ from graph import Graph
 
 
 def graph_hash(graph):
-    """ Generates the top hash of the graph.
+    """ Generates the top hash of the graph using sha3_256.
     :param graph: instance of class Graph.
     :return: graph hash (int) and graph (Graph) with hash values
     """
@@ -75,33 +75,32 @@ def flow_graph_hash(graph):
 
 def merkle_tree(data_blocks):
     """
+    A hash tree or Merkle tree is a tree in which every leaf node is labelled with
+    the hash of a data block, and every non-leaf node is labelled with the
+    cryptographic hash of the labels of its child nodes. Hash trees allow efficient
+    and secure verification of the contents of large data structures. Hash trees
+    are a generalization of hash lists and hash chains.
 
-A hash tree or Merkle tree is a tree in which every leaf node is labelled with
-the hash of a data block, and every non-leaf node is labelled with the
-cryptographic hash of the labels of its child nodes. Hash trees allow efficient
-and secure verification of the contents of large data structures. Hash trees
-are a generalization of hash lists and hash chains.
-
-                    Top Hash
-                 hash ( 0 + 1 )
-                   ^      ^
-                   |      |
-           +------->      +---------+
-           ^                        ^
-           |                        |
-           +                        +
-        Hash 0                    Hash 1
-  hash ( 0-0 + 0-1 )        hash ( 1-0 + 1-1 )
-     ^           ^           ^           ^
-     |           |           |           |
-     +           +           +           +
-  Hash 0-0    Hash 0-1    Hash 1-0     Hash 1-1
-  hash(L1)    hash(L2)    hash(L3)     hash(L4)
-     ^           ^           ^           ^
-     |           |           |           |
-+----------------------------------------------+
-|    L1          L2          L3          L4    | Data blocks
-+----------------------------------------------+
+                        Top Hash
+                     hash ( 0 + 1 )
+                       ^      ^
+                       |      |
+               +------->      +---------+
+               ^                        ^
+               |                        |
+               +                        +
+            Hash 0                    Hash 1
+      hash ( 0-0 + 0-1 )        hash ( 1-0 + 1-1 )
+         ^           ^           ^           ^
+         |           |           |           |
+         +           +           +           +
+      Hash 0-0    Hash 0-1    Hash 1-0     Hash 1-1
+      hash(L1)    hash(L2)    hash(L3)     hash(L4)
+         ^           ^           ^           ^
+         |           |           |           |
+    +----------------------------------------------+
+    |    L1          L2          L3          L4    | Data blocks
+    +----------------------------------------------+
 
     """
     g = Graph()

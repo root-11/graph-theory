@@ -2,12 +2,11 @@ from graph import BasicGraph
 
 
 def adjacency_matrix(graph):
-    """
+    """Converts directed graph to an adjacency matrix.
     :param graph:
     :return: dictionary
 
-    Converts directed graph to an adjacency matrix.
-    Note: The distance from a node to itself is 0 and distance from a node to
+    The distance from a node to itself is 0 and distance from a node to
     an unconnected node is defined to be infinite. This does not mean that there
     is no path from a node to another via other nodes.
 
@@ -33,8 +32,7 @@ def adjacency_matrix(graph):
 
 
 def all_pairs_shortest_paths(graph):
-    """
-    Find the cost of the shortest path between every pair of vertices in a
+    """Find the cost of the shortest path between every pair of vertices in a
     weighted graph. Uses the Floyd-Warshall algorithm.
 
     Example:

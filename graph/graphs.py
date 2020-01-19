@@ -2,11 +2,10 @@
 
 class BasicGraph(object):
     """
-    Graph is the base graph that all methods use.
+    BasicGraph is the base graph that all methods use.
 
     For methods, please see the documentation on the
     individual functions, by importing them separately.
-
     """
 
     def __init__(self, from_dict=None, from_list=None):

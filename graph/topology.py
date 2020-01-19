@@ -20,7 +20,7 @@ def subgraph(graph, nodes):
 
 def is_subgraph(graph1, graph2):
     """
-    Checks is graph1 is subgraph in graph2
+    Checks if graph1 is subgraph in graph2
     :param graph1: instance of Graph
     :param graph2: instance of Graph
     :return: boolean
@@ -109,7 +109,7 @@ def has_path(graph, path):
 
 
 def has_cycles(graph):
-    """ Checks whether the graph has a cycle
+    """ Checks if graph has a cycle
     :param graph: instance of class Graph.
     :return: bool
     """
@@ -171,7 +171,7 @@ def social_network_size(graph, n1, degrees_of_separation=None):
 
 
 def phase_lines(graph):
-    """ Determines the phase lines of a graph.
+    """ Determines the phase lines of a directed graph.
     :param graph: Graph
     :return: dictionary with node id : phase in cut.
     """
