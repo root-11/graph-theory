@@ -40,16 +40,6 @@ class BasicGraph(object):
     def __len__(self):
         raise ValueError("Use len(g.nodes()) or len(g.edges())")
 
-    def __copy__(self):
-        if not self.__class__.__name__ == BasicGraph.__name__:
-            raise NotImplementedError("subclasses must implement this method.")
-        g = BasicGraph()
-        for n in self._nodes:
-            g.add_node(n, obj=self._nodes[n])
-        for s, e, d in self.edges():
-            g.add_edge(s, e, d)
-        return g
-
     def add_edge(self, node1, node2, value=1, bidirectional=False):
         """
         :param node1: hashable node

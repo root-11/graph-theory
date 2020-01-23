@@ -68,6 +68,21 @@ def test_components():
     assert {10} in components
 
 
+def test_network_size():
+    g = graph02()
+    ns1 = g.network_size(n1=1)
+    assert len(ns1) == 9  # all nodes.
+
+    ns1_2 = g.network_size(n1=1, degrees_of_separation=2)
+    assert all(i not in ns1_2 for i in [6, 8, 9])
+
+    ns5 = g.network_size(n1=5)
+    assert len(ns5) == 4  # all nodes downstream from 5 (plus 5 itself)
+
+    ns9 = g.network_size(n1=9)
+    assert len(ns9) == 1  # just node 9, as there are no downstream peers.
+
+
 def test_phaselines():
     """
      1 +---> 3 +--> 5 +---> 6          [7]

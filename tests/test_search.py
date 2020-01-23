@@ -265,3 +265,8 @@ def test_dfs_03():
     path = g.depth_first_search(0, 10)
     assert path == [0, 2, 3, 9, 10]
     assert g.has_path(path)
+
+
+def test_degree_of_separation():
+    g = graph05()
+    assert g.degree_of_separation(0, 10) == 3

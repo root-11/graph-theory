@@ -146,8 +146,9 @@ def components(graph):
     return sets_of_components
 
 
-def social_network_size(graph, n1, degrees_of_separation=None):
-    """ Determines the nodes within a degree of separation range
+def network_size(graph, n1, degrees_of_separation=None):
+    """ Determines the nodes within the range given by
+    a degree of separation
     :param graph: Graph
     :param n1: start node
     :param degrees_of_separation: integer
@@ -155,19 +156,32 @@ def social_network_size(graph, n1, degrees_of_separation=None):
     """
     assert isinstance(graph, BasicGraph)
     assert n1 in graph.nodes()
-    assert isinstance(degrees_of_separation, int)
-    social_network = set(graph.nodes(from_node=n1))
-    peer1 = social_network.copy()
-    peer2 = set()
+    if degrees_of_separation is not None:
+        assert isinstance(degrees_of_separation, int)
+
+    network = {n1}
+    q = set(graph.nodes(from_node=n1))
+
     scan_depth = 1
-    while scan_depth < degrees_of_separation:
+    while True:
+        if not q:  # then there's no network.
+            break
+
+        if degrees_of_separation is not None:
+            if scan_depth > degrees_of_separation:
+                break
+
+        new_q = set()
+        for peer in q:
+            if peer in network:
+                continue
+            else:
+                network.add(peer)
+                new_peers = set(graph.nodes(from_node=peer)) - network
+                new_q.update(new_peers)
+        q = new_q
         scan_depth += 1
-        for peer in peer1:
-            new_peers = set(graph.nodes(from_node=peer)) - social_network
-            peer2.update(new_peers)
-            social_network.update(new_peers)
-        peer1 = peer2
-    return social_network
+    return network
 
 
 def phase_lines(graph):
@@ -175,14 +189,15 @@ def phase_lines(graph):
     :param graph: Graph
     :return: dictionary with node id : phase in cut.
     """
-    if has_cycles(graph):
-        raise ValueError("a cyclic graph will not have phaselines.")
-
     phases = {n: 0 for n in graph.nodes()}
     q = graph.nodes(in_degree=0)
     q_set = set(q)
+    seen = set()
     while q:
         n = q.pop(0)
+        if n in seen:
+            continue  # the graph is cyclic.
+        seen.add(n)
         q_set.remove(n)
         level = phases[n]
         children = graph.nodes(from_node=n)
