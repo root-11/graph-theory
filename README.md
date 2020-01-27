@@ -25,7 +25,7 @@ Modules:
 
 | module | description |
 |:---|:---|
-| `from graph import Graph, Graph2D, Graph3D` | Elementary methods (see basic methods below), 2D and 3D graphs.|
+| `from graph import Graph, Graph3D` | Elementary methods (see basic methods below) for Graph and Graph3D.|
 | `from graph.assignment_problem import ...` | solvers for assignment problem, the Weapons-Target Assignment Problem, ... |
 | `from graph.flow_problem import ...` | maximum flow |
 | `from graph.hash import ...` | graph hash functions: graph hash, merkle tree, flow graph hash | 
@@ -88,7 +88,6 @@ All module functions are available from Graph, Graph2D and Graph3D (where applic
 ## Specialised modules:
 
     from graph import Graph
-    from graph import Graph2D
     from graph import Graph3D
     from graph.hashing import merkle_tree
     from graph.assignment_problem import ap_solver
