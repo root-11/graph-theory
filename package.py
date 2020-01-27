@@ -15,6 +15,7 @@ packages = [
     folder / 'graph' / "random.py",
     folder / 'graph' / "scheduling_problem.py",
     folder / 'graph' / "search.py",
+    folder / 'graph' / "spatial_graph.py",
     folder / 'graph' / "topology.py",
     folder / 'graph' / "transform.py",
     folder / 'LICENSE',
