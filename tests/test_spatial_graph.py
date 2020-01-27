@@ -18,31 +18,37 @@ def spiral_graph():
     return g
 
 
-def fishbone_graph():
+def fishbone_graph(levels=5, lengths=10, depths=2):
+    """ Creates a multi level fishbone graph.
+
+    :param levels: int: number of levels
+    :param lengths: int: number of ribs
+    :param depths: int: number of joints on each rib.
+    :return: Graph3D
+    """
     g = Graph3D()
-    j1 = None
-    for j2 in range(5):  # z axis.
-        g.add_node((0, 0, j2))
-        if j1 is None:
+    prev_level = None
+    for level in range(1, levels+1):  # z axis.
+        g.add_node((0, 0, level))
+        if prev_level is None:
             pass
         else:
-            g.add_edge((0, 0, j1), (0, 0, j2), value=1, bidirectional=True)
+            g.add_edge((0, 0, prev_level), (0, 0, level), value=1, bidirectional=True)
 
-        s1, l1, r1 = None, None, None  # (s)pine, (l)eft side, (r)ight side
-        for i in range(10):  # step along the x axis.
-            s2, l2, r2 = (i, 0, j2), (i, 1, j2), (i, -1, j2)
-            g.add_node(s2)  # spine
-            g.add_node(l2)  # left rib
-            g.add_node(r2)  # right rib
-            if s1 is None:
-                pass
-            else:
-                g.add_edge(s1, s2, 1)
-            g.add_edge(s2, l2, 1, bidirectional=True)
-            g.add_edge(s2, r2, 1, bidirectional=True)
+        prev_spine = (0, 0, level)  # the lift.
+        for step in range(1, lengths+1):  # step along the x axis.
+            spine = (step, 0, level)
+            g.add_edge(prev_spine, spine, 1, bidirectional=True)
 
-            s1, l1, r1 = s2, l2, r2
-        j1 = j2
+            for side in [-1, 1]:
+                rib_1 = spine
+                for depth in range(1, depths+1):
+                    rib_2 = (step, side * depth, level)
+                    g.add_edge(rib_1, rib_2, 1, bidirectional=True)
+                    rib_1 = rib_2
+
+            prev_spine = spine
+        prev_level = level
 
     g.add_node((-1, 0, 2))  # entry point
     g.add_edge((-1, 0, 2), (0, 0, 2), 1, bidirectional=True)
@@ -115,18 +121,113 @@ def test_plotting():
 
 
 def test_shortest_path():
+    """ assure that the fishbone graphs entry and exits are connected. """
     g = fishbone_graph()
     entry_point = (-1, 0, 2)
     exit_point = (-1, 0, 1)
     d, p = g.shortest_path(entry_point, exit_point)
-    assert d == 3
+    assert d == 3, d
 
 
 def test_no_nearest_neighbour():
+    """ checks that when you're alone, you have no neighbours."""
     g = Graph3D()
     xyz = (1, 1, 1)
     g.add_node(xyz)
-    assert g.n_nearest_neighbours(xyz) is None  # itself!
+    assert g.n_nearest_neighbours(xyz) is None
+
+
+def test_bfs():
+    g = fishbone_graph()
+    entry_point = (-1, 0, 2)
+    exit_point = (-1, 0, 1)
+    d, p = g.breadth_first_search(entry_point, exit_point)
+    assert d == 3, d
+    assert len(p) == 4, p
+
+
+def test_dfs():
+    g = fishbone_graph()
+    entry_point = (-1, 0, 2)
+    exit_point = (-1, 0, 1)
+    p = g.depth_first_search(entry_point, exit_point)
+    assert len(p) == 4, p
+
+
+def test_distance_from_path():
+    g = fishbone_graph()
+    entry_point = (-1, 0, 2)
+    exit_point = (-1, 0, 1)
+    d, p = g.breadth_first_search(entry_point, exit_point)
+    assert d == 3
+    assert len(p) == 4
+    assert g.distance_from_path(p) == 3
+
+
+def test_maximum_flow():
+    g = fishbone_graph()
+    entry_point = (-1, 0, 2)
+    exit_point = (-1, 0, 1)
+    total_flow, flow_graph = g.maximum_flow(entry_point, exit_point)
+    assert total_flow == 1, total_flow
+    assert len(flow_graph.nodes()) == 4, len(flow_graph.nodes())
+
+
+def test_subgraph_from_nodes():
+    g = fishbone_graph()
+    entry_point = (-1, 0, 2)
+    exit_point = (-1, 0, 1)
+    d, p = g.breadth_first_search(entry_point, exit_point)
+    subgraph = g.subgraph_from_nodes(p)
+    assert isinstance(subgraph, Graph3D), type(subgraph)
+    new_d, new_p = subgraph.breadth_first_search(entry_point, exit_point)
+    assert p == new_p, (p, new_p)
+
+
+def test_has_cycles():
+    g = Graph3D()
+    a, b, c = (0, 0, 0), (1, 1, 1), (2, 2, 2)
+    g.add_edge(a, b, 1)
+    g.add_edge(b, c, 1)
+    assert not g.has_cycles()
+    g.add_edge(c, a, 1)
+    assert g.has_cycles()
+
+
+def test_network_size():
+    g = fishbone_graph(levels=3, lengths=3, depths=3)
+    g.plot(rotation='yxz')
+    entry_point = (-1, 0, 2)
+    assert g.network_size(entry_point)
+
+
+def test_has_path():
+    g = Graph3D()
+    a, b, c = (0, 0, 0), (1, 1, 1), (2, 2, 2)
+    g.add_edge(a, b, 1)
+    g.add_edge(b, c, 1)
+    assert not g.has_path([c, a, b, c])
+    g.add_edge(c, a, 1)
+    assert g.has_path([c, a, b])
+    assert g.has_path([a, b, c])
+
+
+def test_degree_of_separation():
+    g = fishbone_graph()
+    entry_point = (-1, 0, 2)
+    exit_point = (-1, 0, 1)
+    des = g.degree_of_separation(entry_point, exit_point)
+    assert des == 3
+
+
+def test_number_of_components():
+    g = fishbone_graph(3, 3, 3)
+    cs = g.components()
+    assert len(cs) == 1, cs
+
+    g = fishbone_graph()
+    cs = g.components()
+    assert len(cs) == 1, cs
 
 
 def test_bad_config():
