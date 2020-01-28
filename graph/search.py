@@ -306,3 +306,4 @@ def degree_of_separation(graph, n1, n2):
     assert n1 in graph.nodes()
     d, p = breadth_first_search(graph, n1, n2)
     return d
+

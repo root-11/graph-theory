@@ -1,7 +1,6 @@
-from matplotlib import pyplot as plt
-
 from graph import Graph, tsp
-from graph.random import random_xy_graph
+from graph.random import random_xy_graph, xy_distance
+from graph.visuals import plot_2d
 
 
 def graph07():
@@ -23,6 +22,7 @@ def test_random_graph_2():
     nodes = 10000
     links = 1
 
+    err1 = err2 = ""
     try:
         g = random_xy_graph(nodes=nodes, edges=links, x_max=80, y_max=40, seed=42)
     except ValueError as e:
@@ -52,31 +52,23 @@ def test_random_graph_2():
 
 
 def test_random_graph_3():
-
-    def plot_tour(tour, style='bo-'):
-        "Plot every city and link in the tour, and highlight start city."
-        if len(tour) > 1000: plt.figure(figsize=(15, 10))
-        start = tour[0:1]
-        plot_segment(tour + start, style)
-        plot_segment(start, 'rD')  # start city is red Diamond.
-
-    def plot_segment(segment, style='bo-'):
-        "Plot every city and link in the segment."
-        xs = [X(g.node(c)) for c in segment]
-        ys = [Y(g.node(c)) for c in segment]
-        plt.plot(xs, ys, style, clip_on=False)
-        plt.axis('scaled')
-        plt.axis('off')
-
-    def X(node):
-        """X coordinate."""
-        return node[0]
-
-    def Y(node):
-        """Y coordinate."""
-        return node[1]
-
-    g = random_xy_graph(500, x_max=800, y_max=400)
+    g = random_xy_graph(200, x_max=800, y_max=400)  # a fully connected graph.
     dist, tour = tsp(g)
-    plot_tour(tour)
+
+    # convert the route to a graph.
+    g = Graph()
+
+    a = tour[0]
+    for b in tour[1:]:
+        g.add_edge(a, b, xy_distance(a, b))
+        a = b
+    # add the link back to start.
+    b = tour[0]
+    g.add_edge(a, b, xy_distance(a, b))
+
+    # add a red diamond for the starting point.
+    plt = plot_2d(g)
+    start = tour[0:1]
+    xs, ys = [c[0] for c in start], [c[1] for c in start]
+    plt.plot(xs, ys, 'rD', clip_on=False)
     plt.show()

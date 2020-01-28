@@ -101,25 +101,6 @@ def test_path_finding():
     assert p == xyz, [(idx, a, b) for idx, (a, b) in enumerate(zip(p, xyz)) if a != b]
 
 
-def test_plotting():
-    g = spiral_graph()
-    g.plot()
-
-    g = fishbone_graph()
-    g.plot()
-    g.plot(rotation='yxz')
-    g.plot(maintain_aspect_ratio=True)
-
-    try:
-        g.plot(rotation='x')
-    except ValueError:
-        pass
-    try:
-        g.plot(rotation='abc')
-    except ValueError:
-        pass
-
-
 def test_shortest_path():
     """ assure that the fishbone graphs entry and exits are connected. """
     g = fishbone_graph()
@@ -196,7 +177,8 @@ def test_has_cycles():
 
 def test_network_size():
     g = fishbone_graph(levels=3, lengths=3, depths=3)
-    g.plot(rotation='yxz')
+    plt = g.plot(rotation='yxz')
+    plt.show()
     entry_point = (-1, 0, 2)
     assert g.network_size(entry_point)
 

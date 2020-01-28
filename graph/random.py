@@ -3,6 +3,14 @@ import random
 from graph import Graph
 
 
+def xy_distance(n1, n2):
+    """ calculates the xy_distance between to (x,y)-nodes"""
+    x1, y1 = n1
+    x2, y2 = n2
+    dy, dx = (y2 - y1) * (y2 - y1), (x2 - x1) * (x2 - x1)
+    return (dy + dx) ** (1 / 2)
+
+
 def random_xy_graph(nodes, x_max, y_max, edges=None, seed=42):
     """ Generates a graph with N nodes, M links, where all nodes have x,y in
     range [1,1] to [x_max, y_max]
@@ -13,13 +21,6 @@ def random_xy_graph(nodes, x_max, y_max, edges=None, seed=42):
     :param seed: seed for random number generator
     :return: Graph
     """
-
-    def xy_distance(g, n1, n2):
-        assert isinstance(g, Graph)
-        x1, y1 = g.node(n1)
-        x2, y2 = g.node(n2)
-        return (abs(y2 - y1) + abs(x2 - x1)) ** (1 / 2)
-
     if x_max * y_max < nodes:
         raise ValueError("frame (x:{},y:{}) is too small for {} nodes".format(x_max,y_max,nodes))
 
@@ -35,22 +36,22 @@ def random_xy_graph(nodes, x_max, y_max, edges=None, seed=42):
     random.seed(seed)
     g = Graph()
     xy_space = set()
-    node_list = list(range(nodes))
-    # random search mode
+
+    # Step 1: random search mode
     node_count = 0
     while node_count < nodes:
         xy = (random.randint(1, x_max), random.randint(1, y_max))
         if xy not in xy_space:
-            g.add_node(node_count, obj=xy)
+            g.add_node(xy)
             xy_space.add(xy)
             node_count += 1
             continue
 
         if len(xy_space) > (x_max * y_max) / 2:
-            # use of random is inefficient.
+            # use of random is inefficient --> proceed with step 2.
             break
 
-    # structured search mode.
+    # Step 2: structured search mode.
     if len(g.nodes()) < nodes:
         x_range = list(range(1, x_max+1))
         random.shuffle(x_range)
@@ -65,7 +66,7 @@ def random_xy_graph(nodes, x_max, y_max, edges=None, seed=42):
                 if xy in xy_space:
                     continue
                 else:
-                    g.add_node(node_count, obj=xy)
+                    g.add_node(xy)
                     xy_space.add(xy)
                     node_count += 1
 
@@ -73,8 +74,8 @@ def random_xy_graph(nodes, x_max, y_max, edges=None, seed=42):
                     quit = True
                     break
 
-    n1s = node_list[:]
-    n2s = set(node_list)
+    n1s = g.nodes()
+    n2s = set(n1s)
     edge_set = set()
     edge_count = 0
     while edge_count < edges:
@@ -88,7 +89,7 @@ def random_xy_graph(nodes, x_max, y_max, edges=None, seed=42):
         n2 = random.choice(candidates)
 
         edge_set.add((n1, n2))
-        d = xy_distance(g, n1, n2)
+        d = xy_distance(n1, n2)
         g.add_edge(n1, n2, d)
         edge_count += 1
 

@@ -14,6 +14,7 @@ from graph.topology import (
     has_path,
 )
 from graph.flow_problem import maximum_flow
+from graph.visuals import plot_3d
 
 
 class Graph3D(BasicGraph):
@@ -90,73 +91,7 @@ class Graph3D(BasicGraph):
         :param maintain_aspect_ratio: bool: rescales the chart to maintain aspect ratio.
         :return: None. Plots figure.
         """
-        from mpl_toolkits.mplot3d import Axes3D  # import required by matplotlib.
-        import matplotlib.pyplot as plt
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        if not len(rotation) == 3:
-            raise ValueError(f"expected viewpoint as 'xyz' but got: {rotation}")
-        for c in 'xyz':
-            if c not in rotation:
-                raise ValueError(f"rotation was missing {c}.")
-        x, y, z = rotation
-
-        # Data for a three-dimensional line
-        if edges:
-            for edge in self.edges():
-                n1, n2, v = edge
-                xyz = dict()
-                xyz[x] = [n1[0], n2[0]]
-                xyz[y] = [n1[1], n2[1]]
-                xyz[z] = [n1[2], n2[2]]
-                ax.plot3D(xyz['x'], xyz['y'], xyz['z'], 'gray')
-
-        # Data for three-dimensional scattered points
-        if nodes:
-            xyz = {x: [], y: [], z: []}
-            ix = []
-            for idx, node in enumerate(self.nodes()):
-                vx, vy, vz = node  # value of ...
-                xyz[x].append(vx)
-                xyz[y].append(vy)
-                xyz[z].append(vz)
-                ix.append(idx)
-            ax.scatter3D(xyz['x'], xyz['y'], xyz['z'], c=ix, cmap='Greens')
-
-        if (nodes or edges) and maintain_aspect_ratio:
-            nodes = [n for n in self.nodes()]
-            xyz_dir = {'x': 0, 'y': 1, 'z': 2}
-
-            xdim = xyz_dir[x]  # select the x dimension in the projection.
-            # as the rotation will change the xdimension index.
-            xs = [n[xdim] for n in nodes]  #  use the xdim index to obtain the values.
-            xmin, xmax = min(xs), max(xs)
-            dx = (xmax + xmin) / 2  # determine the midpoint for the dimension.
-
-            ydim = xyz_dir[y]
-            ys = [n[ydim] for n in nodes]
-            ymin, ymax = min(ys), max(ys)
-            dy = (ymax + ymin) / 2
-
-            zdim = xyz_dir[z]
-            zs = [n[zdim] for n in nodes]
-            zmin, zmax = min(zs), max(zs)
-            dz = (zmax + zmin) / 2
-
-            # calculate the radius for the aspect ratio.
-            max_dim = max([xmax - xmin, ymax - ymin, zmax - zmin]) / 2
-
-            xa, xb = dx - max_dim, dx + max_dim  # lower, uppper
-            ax.set_xlim(xa, xb)  # apply the lower and upper to the axis.
-            ya, yb = dy - max_dim, dy + max_dim
-            ax.set_ylim(ya, yb)
-            za, zb = dz - max_dim, dz + max_dim
-            ax.set_zlim(za, zb)
-
-        ax.set_xlabel(f'{x} Label')
-        ax.set_ylabel(f'{y} Label')
-        ax.set_zlabel(f'{z} Label')
-        plt.show()
+        return plot_3d(self, nodes, edges, rotation, maintain_aspect_ratio)
 
     # general graph functions
     # -----------------------
@@ -246,3 +181,4 @@ class Graph3D(BasicGraph):
         :return: degree
         """
         return degree_of_separation(self, n1, n2)
+
