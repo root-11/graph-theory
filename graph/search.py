@@ -140,9 +140,7 @@ def tsp(graph):
     def shortest_links_first(graph):
         """ returns a list of (distance, node1, node2) with shortest on top."""
         c = combinations(graph.nodes(), 2)
-        distances = [(graph.edge(a, b), a, b) for a, b in c]
-        if None in [a for a, b, c in distances]:
-            raise ValueError("TSP requires a fully connected graph.")
+        distances = [(graph.edge(a, b), a, b) for a, b in c if graph.edge(a, b)]
         distances.sort()
         return distances
 
@@ -270,10 +268,9 @@ def all_paths(graph, start, end):
     """
     assert isinstance(graph, BasicGraph)
     options = set(graph.nodes()) - {start, end}
-
-    # powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
     s = list(options)
     L = []
+    # below generates the powerset of options:
     for combination in chain.from_iterable(combinations(s, r) for r in range(len(s) + 1)):
         path = [start] + list(combination) + [end]
         if has_path(graph, path):

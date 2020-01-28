@@ -3,7 +3,7 @@ import time
 from itertools import combinations
 
 from graph import Graph
-from tests.test_graph import graph02, graph03, graph04, graph05
+from tests.test_graph import graph02, graph03, graph04, graph05, graph_cycle_5
 
 
 def test_shortest_path01():
@@ -244,6 +244,20 @@ def test_dfs():
 
     path = g.depth_first_search(4, 1)
     assert path is None, path
+
+
+def test_dfs_on_cycle():
+    edges = [
+        (1, 2, 1),
+        (2, 3, 1),
+        (3, 2, 1),
+    ]
+    for i in range(3, 10, 1):
+        edge = (i, i + 1, 1)
+        edges.append(edge)
+    g = Graph(from_list=edges)
+    path = g.depth_first_search(start=1, end=9)
+    assert path is not None, path
 
 
 def test_dfs_02():
