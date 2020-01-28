@@ -1,5 +1,5 @@
 from graph import Graph
-from examples.optimization.transshipment_problem import clondike_transshipment_problem, Train, schedule_rail_system
+from graph.transshipment_problem import clondike_transshipment_problem, Train, schedule_rail_system
 
 
 def test_mining_train():
@@ -134,3 +134,5 @@ def test_double_direction_delivery():
 
     assert s1 == s1_expected
     assert s2 == s2_expected
+
+
