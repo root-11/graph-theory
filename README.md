@@ -1,6 +1,6 @@
 # graph
 [![Build Status](https://travis-ci.org/root-11/graph-theory.svg?branch=master)](https://travis-ci.org/root-11/graph-theory.svg?branch=master)
-
+[![Code coverage](https://codecov.io/gh/root-11/graph-theory/branch/master/graph/badge.svg)](https://codecov.io/gh/root-11/graph-theory)
 
 
 A simple graph library...<br>
