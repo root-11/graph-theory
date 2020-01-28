@@ -18,6 +18,7 @@ packages = [
     folder / 'graph' / "spatial_graph.py",
     folder / 'graph' / "topology.py",
     folder / 'graph' / "transform.py",
+    folder / 'graph' / "transshipment_problem.py",
     folder / 'LICENSE',
     folder / 'README.md',
 ]

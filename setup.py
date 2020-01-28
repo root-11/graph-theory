@@ -1,7 +1,7 @@
 """
 graph-theory
 """
-build_tag = "70e04477377567d27defde0dd9afb434fc73eeead9ffd8dbaf1dd7d801ad96ec"
+build_tag = "4b8b3e3d126ff9cca519fa58f6bd0b32bc2f4962c43bba7226b75042aa3fde07"
 from setuptools import setup
 from pathlib import Path
 
@@ -27,7 +27,7 @@ keywords.sort(key=lambda x: x.lower())
 
 setup(
     name="graph-theory",
-    version="2020.1.19.40957",
+    version="2020.1.28.44523",
     url="https://github.com/root-11/graph-theory",
     license="MIT",
     author="Bjorn Madsen",
@@ -36,7 +36,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     keywords=keywords,
-    packages=["graph", "examples.optimization"],
+    packages=["graph"],
     include_package_data=True,
     data_files=[(".", ["LICENSE", "README.md"])],
     platforms="any",
