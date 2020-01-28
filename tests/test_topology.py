@@ -1,6 +1,6 @@
 import time
 from graph import Graph
-from tests.test_graph import graph02, graph_cycle_6, graph_cycle_5
+from tests.test_graph import graph02, graph_cycle_6, graph_cycle_5, fully_connected_4
 
 
 def test_subgraph():
@@ -81,6 +81,13 @@ def test_network_size():
 
     ns9 = g.network_size(n1=9)
     assert len(ns9) == 1  # just node 9, as there are no downstream peers.
+
+
+def test_network_size_when_fully_connected():
+    """ tests network size when the peer has already been seen during search."""
+    g = fully_connected_4()
+    ns = g.network_size(n1=1)
+    assert len(ns) == len(g.nodes())
 
 
 def test_phaselines():

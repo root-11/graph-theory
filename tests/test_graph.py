@@ -121,8 +121,17 @@ def graph_cycle_6():
     return Graph(from_list=links)
 
 
-
-
+def fully_connected_4():
+    """
+    fully connected graph with 4 nodes.
+    """
+    L = [
+        (0, 3, 1), (0, 2, 1), (0, 1, 1), (3, 2, 1), (3, 1, 1), (3, 0, 1),
+        (2, 3, 1), (2, 1, 1), (2, 0, 1), (1, 0, 1), (1, 2, 1), (1, 3, 1),
+        (0,), (1,), (2,), (3,)
+    ]
+    g = Graph(from_list=L)
+    return g
 
 
 
