@@ -1,12 +1,11 @@
-# graph
+# graph-theory
 [![Build Status](https://travis-ci.org/root-11/graph-theory.svg?branch=master)](https://travis-ci.org/root-11/graph-theory)
 [![Code coverage](https://codecov.io/gh/root-11/graph-theory/branch/master/graph/badge.svg)](https://codecov.io/gh/root-11/graph-theory)
-
 
 A simple graph library...<br>
 *... A bit like networkx, just without the overhead...*<br> 
 *... similar to graph-tool, without the Python 2.7 legacy...*<br>
-
+*... with code that you can explain to your boss..."*<br>
 
 ---------------------------
 Install:
