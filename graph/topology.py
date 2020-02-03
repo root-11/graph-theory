@@ -116,7 +116,8 @@ def has_cycles(graph):
     for n1, n2, d in graph.edges():
         if n1 == n2:
             return True
-        if graph.depth_first_search(start=n2, end=n1):
+        d, p = graph.breadth_first_search(start=n2, end=n1)
+        if p:
             return True
     return False
 
@@ -195,8 +196,6 @@ def phase_lines(graph):
     seen = set()
     while q:
         n = q.pop(0)
-        if n in seen:
-            continue  # the graph is cyclic.
         seen.add(n)
         q_set.remove(n)
         level = phases[n]
