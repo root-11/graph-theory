@@ -185,13 +185,14 @@ def network_size(graph, n1, degrees_of_separation=None):
     return network
 
 
-def phase_lines(graph):
+def phase_lines(graph, check_if_cyclic=True):
     """ Determines the phase lines of a directed graph.
     :param graph: Graph
     :return: dictionary with node id : phase in cut.
     """
-    if graph.has_cycles():
-        raise AttributeError('phaselines on a cyclic graph will run forever.')
+    if check_if_cyclic:
+        if graph.has_cycles():
+            raise AttributeError('phaselines on a cyclic graph will run forever.')
 
     phases = {n: 0 for n in graph.nodes()}
     q = graph.nodes(in_degree=0)
