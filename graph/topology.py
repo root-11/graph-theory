@@ -190,6 +190,9 @@ def phase_lines(graph):
     :param graph: Graph
     :return: dictionary with node id : phase in cut.
     """
+    if graph.has_cycles():
+        raise AttributeError('phaselines on a cyclic graph will run forever.')
+
     phases = {n: 0 for n in graph.nodes()}
     q = graph.nodes(in_degree=0)
     q_set = set(q)
