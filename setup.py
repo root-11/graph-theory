@@ -1,7 +1,7 @@
 """
 graph-theory
 """
-build_tag = "e87006d966d3421f0c5bafa6a27aae6d1091e9915f1b9fd699586bfff7ac71a5"
+build_tag = "a164a7b89a80c589349910a37967329597bc653ebf4217d7a519a6b2bcb02783"
 from setuptools import setup
 from pathlib import Path
 
@@ -27,7 +27,7 @@ keywords.sort(key=lambda x: x.lower())
 
 setup(
     name="graph-theory",
-    version="2020.2.3.45572",
+    version="2020.2.3.48877",
     url="https://github.com/root-11/graph-theory",
     license="MIT",
     author="Bjorn Madsen",
@@ -40,7 +40,7 @@ setup(
     include_package_data=True,
     data_files=[(".", ["LICENSE", "README.md"])],
     platforms="any",
-    install_requires=[],
+    install_requires=["matplotlib>=3.1"],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Science/Research",
