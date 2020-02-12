@@ -106,3 +106,11 @@ and computer science problems, which are made simple when treated as a graph.
 | knapsack_problem.py | knapsack problem | solves the knapsack problem |
 | wtap.py | weapons-target assignment problem | solves the WTAP problem. | 
 
+Credits:
+
+- Peter Norvig for inspiration on TSP for pytudes.
+- Harry Darby & Hartmut Mause for the mountain river map.
+
+
+
+
