@@ -1,3 +1,4 @@
+from functools import lru_cache
 
 
 class BasicGraph(object):
@@ -279,4 +280,22 @@ class BasicGraph(object):
     def to_list(self):
         """ returns list of edges and nodes."""
         return self.edges() + [(i,) for i in self.nodes()]
+
+    @lru_cache(maxsize=128)
+    def is_connected(self, n1, n2):
+        """ helper determining if two nodes are connected using BFS. """
+        q = [n1]
+        visited = set()
+        while q:
+            n = q.pop(0)
+            if n not in visited:
+                visited.add(n)
+            for c in self.nodes(from_node=n):
+                if c == n2:
+                    return True  # <-- Exit if connected.
+                if c in visited:
+                    continue
+                else:
+                    q.append(c)
+        return False  # <-- Exit if not connected.
 

@@ -27,7 +27,7 @@ keywords.sort(key=lambda x: x.lower())
 
 setup(
     name="graph-theory",
-    version="2020.2.3.48877",
+    version="2020.2.6.35531",
     url="https://github.com/root-11/graph-theory",
     license="MIT",
     author="Bjorn Madsen",

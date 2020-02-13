@@ -147,7 +147,7 @@ class Graph(BasicGraph):
         :param: check_if_cyclic: bool: performs check to detect if graph is cyclic.
         :returns: dictionary with phase: nodes in phase
         """
-        return phase_lines(self, check_if_cyclic)
+        return phase_lines(self)
 
     def sources(self, n):
         """ Determines the DAG sources of node n """

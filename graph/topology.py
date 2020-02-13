@@ -1,5 +1,5 @@
 from graph import BasicGraph
-
+from collections import defaultdict
 
 def subgraph(graph, nodes):
     """ Creates a subgraph as a copy from the graph
@@ -185,31 +185,35 @@ def network_size(graph, n1, degrees_of_separation=None):
     return network
 
 
-def phase_lines(graph, check_if_cyclic=True):
+def phase_lines(graph):
     """ Determines the phase lines of a directed graph.
     :param graph: Graph
     :return: dictionary with node id : phase in cut.
     """
-    if check_if_cyclic:
-        if graph.has_cycles():
-            raise AttributeError('phaselines on a cyclic graph will run forever.')
-
     phases = {n: 0 for n in graph.nodes()}
-    q = graph.nodes(in_degree=0)
-    q_set = set(q)
-    seen = set()
-    while q:
-        n = q.pop(0)
-        seen.add(n)
-        q_set.remove(n)
-        level = phases[n]
-        children = graph.nodes(from_node=n)
-        for c in children:
-            if phases[c] <= level:
-                phases[c] = level + 1
-            if c not in q_set:
-                q.append(c)
-                q_set.add(c)
+    sinks = {n: set() for n in phases}  # sinks[e] = {s1,s2}
+    for s, e, d in graph.edges():
+        sinks[e].add(s)
+
+    level = 0
+    while sinks:
+        sources = [e for e in sinks if not sinks[e]]  # these nodes have in_degree=0
+        if not sources:
+            raise AttributeError("The graph does not have any sinks.")
+        for s in sources:
+            phases[s] = level  # let's update the phase value
+            del sinks[s]  # and let's remove their sink entry.
+            # and remove their set item from the sinks dict
+            for e in graph.nodes(from_node=s):
+                if e not in sinks:
+                    continue
+                sinks[e].discard(s)
+                # but also check if their descendants are loops.
+                for s2 in list(sinks[e]):
+                    if graph.is_connected(e, s2):
+                        sinks[e].discard(s2)
+        level += 1
+
     return phases
 
 

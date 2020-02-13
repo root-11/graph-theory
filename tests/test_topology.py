@@ -96,7 +96,7 @@ def test_phase_lines_with_loop():
     g = graph02()
     g.add_edge(9, 1)
     try:
-        _ = g.phase_lines(check_if_cyclic=False)
+        _ = g.phase_lines()
         raise AssertionError("The graph is a cycle.")
     except AttributeError:
         assert True
@@ -105,7 +105,7 @@ def test_phase_lines_with_loop():
 def test_phase_lines_with_inner_loop():
     g = graph02()
     g.add_edge(9, 2)
-    p = g.phase_lines(check_if_cyclic=False)
+    p = g.phase_lines()
     expected = {1: 0,
                 2: 1, 4: 1,
                 3: 2,  5: 2, 7: 2,
@@ -117,7 +117,7 @@ def test_phase_lines_with_inner_loop():
 def test_phase_lines_with_inner_loop2():
     g = graph02()
     g.add_edge(3, 2)
-    p = g.phase_lines(check_if_cyclic=False)
+    p = g.phase_lines()
     expected = {1: 0,
                 2: 1, 4: 1,
                 3: 2,  5: 2, 7: 2,
@@ -130,7 +130,7 @@ def test_phase_lines_with_inner_loop3():
     g = graph02()
     g.add_edge(9, 10)
     g.add_edge(10, 5)
-    p = g.phase_lines(check_if_cyclic=False)
+    p = g.phase_lines()
     expected = {1: 0,
                 2: 1, 4: 1,
                 3: 2,  5: 2, 7: 2,
@@ -171,14 +171,7 @@ def test_offset_phase_lines():
         ('b', 6, 1)
     ])
     p = g.phase_lines(check_if_cyclic=False)
-    expected = {
-        1: 0, 'a': 0,
-        2: 1, 'b': 1,
-        3: 2, 4: 3, 5: 4, 6: 5, 7: 6
-    }
-    bad_output = {1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 2, 7: 3, 'a': 0, 'b': 1}
-    if p == bad_output:
-        raise AssertionError("node 6 and 7 are wrong.")
+    expected = {1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 2, 7: 3, 'a': 0, 'b': 1}
     assert p == expected, {(k, v) for k, v in p.items()} - {(k, v) for k, v in expected.items()}
 
 
@@ -226,26 +219,37 @@ def test_phaselines_for_ordering():
         save
 
     """
-    L = [('u1', 2, 1), (2, 1, 1), (1, 'csg', 1), ('csg', 4, 1), (4, 3, 1), (3, 'op1', 1), ('op1', 6, 1), (6, 5, 1),
-         (5, 'op2', 1), ('op2', 8, 1), (8, 7, 1), (7, 'cs1', 1), ('cs1', 10, 1), (10, 9, 1), (9, 'map1', 1),
-         ('map1', 12, 1), (12, 11, 1), (11, 'save', 1), ('u2', 14, 1), (14, 13, 1), (13, 'append', 1),
-         ('append', 17, 1), ('u3', 15, 1), (15, 13, 1), (17, 16, 1), (16, 'op3', 1), ('op3', 19, 1), (19, 18, 1),
-         (18, 'cs2', 1), ('cs2', 23, 1), ('u4', 21, 1), (21, 20, 1), (20, 'cs3', 1), ('cs3', 25, 1), (23, 22, 1),
-         (22, 'join', 1), ('join', 27, 1), (25, 24, 1), (24, 'join', 1), (27, 26, 1), (26, 'map2', 1), ('map2', 28, 1),
-         (28, 11, 1), ('u1',), ('csg',), ('op1',), ('op2',), ('cs1',), ('map1',), ('save',), ('u2',), ('u3',),
-         ('append',), ('op3',), ('cs2',), ('u4',), ('cs3',), ('join',), ('map2',), (2,), (1,), (4,), (3,), (6,), (5,),
-         (8,), (7,), (10,), (9,), (12,), (11,), (14,), (13,), (15,), (17,), (16,), (19,), (18,), (21,), (20,), (23,),
-         (22,), (25,), (24,), (27,), (26,), (28,)]
+    L = [
+        ('u1', 'csg', 1),
+        ('csg', 'op1', 1),
+        ('op1', 'op2', 1),
+        ('op2', 'cs1', 1),
+        ('cs1', 'map1', 1),
+        ('map1', 'save', 1),
+        ('u4', 'cs3', 1),
+        ('cs3', 'join', 1),
+        ('join', 'map2', 1),
+        ('map2', 'save', 1),
+        ('u2', 'append', 1),
+        ('u3', 'append', 1),
+        ('append', 'op3', 1),
+        ('op3', 'cs2', 1),
+        ('cs2', 'join', 1)
+    ]
+
     g = Graph(from_list=L)
 
     p = g.phase_lines()
 
-    expected = {'u1': 0, 'csg': 3, 'op1': 6, 'op2': 9, 'cs1': 12, 'map1': 15, 'save': 18, 'u2': 0, 'u3': 0, 'append': 3,
-                'op3': 6, 'cs2': 9, 'u4': 0, 'cs3': 3, 'join': 12, 'map2': 15, 2: 1, 1: 2, 4: 4, 3: 5, 6: 7, 5: 8,
-                8: 10, 7: 11, 10: 13, 9: 14, 12: 16, 11: 17, 14: 1, 13: 2, 15: 1, 17: 4, 16: 5, 19: 7, 18: 8, 21: 1,
-                20: 2, 23: 10, 22: 11, 25: 4, 24: 5, 27: 13, 26: 14, 28: 16}
+    expected = {'u1': 0, 'u4': 0, 'u2': 0, 'u3': 0,
+                'csg': 1, 'cs3': 1, 'append': 1,
+                'op1': 2, 'op3': 2,
+                'op2': 3, 'cs2': 3,
+                'cs1': 4, 'join': 4,
+                'map1': 5, 'map2': 5,
+                'save': 6, }
 
-    assert p == expected
+    assert p == expected, {(k, v) for k, v in p.items()} - {(k, v) for k, v in expected.items()}
 
 
 def test_phaselines_for_larger_graph():
@@ -262,11 +266,11 @@ def test_phaselines_for_larger_graph():
     assert end - start < 1  # second.
 
     # third objective: efficiency.
-    max_calls = 4000
+    max_calls = 2500
 
     profiled_phaseline_func = profileit(phase_lines)
 
-    calls, text = profiled_phaseline_func(g, False)
+    calls, text = profiled_phaseline_func(g)
     if calls > max_calls:
         raise Exception(f"too many function calls: {text}")
 
