@@ -142,7 +142,7 @@ class Graph(BasicGraph):
         """
         return network_size(self, n1, degrees_of_separation)
 
-    def phase_lines(self, check_if_cyclic=True):
+    def phase_lines(self):
         """ Determines the phase lines (cuts) of the graph
         :param: check_if_cyclic: bool: performs check to detect if graph is cyclic.
         :returns: dictionary with phase: nodes in phase

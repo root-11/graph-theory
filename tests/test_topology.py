@@ -170,7 +170,7 @@ def test_offset_phase_lines():
         ('a', 'b', 1),
         ('b', 6, 1)
     ])
-    p = g.phase_lines(check_if_cyclic=False)
+    p = g.phase_lines()
     expected = {1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 2, 7: 3, 'a': 0, 'b': 1}
     assert p == expected, {(k, v) for k, v in p.items()} - {(k, v) for k, v in expected.items()}
 
