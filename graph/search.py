@@ -74,7 +74,7 @@ def breadth_first_search(graph, start, end):
                     v, path = path[0], path[1]
                     L.append(v)
                 L.reverse()
-                return cost, L
+                return cost, L  # <-- exit if end is found.
 
             for dist, v2 in g.get(v1, ()):
                 if v2 in visited:
@@ -84,7 +84,7 @@ def breadth_first_search(graph, start, end):
                 if prev is None or next_node < prev:
                     mins[v2] = next_node
                     heappush(q, (next_node, v2, path))
-    return float("inf"), []
+    return float("inf"), []  # <-- exit if end is not found.
 
 
 def depth_first_search(graph, start, end):
