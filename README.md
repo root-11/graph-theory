@@ -32,11 +32,13 @@ Modules:
 | `from graph.assignment_problem import ...` | solvers for assignment problem, the Weapons-Target Assignment Problem, ... |
 | `from graph.hash import ...` | graph hash functions: graph hash, merkle tree, flow graph hash | 
 | `from graph.random import ...` | graph generators for random, 2D and 3D graphs. |
-| `from graph.scheduling import sp_solver` | Scheduling problem solver. |
+| `from graph.transshipment_problem import ...` | solvers for the transshipment problem |
+| `from graph.visuals import ...` | methods for creating matplotlib plots |
+
 
 All module functions are available from Graph and Graph3D (where applicable).
 
-| G | G3D | methods | returns |
+| Graph | Graph3D | methods | returns |
 |:---:|:---:|:---|:---|
 | + | + | `a in g` | assert if g contains node a |
 | + | + | `g.add_node(n, [obj])` | adds a node (with a pointer to object `obj` if given) |
@@ -90,8 +92,6 @@ All module functions are available from Graph and Graph3D (where applicable).
 | - | + | `g3d.plot()` | returns matplotlib plot of the graph. |
 
 
-
-
 ## FAQ
 
 | want to | doesn't work | do instead | but why? |
@@ -126,7 +126,4 @@ and computer science problems, which are made simple when treated as a graph.
 - Arturo Soucase for packaging and testing. 
 - Peter Norvig for inspiration on TSP for pytudes.
 - Harry Darby & Hartmut Mause for the mountain river map.
-
-
-
 
