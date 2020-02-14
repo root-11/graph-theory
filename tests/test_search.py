@@ -12,7 +12,7 @@ def test_shortest_path01():
     assert path_g == [1, 2, 4, 8], path_g
 
     h = graph04()
-    distH, pathH = h.shortest_path(1, 8)
+    distH, pathH = g.shortest_path(1, 8)
     assert pathH == [1, 2, 4, 8], pathH
     pathH = pathH[2:] + pathH[:2]
     assert path_g != pathH, (path_g, pathH)
@@ -157,11 +157,11 @@ def test_shortest_path_fail():
 
 
 def test_distance():
-    G = graph02()
+    g = graph02()
     p = [1, 2, 3, 6, 9]
-    assert G.distance_from_path(p) == len(p) - 1
+    assert g.distance_from_path(p) == 4
 
-    assert float('inf') == G.distance_from_path([1, 2, 3, 900])  # 900 doesn't exist.
+    assert float('inf') == g.distance_from_path([1, 2, 3, 900])  # 900 doesn't exist.
 
 
 def test_bfs():

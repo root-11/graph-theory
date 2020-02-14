@@ -1,5 +1,5 @@
 from math import sin, cos, isclose
-from graph.spatial_graph import Graph3D
+from graph import Graph3D
 
 
 def spiral_graph():
@@ -76,7 +76,7 @@ def test_basics():
     assert g3.nodes() == g.nodes()
     assert g3.edges() == g.edges()
 
-    g4 = g.__copy__()
+    g4 = g.copy()
     assert g4.edges() == g.edges()
 
 

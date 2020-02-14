@@ -1,7 +1,7 @@
 """
 graph-theory
 """
-build_tag = "3200272e7877e2d506d21c783b8d8909fb5dd7372338d5bdf909ca277ae4410e"
+build_tag = "6e141bc27c42e288634efe6b519a054198c5fb6e1cfbca14bdba188508db9fce"
 from setuptools import setup
 from pathlib import Path
 
@@ -27,7 +27,7 @@ keywords.sort(key=lambda x: x.lower())
 
 setup(
     name="graph-theory",
-    version="2020.2.13.54023",
+    version="2020.2.13.55534",
     url="https://github.com/root-11/graph-theory",
     license="MIT",
     author="Bjorn Madsen",

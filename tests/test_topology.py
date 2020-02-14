@@ -1,6 +1,5 @@
 import time
-from graph import Graph
-from graph.topology import phase_lines
+from graph import Graph, phase_lines
 from tests import profileit
 from tests.test_graph import graph02, graph_cycle_6, graph_cycle_5, fully_connected_4, mountain_river_map
 
@@ -266,7 +265,7 @@ def test_phaselines_for_larger_graph():
     assert end - start < 1  # second.
 
     # third objective: efficiency.
-    max_calls = 2500
+    max_calls = 10000
 
     profiled_phaseline_func = profileit(phase_lines)
 

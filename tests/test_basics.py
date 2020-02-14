@@ -192,7 +192,7 @@ def test_subgraph():
 
 def test_copy():
     g = graph05()
-    g2 = g.__copy__()
+    g2 = g.copy()
     assert set(g.edges()) == set(g2.edges())
 
 

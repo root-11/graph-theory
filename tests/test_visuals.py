@@ -1,7 +1,6 @@
 from graph.random import random_xy_graph, xy_distance
-from graph.search import tsp
 from graph.visuals import plot_2d
-from graph import Graph
+from graph import Graph, tsp
 from tests.test_spatial_graph import spiral_graph, fishbone_graph
 
 

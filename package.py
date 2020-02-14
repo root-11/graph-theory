@@ -3,6 +3,10 @@ from datetime import datetime
 import subprocess
 import hashlib
 
+# -------------------------------------------
+# This script packages Graph-theory for pypi
+# -------------------------------------------
+
 folder = Path(__file__).parent
 
 # Step 1. find the sha256 of the files used for this build.
