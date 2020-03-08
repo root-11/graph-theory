@@ -13,16 +13,11 @@ folder = Path(__file__).parent
 packages = [
     folder / 'graph' / "__init__.py",
     folder / 'graph' / "assignment_problem.py",
-    folder / 'graph' / "flow_problem.py",
-    folder / 'graph' / "graphs.py",
+    folder / 'graph' / "finite_state_machine.py",
     folder / 'graph' / "hash.py",
     folder / 'graph' / "random.py",
     # folder / 'graph' / "routing.py",
     # folder / 'graph' / "scheduling_problem.py",
-    folder / 'graph' / "search.py",
-    folder / 'graph' / "spatial_graph.py",
-    folder / 'graph' / "topology.py",
-    folder / 'graph' / "transform.py",
     folder / 'graph' / "transshipment_problem.py",
     folder / 'graph' / "visuals.py",
     folder / 'LICENSE',
@@ -31,7 +26,7 @@ packages = [
 
 sha = hashlib.sha3_256()
 for package_path in packages:
-    assert package_path.exists()
+    assert package_path.exists(), str(package_path)
     with open(str(package_path), mode='rb') as fi:
         data = fi.read()
         sha.update(data)
