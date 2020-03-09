@@ -34,6 +34,7 @@ Modules:
 | `from graph.random import ...` | graph generators for random, 2D and 3D graphs. |
 | `from graph.transshipment_problem import ...` | solvers for the transshipment problem |
 | `from graph.visuals import ...` | methods for creating matplotlib plots |
+| `from graph.finite_state_machine import ...` | finite state machine |
 
 
 All module functions are available from Graph and Graph3D (where applicable).
@@ -107,6 +108,7 @@ All module functions are available from Graph and Graph3D (where applicable).
     from graph.assignment_problem import ap_solver
     from graph.assignment_problem import wtap_solver
     from graph.scheduling_problem import sp_solver
+    from graph.finite_state_machine import FiniteStateMachine
 
 
 Examples contains a number of tutorial/solutions to common operations research
