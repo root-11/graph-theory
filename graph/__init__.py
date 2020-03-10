@@ -980,21 +980,31 @@ def has_path(graph, path):
 
 
 def all_paths(graph, start, end):
-    """ Returns all paths from start to end.
+    """
     :param graph: instance of Graph
     :param start: node
     :param end: node
     :return: list of paths
     """
-    options = set(graph.nodes()) - {start, end}
-    s = list(options)
-    L = []
-    # below generates the powerset of options:
-    for combination in chain.from_iterable(combinations(s, r) for r in range(len(s) + 1)):
-        path = [start] + list(combination) + [end]
-        if has_path(graph, path):
-            L.append(path)
-    return L
+    if not graph.is_connected(start, end):
+        return []
+
+    nodes = set(graph.nodes()) - {start, end}
+    result = set()
+    while nodes:
+        n = nodes.pop()
+        p1 = graph.depth_first_search(start, n)
+        if not p1:
+            continue
+        p2 = graph.depth_first_search(n, end)
+        if not p2:
+            continue
+        trail = tuple(p1[:-1] + p2)
+        result.add(trail)
+
+    result = list(result)
+    result.sort(key=lambda x: len(x))
+    return [list(i) for i in result]
 
 
 def degree_of_separation(graph, n1, n2):
