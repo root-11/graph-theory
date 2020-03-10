@@ -230,6 +230,12 @@ def test_path_permutations03():
                      [1, 4, 7, 8, 9]], paths
 
 
+def test_path_permutations04():
+    g = Graph(from_list=[(1, 2, 1), (1, 3, 1), (2, 4, 1), (3, 4, 1)])
+    paths = g.all_paths(1, 4)
+    assert paths == [[1, 2, 4], [1, 3, 4]]
+
+
 def test_path_permutations_pmk():
     links = [(1, 2), (2, 3), (3, 4), (4, 5), (4, 6), (6, 2), (6, 7), (7, 8), (8, 9), (9, 10), (10, 2)]
     g = Graph(from_list=[(a, b, 1) for a, b in links])
