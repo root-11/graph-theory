@@ -984,22 +984,30 @@ def all_paths(graph, start, end):
     :param graph: instance of Graph
     :param start: node
     :param end: node
-    :return: list of paths
+    :return: list of paths unique from start to end.
     """
     if not graph.is_connected(start, end):
         return []
 
-    nodes = set(graph.nodes()) - {start, end}
+    edges = set(graph.edges())
     result = set()
-    while nodes:
-        n = nodes.pop()
-        p1 = graph.depth_first_search(start, n)
+    while edges:
+        s, e, d = edges.pop()
+        if (s, e) == (start, end):
+            result.add((start, end))
+        if s == start:
+            p1 = [start]
+        else:
+            p1 = graph.depth_first_search(start, s)
+        if e == end:
+            p2 = [end]
+        else:
+            p2 = graph.depth_first_search(e, end)
         if not p1:
             continue
-        p2 = graph.depth_first_search(n, end)
         if not p2:
             continue
-        trail = tuple(p1[:-1] + p2)
+        trail = tuple(p1 + p2)
         result.add(trail)
 
     result = list(result)
