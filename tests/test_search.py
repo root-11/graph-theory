@@ -215,34 +215,48 @@ def test_path_permutations02():
     g = graph02()
     paths = g.all_paths(1, 6)
     assert len(paths) == 3
-    assert paths == [[1, 2, 3, 6], [1, 2, 5, 6], [1, 4, 5, 6]]
+    expected = [[1, 2, 3, 6], [1, 2, 5, 6], [1, 4, 5, 6]]
+    assert all(i in expected for i in paths) and all(i in paths for i in expected)
 
 
 def test_path_permutations03():
     g = graph02()
     paths = g.all_paths(1, 9)
     assert len(paths) == 6
-    assert paths == [[1, 2, 3, 6, 9],
-                     [1, 2, 5, 6, 9],
-                     [1, 2, 5, 8, 9],
-                     [1, 4, 5, 6, 9],
-                     [1, 4, 5, 8, 9],
-                     [1, 4, 7, 8, 9]], paths
+    expected_result = [[1, 2, 3, 6, 9],
+                       [1, 2, 5, 6, 9],
+                       [1, 2, 5, 8, 9],
+                       [1, 4, 5, 6, 9],
+                       [1, 4, 5, 8, 9],
+                       [1, 4, 7, 8, 9]]
+    assert all(i in expected_result for i in paths) and all(i in paths for i in expected_result)
 
 
 def test_path_permutations04():
     g = Graph(from_list=[(1, 2, 1), (1, 3, 1), (2, 4, 1), (3, 4, 1)])
     paths = g.all_paths(1, 4)
-    assert paths == [[1, 2, 4], [1, 3, 4]]
+    expected = [[1, 2, 4], [1, 3, 4]]
+    assert all(i in expected for i in paths) and all(i in paths for i in expected)
 
 
 def test_path_permutations_pmk():
+    """
+    [1] --> [2] --> [3] --> [4] --> [5]
+             ^               |
+             |               v
+    [10] --> +<---- [6] <----+
+     ^               |
+     |               v
+    [9] <-- [8] <-- [7]
+
+    """
     links = [(1, 2), (2, 3), (3, 4), (4, 5), (4, 6), (6, 2), (6, 7), (7, 8), (8, 9), (9, 10), (10, 2)]
     g = Graph(from_list=[(a, b, 1) for a, b in links])
     paths = g.all_paths(start=1, end=5)
-    assert paths == [[1, 2, 3, 4, 5],
-                     [1, 2, 3, 4, 6, 2, 3, 4, 5],
-                     [1, 2, 3, 4, 6, 7, 8, 9, 10, 2, 3, 4, 5]]
+    expected = [[1, 2, 3, 4, 5],
+                [1, 2, 3, 4, 6, 2, 3, 4, 5],
+                [1, 2, 3, 4, 6, 7, 8, 9, 10, 2, 3, 4, 5]]
+    assert all(i in expected for i in paths) and all(i in paths for i in expected)
 
 
 def test_dfs():
