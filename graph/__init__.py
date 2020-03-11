@@ -401,8 +401,11 @@ def depth_first_search(graph, start, end):
     :param end: end node
     :return: path as list of nodes.
     """
-    assert start in graph, "start not in graph"
-    assert end in graph, "end not in graph"
+    if start not in graph:
+        raise ValueError(f"{start} not in graph")
+    if end not in graph:
+        raise ValueError(f"{end} not in graph")
+
     q = [start]
     path = []
     visited = set()
@@ -988,31 +991,45 @@ def all_paths(graph, start, end):
     """
     if not graph.is_connected(start, end):
         return []
-
-    edges = set(graph.edges())
-    result = set()
-    while edges:
-        s, e, d = edges.pop()
-        if (s, e) == (start, end):
-            result.add((start, end))
-        if s == start:
-            p1 = [start]
-        else:
-            p1 = graph.depth_first_search(start, s)
-        if e == end:
-            p2 = [end]
-        else:
-            p2 = graph.depth_first_search(e, end)
-        if not p1:
+    paths = [(start,)]
+    q = [start]
+    skip_list = set()
+    while q:
+        n1 = q.pop(0)
+        if n1 == end:
             continue
-        if not p2:
-            continue
-        trail = tuple(p1 + p2)
-        result.add(trail)
 
-    result = list(result)
-    result.sort(key=lambda x: len(x))
-    return [list(i) for i in result]
+        if n1 in skip_list:
+            continue
+
+        n2s = graph.nodes(from_node=n1)
+        new_paths = [p for p in paths if p[-1] == n1]
+        for n2 in n2s:
+            if n2 in skip_list:
+                continue
+            n3s = graph.nodes(from_node=n2)
+            if len(n3s) > 1 and graph.is_connected(n2, n1):
+                # it's a fork and it's a part of a loop!
+                # is the sequence n2,n3 already in the path?
+                for n3 in n3s:
+                    for path in new_paths:
+                        a = [n2, n3]
+                        if any(all(path[i+j] == a[j] for j in range(len(a))) for i in range(len(path))):
+                            skip_list.add(n3)
+
+            for path in new_paths:
+                if path in paths:
+                    paths.remove(path)
+
+                new_path = path + (n2,)
+                if new_path not in paths:
+                    paths.append(new_path)
+
+            if n2 not in q:
+                q.append(n2)
+
+    paths = [list(p) for p in paths if p[-1] == end]
+    return paths
 
 
 def degree_of_separation(graph, n1, n2):
