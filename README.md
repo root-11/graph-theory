@@ -95,7 +95,7 @@ All module functions are available from Graph and Graph3D (where applicable).
 
 ## FAQ
 
-| want to | doesn't work | do instead | but why? |
+| want to... | doesn't work... | do instead... | ...but why? |
 |:---|:---|:---|:---|
 | have multiple edges between two nodes | `Graph(from_list=[(1,2,3), (1,2,4)]` | Add dummy nodes<br>`[(1,a,3), (a,2,0),`<br>` (1,b,4),(b,2,0)]` | Explicit is better than implicit. |
 | multiple values on an edge | `g.add_edge(1,2,{'a':3, 'b':4})` | Have two graphs<br>`g_a.add_edge(1,2,3)`<br>`g_b.add_edge(1,2,4)` | Most graph algorithms don't work with multiple values |   
@@ -126,6 +126,6 @@ and computer science problems, which are made simple when treated as a graph.
 ## Credits:
 
 - Arturo Soucase for packaging and testing. 
-- Peter Norvig for inspiration on TSP for pytudes.
-- Harry Darby & Hartmut Mause for the mountain river map.
+- Peter Norvig for inspiration on TSP from [pytudes](https://github.com/norvig/pytudes/blob/master/ipynb/TSP.ipynb).
+- Harry Darby for the mountain river map.
 
