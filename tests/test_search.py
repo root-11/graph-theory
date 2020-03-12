@@ -1,6 +1,6 @@
 import random
 import time
-from itertools import combinations
+from itertools import combinations, permutations
 
 from graph import Graph
 from tests.test_graph import graph02, graph03, graph04, graph05, graph_cycle_5
@@ -204,14 +204,32 @@ def test_shortest_tree_all_pairs02():
     assert p == [1, 2, 3]
 
 
-def test_path_permutations01():
+def test_all_paths_no_path():
+    """
+    [1] --> [2]    [3] --> [4]
+    """
+    g = Graph(from_list=[(1,2,1), (3,4,1)])
+    paths = g.all_paths(1, 4)
+    assert paths == []
+
+
+def test_all_paths_start_is_end():
+    g = graph02()
+    try:
+        g.all_paths(2, 2)
+        raise AssertionError("a value error should have been raised.")
+    except ValueError:
+        pass
+
+
+def test_all_paths01():
     g = graph02()
     paths = g.all_paths(1, 3)
     assert len(paths) == 1, paths
     assert paths[0] == [1, 2, 3]
 
 
-def test_path_permutations02():
+def test_all_paths02():
     g = graph02()
     paths = g.all_paths(1, 6)
     assert len(paths) == 3
@@ -219,7 +237,7 @@ def test_path_permutations02():
     assert all(i in expected for i in paths) and all(i in paths for i in expected)
 
 
-def test_path_permutations03():
+def test_all_paths03():
     g = graph02()
     paths = g.all_paths(1, 9)
     assert len(paths) == 6
@@ -232,14 +250,14 @@ def test_path_permutations03():
     assert all(i in expected_result for i in paths) and all(i in paths for i in expected_result)
 
 
-def test_path_permutations04():
+def test_all_paths04():
     g = Graph(from_list=[(1, 2, 1), (1, 3, 1), (2, 4, 1), (3, 4, 1)])
     paths = g.all_paths(1, 4)
     expected = [[1, 2, 4], [1, 3, 4]]
     assert all(i in expected for i in paths) and all(i in paths for i in expected)
 
 
-def test_path_permutations_pmk():
+def test_all_paths05():
     """
     [1] --> [2] --> [3] --> [4] --> [5]
              ^               |
@@ -259,6 +277,15 @@ def test_path_permutations_pmk():
     assert all(i in expected for i in paths) and all(i in paths for i in expected)
 
 
+def test_all_paths06():
+    links = [(1, 2), (2, 3), (3, 4), (4, 5), (4, 6), (6, 2), (6, 7), (7, 8), (8, 9), (9, 10), (10, 2)]
+    g = Graph(from_list=[(a, b, 1) for a, b in links])
+    for comb in permutations(list(range(1, 11)), 2):
+        start, end = comb
+        _ = g.all_paths(start, end)
+    assert True, "All permutations of start and end passed."
+
+
 def test_dfs():
     links = [
         (1, 2, 0),
@@ -268,6 +295,18 @@ def test_dfs():
         (3, 4, 0)
     ]
     g = Graph(from_list=links)
+    try:
+        g.depth_first_search(0,2)
+        assert False, "node 0 is not in g"
+    except ValueError:
+        pass
+
+    try:
+        g.depth_first_search(1,99)
+        assert False, "node 99 is not in g"
+    except ValueError:
+        pass
+
     path = g.depth_first_search(1, 4)
     assert g.has_path(path)
 
