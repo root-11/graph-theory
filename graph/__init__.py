@@ -1,7 +1,7 @@
 from collections import defaultdict
 from functools import lru_cache
 from heapq import heappop, heappush
-from itertools import combinations, chain
+from itertools import combinations
 
 from graph.visuals import plot_3d
 
@@ -989,6 +989,8 @@ def all_paths(graph, start, end):
     :param end: node
     :return: list of paths unique from start to end.
     """
+    if start == end:
+        raise ValueError("start is end")
     if not graph.is_connected(start, end):
         return []
     paths = [(start,)]
@@ -997,9 +999,6 @@ def all_paths(graph, start, end):
     while q:
         n1 = q.pop(0)
         if n1 == end:
-            continue
-
-        if n1 in skip_list:
             continue
 
         n2s = graph.nodes(from_node=n1)
