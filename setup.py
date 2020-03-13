@@ -1,7 +1,7 @@
 """
 graph-theory
 """
-build_tag = "6e141bc27c42e288634efe6b519a054198c5fb6e1cfbca14bdba188508db9fce"
+build_tag = "8fae9d1b55c40ec3e2d733d547ed66ca1990bfb6dd5007f141610718eb6097cc"
 from setuptools import setup
 from pathlib import Path
 
@@ -19,7 +19,7 @@ keywords = list({
     'graph-generation', 'graph-theory', 'graph-visualization', 'graphs', 'math', 'Mathematics', 'maths',
     'minimum-spanning-trees', 'network', 'Networks', 'optimization', 'python', 'shortest-path', 'tsp', 'tsp-solver',
     'assignment problem', 'flow-problem', 'hash', 'graph-hash', 'random graph', 'search', 'cycle', 'path',
-    'component', 'components', 'adjacency', 'matrix', 'all pairs shortest path'
+    'component', 'components', 'adjacency', 'matrix', 'all pairs shortest path', 'finite state machine', 'fsm'
 })
 
 keywords.sort(key=lambda x: x.lower())
@@ -27,7 +27,7 @@ keywords.sort(key=lambda x: x.lower())
 
 setup(
     name="graph-theory",
-    version="2020.2.13.55534",
+    version="2020.3.12.46947",
     url="https://github.com/root-11/graph-theory",
     license="MIT",
     author="Bjorn Madsen",
@@ -40,7 +40,7 @@ setup(
     include_package_data=True,
     data_files=[(".", ["LICENSE", "README.md"])],
     platforms="any",
-    install_requires=["matplotlib>=3.1"],
+    install_requires=[],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Science/Research",

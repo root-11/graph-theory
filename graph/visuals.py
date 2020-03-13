@@ -1,7 +1,20 @@
-from matplotlib import pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D  # import required by matplotlib.
+try:
+    from matplotlib import pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D  # import required by matplotlib.
+    visuals_enabled = True
+except ImportError:
+    visuals_enabled = False
 
 
+def visualise(func):
+    def wrapper(*args, **kwargs):
+        if not visuals_enabled:
+            raise ImportError("visualise is not available unless matplotlib is installed")
+        return func(*args, **kwargs)
+    return wrapper
+
+
+@visualise
 def plot_2d(graph, nodes=True, edges=True):
     """
     :param graph: instance of Graph with nodes as (x,y)
@@ -61,6 +74,7 @@ def plot_2d(graph, nodes=True, edges=True):
     return plt
 
 
+@visualise
 def plot_3d(graph, nodes=True, edges=True, rotation='xyz', maintain_aspect_ratio=False):
     """ plots nodes and links using matplotlib3
     :param nodes: bool: plots nodes

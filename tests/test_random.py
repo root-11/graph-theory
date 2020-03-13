@@ -1,6 +1,6 @@
 from graph import Graph, tsp
 from graph.random import random_xy_graph, xy_distance
-from graph.visuals import plot_2d
+from graph.visuals import plot_2d, visuals_enabled
 
 
 def graph07():
@@ -67,6 +67,8 @@ def test_random_graph_3():
     g.add_edge(a, b, xy_distance(a, b))
 
     # add a red diamond for the starting point.
+    if not visuals_enabled:
+        return
     plt = plot_2d(g)
     start = tour[0:1]
     xs, ys = [c[0] for c in start], [c[1] for c in start]
