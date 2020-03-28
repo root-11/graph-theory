@@ -142,6 +142,9 @@ def wtap_solver(probabilities, weapons, target_values):
     assert isinstance(probabilities, Graph)
     assert isinstance(weapons, list)
     assert isinstance(target_values, dict)
+    id_overlap = set(weapons).intersection(set(target_values))
+    if id_overlap:
+        raise ValueError(f"weapon ids in target_values for {id_overlap}")
 
     assignments = Graph()
     current_target_values = sum(target_values.values()) + 1
