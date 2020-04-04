@@ -13,7 +13,7 @@ class NullTask(object):
 class Task(object):
     _ids = count()
 
-    def __init__(self, requires, client=None, earliest_start=None, latest_finish=None,
+    def __init__(self, requires, client=None, supplier=None, earliest_start=None, latest_finish=None,
                  latest_start=None, earliest_finish=None, duration=None, cost=None):
         """
         :param requires: multiple types:
@@ -37,6 +37,11 @@ class Task(object):
             self.client = client
         else:
             raise TypeError(f"expected client to be int, not {type(client)}")
+
+        if supplier is None or isinstance(supplier, int):
+            self.supplier = supplier
+        else:
+            raise TypeError(f"expected supplier to be int, not {type(client)}")
 
         self.earliest_start = earliest_start
         self.earliest_finish = earliest_finish
@@ -162,7 +167,7 @@ class Resource(object):
         self.id = next(self._ids)
         self.new_tasks = []  # new tasks
         self.tasks = []  # known tasks
-        self.supply = []  # new tasks to suppliers
+        self.supply = {}  # task = [list of tasks given to suppliers]
         self.processes = []
         self._rdn = None
 
@@ -241,6 +246,7 @@ class Resource(object):
 
     def suppliers(self, task):
         """ returns list of suppliers who can support the task. """
+        assert isinstance(task, Task)
         suppliers = []
         for nid in self._rdn.network.nodes(from_node=self.id):
             resource = self._rdn.network.node(nid)
@@ -279,21 +285,29 @@ class Resource(object):
             task = self.new_tasks.pop(0)
             assert isinstance(task, Task), type(task)
             self.tasks.append(task)
+            process = self.get_process(task)
+            assert isinstance(process, Process)
+            if not process.inputs:
+                continue  # nothing to do. supplies are not required.
+
+            self.supply[task] = []  # create empty list for adding tasks given to suppliers.
             # below:
             # if there are more customers to a supplier, it'll be ambiguous, who's ordering what.
             # Therefore we set: Task.client = self.id.
-            supply_task = Task(requires=self.supplies(task), client=self.id)
+            supply_task = Task(requires=process.inputs, client=self.id)
 
             for resource in self.suppliers(supply_task):
-                new_task = supply_task.copy()  # creates separate instance!
-                self.supply.append(new_task)  # own reference to task.
+                new_task = Task(requires=process.inputs, client=self.id, supplier=resource.id)
+                self.supply[task].append(new_task)  # own reference to task.
                 resource.add_task(new_task)  # adding task suppliers inbox.
+            return  # as this resource created tasks, it will have to wait for reply from suppliers
 
-        if not all(t for t in self.supply):
-            return  # resource is waiting for information from suppliers.
+        for supply_task, supplier_list in self.supply.items():
+            if any(not t for t in supplier_list):
+                return  # resource is waiting for information from suppliers.
 
         # as self.supply contains all scheduled supply tasks, it is possible to iterate through own
-        # tasks and detertime the best supply option without having to find the supplier.
+        # tasks and determine the best supply option without having to find the supplier.
         # -- some kind of match(self.tasks, self.supply)
 
         # PS> remember to cancel duplicate tasks for stuff that isn't needed.
@@ -301,9 +315,10 @@ class Resource(object):
         # 2. check / determine schedule.
 
         # to minimise total idle time, sort tasks by (runtime, name)
-        assert all(isinstance(t, Task) for t in self.tasks)  # this is disable with python -OO
+        assert all(isinstance(t, Task) for t in self.tasks)  # this is disabled with python -OO
         tasks = [(t.runtime, t.name, t) for t in self.tasks]
-        # runtime to minimise initial waiting time, and, name to assure that task of same name come out together.
+        # `runtime` to minimise initial waiting time, and,
+        # `name` to assure that task of same name come out together so c/o time can be exploited.
         tasks.sort()  # ascending!
         self.tasks = [t for r, n, t in tasks]
 
@@ -317,13 +332,23 @@ class Resource(object):
             if previous_task == task:  # handling change_over time instead of shutdown time if the tasks are the same.
                 previous_task.scheduled_finish += (process.change_over_time - process.shutdown_time)
 
-            if not process.inputs:
-                task.scheduled_start = previous_task.scheduled_finish
+            if process.inputs:  # pick best matching supply time.
+                supply_times = [(t.scheduled_finish, t) for t in self.supply[task]]
+                supply_times.sort()
+                supply_times = [t for _, t in supply_times]
+
+                fas = supply_times[0]  # pick first available supply
+                for t in supply_times[1:]:  # cancel all other tasks
+                    resource = self._rdn.network.node(node_id=t.supplier)
+                    assert isinstance(resource, Resource)
+                    resource.remove_task(t)
+                    resource.notify()
+
+                start_time = max(previous_task.scheduled_finish, fas.scheduled_finish)
             else:
-                supply_time = self.supply # list of supply with multiple tasks present.
+                start_time = previous_task.scheduled_finish
 
-
-
+            task.scheduled_start = start_time
 
             if previous_task == task:
                 steps = [task.scheduled_start, process.run_time, process.shutdown_time]
@@ -331,17 +356,10 @@ class Resource(object):
                 steps = [task.scheduled_start, process.setup_time, process.run_time, process.shutdown_time]
             task.scheduled_finish = sum(steps)
 
-            # ready to loop.
+            # get ready to loop.
             previous_task = task
 
         # at this point, the tasks are all scheduled with start and finish times.
-
-
-
-
-
-            finish = start + process.run_time
-
 
         # check if there's any idle time.
         # notify customer.
