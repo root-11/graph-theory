@@ -9,7 +9,7 @@ def profileit(func):
     >>> def this(var1, var2):
             # do something
 
-    >>> new_this = count_calls(this)
+    >>> new_this = profileit(this)
     >>> calls, cprofile_text = new_this(var1=1,var2=2)
     """
     def wrapper(*args, **kwargs):
