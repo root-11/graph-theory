@@ -1083,6 +1083,14 @@ class Graph(BasicGraph):
         """
         return depth_first_search(graph=self, start=start, end=end)
 
+    def dfs_visit(self, start, visitor):
+        """
+        Given a starting node, visits all descendants of that node
+        :param start: start node
+        :param visitor: function which takes a node and returns True if children of that node should be visited
+        """
+        pass
+
     def distance_from_path(self, path):
         """
         :param path: list of nodes
