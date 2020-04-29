@@ -3,7 +3,7 @@ import time
 from itertools import combinations, permutations
 
 from graph import Graph
-from tests.test_graph import graph02, graph03, graph04, graph05, graph_cycle_5
+from tests.test_graph import graph02, graph03, graph04, graph05
 
 
 def test_shortest_path01():
@@ -347,6 +347,32 @@ def test_dfs_03():
     path = g.depth_first_search(0, 10)
     assert path == [0, 2, 3, 9, 10]
     assert g.has_path(path)
+
+
+def test_dfs_04():
+    links = [
+        (1, 2, 0),
+        (1, 3, 0),
+        (3, 5, 0),
+        (2, 4, 0),
+        (5, 6, 0),
+    ]
+    g = Graph(from_list=links)
+
+    visited = set()
+
+    def visit_node(node) -> bool:
+        visited.add(node)
+        return node != 2
+
+    g.dfs_visit(1, visit_node)
+    assert len(visited) == 5
+    assert 1 in visited
+    assert 2 in visited
+    assert 3 in visited
+    assert 5 in visited
+    assert 6 in visited
+    assert 4 not in visited
 
 
 def test_degree_of_separation():
