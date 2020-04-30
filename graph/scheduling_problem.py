@@ -2,6 +2,9 @@ from graph import Graph
 from itertools import count
 
 
+__all__ = ["SchedulingError", "Task", "Resource", "Process", "ResourceDemandNetwork"]
+
+
 class SchedulingError(ValueError):
     pass
 
@@ -52,6 +55,7 @@ class Task(object):
 
         self.scheduled_start = None
         self.scheduled_finish = None
+        self.idle_time = 0
 
         self.id = next(self._ids)
 
@@ -131,7 +135,7 @@ class Process(object):
             if not isinstance(i, (int, float)):
                 raise TypeError(f"{i.__name__} is {type(i)}. Expected float or int")
 
-        # The values below are set by the resource.
+        # override these with @property if a function is to be used.
         self.setup_time = setup_time
         self.run_time = run_time
         self.shutdown_time = shutdown_time
@@ -170,6 +174,7 @@ class Resource(object):
         self.supply = {}  # task = [list of tasks given to suppliers]
         self.processes = []
         self._rdn = None
+        self.idle_time = 0
 
     def __str__(self):
         return f"{self.__class__.__name__}({self.id})"
@@ -191,6 +196,7 @@ class Resource(object):
         self._rdn = value
 
     def add_task(self, task):
+        """ adds a task to the resource. """
         assert isinstance(task, Task)
         if self._rdn is None:
             raise ValueError(f"{self} has not been added to the RDN. Do this first.")
@@ -200,23 +206,53 @@ class Resource(object):
         self._rdn.notify(r_id=self.id)
 
     def remove_task(self, task):
+        """ removes a task from the resource. """
         assert isinstance(task, Task)
         if task in self.tasks:
             self.tasks.remove(task)
+
         if task in self.new_tasks:
             self.new_tasks.remove(task)
 
+        if task in self.supply:
+            supply_tasks = self.supply[task]
+            for supply_task in supply_tasks:
+                resource = self._rdn.network.node(task.supplier)
+                resource.remove_task(supply_task)
+                self._rdn.notify(r_id=task.supplier)
+
     def add_process(self, proc):
+        """ adds a process to the resource. """
         assert isinstance(proc, Process)
         self.processes.append(proc)
 
+    def finish_time(self):
+        """ returns the make span of the tasks. """
+        if not self.tasks:
+            return 0
+        return max(t.scheduled_finish for t in self.tasks)
+
+    def perfect_schedule(self):
+        """ returns True if there's no idle time. """
+        if not self.tasks:
+            return True
+        if self.idle_time == 0:
+            return True
+        return False
+
+    def task_sequence(self):
+        """ returns a tuple of tasks """
+        return tuple((t for t in self.tasks))
+
     def supplies(self, task):
+        """ returns the supplies required for a task. """
         for p in self.processes:
             if p == task:
                 return p.inputs
         raise ValueError(f"{self} does not support {task}")
 
     def get_process(self, task):
+        """ finds the Process that is required by a task. """
         for p in self.processes:
             if p == task:
                 return p
@@ -256,31 +292,27 @@ class Resource(object):
         return suppliers
 
     def schedule(self):
-        """ calculates the schedule. Stores the schedule in self.tasks
-
-        1. discover tasks:
-            tasks are in self.mq
-            for each new task:
-                find supply requirements (proc.output requires proc.input)
-                find suppliers
-                for each supplier:
-                    create a new (supply) task as: Task(requires=supply, required_by=self.id)
-                    add task to supplier (which automatically notifies)
-                    notify via supplier.notify()
-
-        2. determine better schedule (if all supply tasks are scheduled for delivery):
-        sort tasks by arrival (as we hold no inventory)
-
-        3. detect idle-time, lateness, ...
-        remove any duplicate tasks (and ping suppliers to update delivery times).
-
-        notify client of change in delivery times.
-
-        """
+        """ calculates the schedule. Stores the schedule in self.tasks """
         if not isinstance(self._rdn, ResourceDemandNetwork):
             raise AttributeError(f"Use ResourceDemandNetwork.add_resource({self}) first.")
+        if self._awaiting_supply_schedule():
+            return
+        self._determine_schedule()
+        self._lookup_for_improvements()
 
-        # 1. discover tasks
+    def _awaiting_supply_schedule(self):
+        """ helper for self.schedule.
+
+        Process:
+        tasks are in self.mq
+        for each new task:
+            find supply requirements (proc.output requires proc.input)
+            find suppliers
+            for each supplier:
+                create a new (supply) task as: Task(requires=supply, required_by=self.id)
+                add task to supplier (which automatically notifies)
+                notify via supplier.notify()
+        """
         while self.new_tasks:
             task = self.new_tasks.pop(0)
             assert isinstance(task, Task), type(task)
@@ -288,7 +320,7 @@ class Resource(object):
             process = self.get_process(task)
             assert isinstance(process, Process)
             if not process.inputs:
-                continue  # nothing to do. supplies are not required.
+                continue  # nothing to do. Supplies are not required.
 
             self.supply[task] = []  # create empty list for adding tasks given to suppliers.
             # below:
@@ -300,30 +332,33 @@ class Resource(object):
                 new_task = Task(requires=process.inputs, client=self.id, supplier=resource.id)
                 self.supply[task].append(new_task)  # own reference to task.
                 resource.add_task(new_task)  # adding task suppliers inbox.
-            return  # as this resource created tasks, it will have to wait for reply from suppliers
+
+            return True  # as this resource created tasks, it will have to wait for reply from suppliers
+
+        if not self.supply:  # then there are no sources.
+            # first sort tasks by (runtime, name) to minimise total idle time.
+            assert all(isinstance(t, Task) for t in self.tasks)  # this is disabled with python -OO
+            self.tasks.sort(key=lambda t: (t.runtime, t.name, t.id))
+            # sort ascending so that earliest start is first!
+            # `runtime` to minimise initial waiting time, and,
+            # `name` to assure that task of same name come out together so c/o time can be exploited.
+            # `id` to assure non-randomness.
+            return False
 
         for supply_task, supplier_list in self.supply.items():
             if any(not t for t in supplier_list):
-                return  # resource is waiting for information from suppliers.
+                return True  # resource is waiting for information from suppliers.
+        return False
 
-        # as self.supply contains all scheduled supply tasks, it is possible to iterate through own
-        # tasks and determine the best supply option without having to find the supplier.
-        # -- some kind of match(self.tasks, self.supply)
-
-        # PS> remember to cancel duplicate tasks for stuff that isn't needed.
-
+    def _determine_schedule(self):
+        """ helper for self.schedule() - calculates the schedule """
         # 2. check / determine schedule.
-
-        # to minimise total idle time, sort tasks by (runtime, name)
-        assert all(isinstance(t, Task) for t in self.tasks)  # this is disabled with python -OO
-        tasks = [(t.runtime, t.name, t) for t in self.tasks]
-        # `runtime` to minimise initial waiting time, and,
-        # `name` to assure that task of same name come out together so c/o time can be exploited.
-        tasks.sort()  # ascending!
-        self.tasks = [t for r, n, t in tasks]
-
+        # -----------------------------
+        # Note that clients may remove tasks from resources, so they'll need to recalculate
+        # their schedule every time.
+        #
         # for task in tasks: update start and finish time.
-        previous_task = NullTask
+        previous_task = NullTask  # this class 'cheats' the iteration for the first task.
         for ix, task in enumerate(self.tasks):
             process = self.get_process(task)
             assert isinstance(process, Process)
@@ -333,18 +368,21 @@ class Resource(object):
                 previous_task.scheduled_finish += (process.change_over_time - process.shutdown_time)
 
             if process.inputs:  # pick best matching supply time.
-                supply_times = [(t.scheduled_finish, t) for t in self.supply[task]]
-                supply_times.sort()
-                supply_times = [t for _, t in supply_times]
+                supply_times = [t for t in self.supply[task]]
+                supply_times.sort(key=lambda t: t.scheduled_finish)
 
-                fas = supply_times[0]  # pick first available supply
+                first_available_supply = supply_times[0]
                 for t in supply_times[1:]:  # cancel all other tasks
                     resource = self._rdn.network.node(node_id=t.supplier)
                     assert isinstance(resource, Resource)
                     resource.remove_task(t)
-                    resource.notify()
 
-                start_time = max(previous_task.scheduled_finish, fas.scheduled_finish)
+                if first_available_supply.scheduled_finish < previous_task.scheduled_finish:
+                    task.idle_time = 0
+                else:
+                    task.idle_time = first_available_supply.scheduled_finish - previous_task.scheduled_finish
+
+                start_time = max(previous_task.scheduled_finish, first_available_supply.scheduled_finish)
             else:
                 start_time = previous_task.scheduled_finish
 
@@ -354,18 +392,32 @@ class Resource(object):
                 steps = [task.scheduled_start, process.run_time, process.shutdown_time]
             else:
                 steps = [task.scheduled_start, process.setup_time, process.run_time, process.shutdown_time]
+
             task.scheduled_finish = sum(steps)
 
             # get ready to loop.
             previous_task = task
+        return  # at this point, the tasks are all scheduled with start and finish times.
 
-        # at this point, the tasks are all scheduled with start and finish times.
+    def _lookup_for_improvements(self):
+        """ 3. Look for improvements """
+        # now check if there's any idle time and change the order of tasks.
+        if not self.tasks:
+            return  # nothing to do.
 
-        # check if there's any idle time.
-        # notify customer.
+        last_task = self.tasks[-1]
+        finish_time = last_task.scheduled_finish
+        active_time = sum((t.scheduled_finish - t.scheduled_start for t in self.tasks))
+        self.idle_time = finish_time - active_time
 
-        print(f"{self} done")
+        if not self.idle_time:
+            return  # nothing to do.
 
+
+        for task in self.tasks:
+            pass
+
+        # if there are no suppliers and first task
 
 
 
@@ -379,6 +431,8 @@ class ResourceDemandNetwork(object):
     def __init__(self):
         self.network = Graph()
         self.task_queue = {}  # only keys are used as this behaves like an ordered set
+        self._solution = {}
+        self._makespan = float('inf')
 
     def add_resource(self, resource):
         """ adds resource to RDN. """
@@ -388,20 +442,25 @@ class ResourceDemandNetwork(object):
             resource.rdn = self
         # else: ... just return.
 
+    def _keep_schedule(self):
+        self._solution = {
+            r: r.task_sequence() for r in (self.network.node(r_id) for r_id in self.network.nodes())
+        }
+
     def add_edge(self, client, resource):
         """ A directed edge"""
         assert isinstance(client, Resource)
         assert isinstance(resource, Resource)
         self.network.add_node(node_id=client.id, obj=client)
         self.network.add_node(node_id=resource.id, obj=resource)
-        self.network.add_edge(client.id, resource.id, value=1)  # hop size = 1.
+        self.network.add_edge(node1=client.id, node2=resource.id, value=1)  # hop size = 1.
         if client.rdn is None:
             client.rdn = self
         if resource.rdn is None:
             resource.rdn = self
 
     def notify(self, r_id):
-        """ method for assure that RDN will run resource.schedule() """
+        """ API for other resources assure that RDN will run resource.schedule() on the r_id """
         if r_id not in self.task_queue:
             self.task_queue[r_id] = self.network.node(r_id)
         # else: ... just return.
@@ -409,28 +468,36 @@ class ResourceDemandNetwork(object):
     def schedule(self):
         """ schedules the tasks on the resources """
         # 1. discover new tasks and prepare the task_queue:
-        resource_ids = self.network.nodes()
-        if not resource_ids:
+        resources = [self.network.node(r_id) for r_id in self.network.nodes()]
+        if not resources:
             raise SchedulingError("No resources to schedule.")
-
-        for r_id in resource_ids:
-            resource = self.network.node(r_id)
+        for resource in resources:
             if resource.mq:
-                self.task_queue[r_id] = resource
+                self.task_queue[resource.id] = resource
         # task_queue is now prepared.
 
         # 2. initiate the scheduling.
-        while self.task_queue:
-            # first swop the pointer for the queue, so I can loop over it, without
-            # changing the order of events.
-            current_queue, self.task_queue = self.task_queue, {}
+        done = False
+        while not done:
+            while self.task_queue:
+                # first swop the pointer for the queue, so I can loop over it, without
+                # changing the order of events.
+                current_queue, self.task_queue = self.task_queue, {}
+                for r_id, resource in current_queue.items():
+                    assert isinstance(resource, Resource)
+                    resource.schedule()
+                    # self.task_queue is now populated by:
+                    # - any resource that places tasks on any downstream resource
+                    # - any resource that finishes scheduling and uses notify
 
-            for r_id, resource in current_queue.items():
-                resource = self.network.node(node_id=r_id)
-                assert isinstance(resource, Resource)
-                resource.schedule()
-                # self.task_queue is now populated by:
-                # - any resource that places tasks on any downstream resource
-                # - any resource that finishes scheduling and uses notify
+                # capture the new state and the task sequences.
+                makespan = max((r.finish_time() for r in resources))
 
+            if makespan == perfect_result:
+                done = True
+
+
+                if self._makespan > makespan:
+                    self._makespan = makespan
+                    self._keep_schedule()
 

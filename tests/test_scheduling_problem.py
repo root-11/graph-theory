@@ -75,7 +75,12 @@ def test_03():
     rdn = ResourceDemandNetwork()
     d1, d2, r = Resource(), Resource(), Resource()
 
-    # p1 runtime < p2 runtime, so doing p1 before p2 will minimise total lateness.
+    d1p = Process(inputs=['A'], outputs=['A'])
+    d1.add_process(d1p)
+    d2p = Process(inputs=['B'], outputs=['B'])
+    d2.add_process(d2p)
+
+    # p1 runtime < p2 runtime, so delivering p1 before p2 will minimise total lateness.
     p1 = Process(inputs=[], outputs=['A'], run_time=1)
     p2 = Process(inputs=[], outputs=['B'], run_time=2)
     r.add_process(p1)
@@ -84,8 +89,8 @@ def test_03():
     rdn.add_edge(d1, r)
     rdn.add_edge(d2, r)
 
-    d1.add_task('A')
-    d2.add_task('B')
+    d1.add_task(Task('A'))
+    d2.add_task(Task('B'))
 
     rdn.schedule()
 

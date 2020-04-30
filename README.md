@@ -30,6 +30,7 @@ Modules:
 | `from graph import Graph, Graph3D` | Elementary methods (see basic methods below) for Graph and Graph3D.|
 | `from graph import ...` | All methods available on Graph (see table below) |
 | `from graph.assignment_problem import ...` | solvers for assignment problem, the Weapons-Target Assignment Problem, ... |
+| `from graph.scheduling_problem import ...` | solvers for scheduling problems |
 | `from graph.hash import ...` | graph hash functions: graph hash, merkle tree, flow graph hash | 
 | `from graph.random import ...` | graph generators for random, 2D and 3D graphs. |
 | `from graph.transshipment_problem import ...` | solvers for the transshipment problem |
