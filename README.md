@@ -74,6 +74,7 @@ All module functions are available from Graph and Graph3D (where applicable).
 | + | + | `g.phase_lines()` | returns a dictionary with the phase_lines for a non-cyclic graph. |
 | + | + | `g.sources(n)` | returns the source_tree of node `n` |
 | + | + | `g.depth_first_search(start,end)` | returns path using DFS and backtracking  |
+| + | + | `g.depth_scan(start, criteria)` | returns set of nodes where criteria is True |
 | + | + | `g.distance_from_path(path)` | returns the distance for path. |
 | + | + | `g.maximum_flow(source,sink)` | finds the maximum flow between a source and a sink |
 | + | + | `g.solve_tsp()` | solves the traveling salesman problem for the graph |
@@ -100,32 +101,10 @@ All module functions are available from Graph and Graph3D (where applicable).
 | have multiple edges between two nodes | `Graph(from_list=[(1,2,3), (1,2,4)]` | Add dummy nodes<br>`[(1,a,3), (a,2,0),`<br>` (1,b,4),(b,2,0)]` | Explicit is better than implicit. |
 | multiple values on an edge | `g.add_edge(1,2,{'a':3, 'b':4})` | Have two graphs<br>`g_a.add_edge(1,2,3)`<br>`g_b.add_edge(1,2,4)` | Most graph algorithms don't work with multiple values |   
 
-## Specialised modules:
-
-    from graph import Graph
-    from graph import Graph3D
-    from graph.hashing import merkle_tree
-    from graph.assignment_problem import ap_solver
-    from graph.assignment_problem import wtap_solver
-    from graph.scheduling_problem import sp_solver
-    from graph.finite_state_machine import FiniteStateMachine
-
-
-Examples contains a number of tutorial/solutions to common operations research
-and computer science problems, which are made simple when treated as a graph.
-
-| module | function | description |
-|:---|:---|:---|
-| assignment_problem.py | assignment_problem |  solves the assignment problem |
-| hashgraph.py | merkle_tree | datablocks |
-| hashgraph.py | graph_hash | computes the sha256 of a graphs nodes and edges |
-| hashgraph.py | flow_graph_hash | computes the sha256 of a graph with multiple sources and sinks |
-| knapsack_problem.py | knapsack problem | solves the knapsack problem |
-| wtap.py | weapons-target assignment problem | solves the WTAP problem. | 
-
 ## Credits:
 
 - Arturo Soucase for packaging and testing. 
 - Peter Norvig for inspiration on TSP from [pytudes](https://github.com/norvig/pytudes/blob/master/ipynb/TSP.ipynb).
 - Harry Darby for the mountain river map.
+- Kyle Downey for depth_scan algorithm.
 
