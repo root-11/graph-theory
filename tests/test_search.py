@@ -3,7 +3,7 @@ import time
 from itertools import combinations, permutations
 
 from graph import Graph
-from tests.test_graph import graph02, graph03, graph04, graph05, graph_cycle_5
+from tests.test_graph import graph01, graph02, graph03, graph04, graph05, graph_cycle_5
 
 
 def test_shortest_path01():
@@ -349,6 +349,78 @@ def test_dfs_03():
     assert g.has_path(path)
 
 
+def test_depth_scan_01():
+    links = [
+        (1, 2, 0),
+        (1, 3, 0),
+        (3, 5, 0),
+        (2, 4, 0),
+        (5, 6, 0),
+    ]
+    g = Graph(from_list=links)
+
+    def visit_node(node) -> bool:
+        return node != 2
+
+    visited = g.depth_scan(1, visit_node)
+    assert len(visited) == 5
+    assert 1 in visited
+    assert 2 in visited
+    assert 3 in visited
+    assert 5 in visited
+    assert 6 in visited
+    assert 4 not in visited
+
+
+def test_depth_scan_02():
+    """ criteria not callable"""
+    g = graph01()
+
+    criteria = 41  # not callable
+    try:
+        g.depth_scan(1, criteria)
+        assert False, "criteria must be a callable, so this is not possible"
+    except TypeError:
+        assert True
+
+
+def test_depth_scan_03():
+    """ start not in graph """
+    g = graph01()
+    start_that_doesnt_exist = max(g.nodes()) + 1
+
+    def criteria(n):
+        return False
+
+    try:
+        g.depth_scan(start_that_doesnt_exist, criteria)
+        assert False, "start isn't in g, so reaching this code isn't possible."
+    except ValueError:
+        assert True
+
+
+def test_depth_scan_04():
+    """ criteria negative on start"""
+    g = graph01()
+
+    def criteria(n):
+        return False
+
+    empty_set = set()
+    assert g.depth_scan(1, criteria) == empty_set
+
+
+def test_depth_scan_05():
+    g = graph01()
+
+    def criteria(n):
+        return n < 5
+
+    result = g.depth_scan(1, criteria)
+    assert max(result) == 5, result
+
+
 def test_degree_of_separation():
     g = graph05()
     assert g.degree_of_separation(0, 10) == 3
+
