@@ -109,22 +109,14 @@ def wtap_solver(probabilities, weapons, target_values):
 
         min E( O )
 
-    [1].
+    for more see: https://en.wikipedia.org/wiki/Weapon_target_assignment_problem
 
     Variations:
 
     - if V is unknown, use v = 1. This maximises the exploitation of the available
     probabilities.
 
-    Solution methods:
-
-    1. Dynamic programming problem.
-    2. Alternating iterative auction.
-
-
-    [1] https://en.wikipedia.org/wiki/Weapon_target_assignment_problem
-
-    Method:
+    Method used:
 
     1. initial assignment using greedy algorithm;
     2. followed by search for improvements.
@@ -142,10 +134,22 @@ def wtap_solver(probabilities, weapons, target_values):
     assert isinstance(probabilities, Graph)
     assert isinstance(weapons, list)
     assert isinstance(target_values, dict)
-    id_overlap = set(weapons).intersection(set(target_values))
+    # first: verify internal integrity of inputs.
+    weaponset = set(weapons)
+    targetset = set(target_values)
+    id_overlap = weaponset.intersection(targetset)
     if id_overlap:
         raise ValueError(f"weapon ids in target_values for {id_overlap}")
+    target_prob_set = {e for s, e, d in probabilities.edges()}
+    if targetset > target_prob_set:
+        raise ValueError(f"targets have no probabilities: {targetset-target_prob_set}")
 
+    # second: clear the memory from the validations.
+    weaponset.clear()
+    targetset.clear()
+    target_prob_set.clear()
+
+    # then: Calculate the solution.
     assignments = Graph()
     current_target_values = sum(target_values.values()) + 1
 
