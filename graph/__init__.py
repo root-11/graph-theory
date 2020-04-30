@@ -433,6 +433,53 @@ def depth_first_search(graph, start, end):
     return None  # <-- exit if not path was found.
 
 
+def depth_scan(graph, start, criteria):
+    """ traverses the descendants of node `start` using callable `criteria` to determine
+    whether to terminate search along each branch in `graph`.
+
+    :param graph: class Graph
+    :param start: start node
+    :param criteria: function to terminate scan along a branch must return bool
+    :return: set of nodes
+    """
+    if not callable(criteria):
+        raise TypeError(f"Expected {criteria} to be callable")
+    if start not in graph:
+        raise ValueError(f"{start} not in graph")
+    if not criteria(start):
+        return set()
+
+    q = [start]
+    path = []
+    visited = set()
+    while q:
+        n1 = q.pop()
+        visited.add(n1)
+        path.append(n1)
+        for n2 in graph.nodes(from_node=n1):
+            if n2 in visited:
+                continue
+            if not criteria(n2):
+                visited.add(n2)
+                continue
+            q.append(n2)
+            break
+        else:
+            path.remove(n1)
+            while not q and path:
+                for n2 in graph.nodes(from_node=path[-1]):
+                    if n2 in visited:
+                        continue
+                    if not criteria(n2):
+                        visited.add(n2)
+                        continue
+                    q.append(n2)
+                    break
+                else:
+                    path = path[:-1]
+    return visited
+
+
 def distance(graph, path):
     """ Calculates the distance for the path in graph
     :param graph: class Graph
@@ -1082,6 +1129,18 @@ class Graph(BasicGraph):
         :return: path
         """
         return depth_first_search(graph=self, start=start, end=end)
+
+    def depth_scan(self, start, criteria):
+        """
+        traverses the descendants of node `start` using callable `criteria` to determine
+        whether to terminate search along each branch in `graph`.
+
+        :param graph: class Graph
+        :param start: start node
+        :param criteria: function to terminate scan along a branch must return bool
+        :return: set of nodes
+        """
+        return depth_scan(graph=self, start=start, criteria=criteria)
 
     def distance_from_path(self, path):
         """
