@@ -86,6 +86,8 @@ All module functions are available from Graph and Graph3D (where applicable).
 | + | + | `g.same_path(p1,p2)` | compares two paths, returns True if they're the same |
 | + | + | `g.adjacency_matrix()` | returns the adjacency matrix for the graph |
 | + | + | `g.all_pairs_shortest_paths()` | finds the shortest path between all nodes |
+| + | + | `g.minsum()` | finds the node(s) with shortest total distance to all other nodes |
+| + | + | `g.minmax()` | finds the node(s) with shortest maximum distance to all other nodes |
 | + | + | `g.shortest_tree_all_pairs()` | finds the shortest tree for all pairs |
 | + | + | `g.has_path(p)` | asserts whether a path `p` exists in g |
 | + | + | `g.all_paths(start,end)` | finds all combinations of paths between 2 nodes|
