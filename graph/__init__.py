@@ -972,6 +972,26 @@ def all_pairs_shortest_paths(graph):
     return g
 
 
+def minsum(graph):
+    """ finds the mode(s) that have the smallest sum of distance to all other nodes. """
+    assert isinstance(graph, Graph)
+    adj_mat = graph.all_pairs_shortest_paths()
+    for n in adj_mat:
+        adj_mat[n] = sum(adj_mat[n].values())
+    smallest = min(adj_mat.values())
+    return [k for k, v in adj_mat.items() if v == smallest]
+
+
+def minmax(graph):
+    """ finds the node(s) with shortest distance to all other nodes. """
+    assert isinstance(graph, Graph)
+    adj_mat = graph.all_pairs_shortest_paths()
+    for n in adj_mat:
+        adj_mat[n] = max(adj_mat[n].values())
+    smallest = min(adj_mat.values())
+    return [k for k, v in adj_mat.items() if v == smallest]
+
+
 def shortest_tree_all_pairs(graph):
     """
        'minimize the longest distance between any pair'
@@ -1242,6 +1262,18 @@ class Graph(BasicGraph):
         :return: dict
         """
         return adjacency_matrix(graph=self)
+
+    def minsum(self):
+        """ Finds the mode(s) that have the smallest sum of distance to all other nodes.
+        :return: list of nodes
+        """
+        return minsum(self)
+
+    def minmax(self):
+        """ Finds the node(s) with shortest distance to all other nodes.
+        :return: list of nodes
+        """
+        return minmax(self)
 
     def all_pairs_shortest_paths(self):
         """
