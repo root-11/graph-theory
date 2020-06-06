@@ -4,7 +4,7 @@ The problem of deciding the exact place in a community where a school or a fire 
 is classified as the facility location problem.
 
 If the facility is a school, it is desirable to locate it so that the sum 
-of distances travelled by all memebers of the communty is as short as possible. 
+of distances travelled by all members of the communty is as short as possible. 
 This is the minimum of sum - or in short `minsum` of the graph.
 
 If the facility is a firestation, it is desirable to locate it so that the distance from the firestation
