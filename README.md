@@ -1,6 +1,9 @@
 # graph-theory
 [![Build Status](https://travis-ci.org/root-11/graph-theory.svg?branch=master)](https://travis-ci.org/root-11/graph-theory)
 [![Code coverage](https://codecov.io/gh/root-11/graph-theory/branch/master/graph/badge.svg)](https://codecov.io/gh/root-11/graph-theory)
+[![Downloads](https://pepy.tech/badge/graph-theory)](https://pepy.tech/project/graph-theory)
+[![Downloads](https://pepy.tech/badge/graph-theory/month)](https://pepy.tech/project/graph-theory/month)
+[![Downloads](https://pepy.tech/badge/maslite/month)](https://pepy.tech/project/maslite/month)
 
 A simple graph library...<br>
 *... A bit like networkx, just without the overhead...*<br> 
