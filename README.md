@@ -112,4 +112,4 @@ All module functions are available from Graph and Graph3D (where applicable).
 - Peter Norvig for inspiration on TSP from [pytudes](https://github.com/norvig/pytudes/blob/master/ipynb/TSP.ipynb).
 - Harry Darby for the mountain river map.
 - Kyle Downey for depth_scan algorithm.
-
+- Ross Blandford for new transshipment test cases.

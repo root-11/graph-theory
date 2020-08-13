@@ -1,5 +1,8 @@
+from itertools import permutations
+
 from graph import Graph
-from graph.transshipment_problem import clondike_transshipment_problem, Train, schedule_rail_system
+from graph.transshipment_problem import clondike_transshipment_problem, Train, schedule_rail_system, loop, avoids, \
+    resolve2x3, resolve
 
 
 def test_mining_train():
@@ -136,3 +139,199 @@ def test_double_direction_delivery():
     assert s2 == s2_expected
 
 
+def grid():
+    edges = [
+        (1, 2, 1), (2, 3, 1), (3, 4, 1), (1, 5, 1),
+        (5, 6, 1), (6, 7, 1), (7, 8, 1), (2, 6, 1),
+        (3, 7, 1), (4, 8, 1), (5, 9, 1), (9, 10, 1),
+        (10, 11, 1), (11, 12, 1), (6, 10, 1), (7, 11, 1),
+        (8, 12, 1), (9, 13, 1), (13, 14, 1), (14, 15, 1),
+        (15, 16, 1), (10, 14, 1), (11, 15, 1), (12, 16, 1)
+    ]
+    g = Graph()
+    for s, e, d in edges:
+        g.add_edge(s, e, d, bidirectional=True)
+    return g
+
+
+def test_loop():
+    g = grid()
+    p = loop(g, 1, 16)
+    assert p == [1, 2, 3, 4, 8, 12, 16, 15, 11, 7, 6, 5, 1]
+
+
+def test_avoids():
+    g = grid()
+    p = avoids(g, 1, 16, (3, 7, 11, 10))
+    assert p == [1, 5, 9, 13, 14, 15, 16], p
+
+
+def test_01():
+    summary = {}
+
+    items = [1, 2, 3,
+             4, 5, 6]
+    initial_state = "".join([str(i) for i in items])
+    p, g = resolve2x3(initial_state, initial_state)
+
+    for pz in permutations(items, 6):
+        desire_state = "".join([str(i) for i in pz])
+        d, p = g.states.shortest_path(initial_state, desire_state)
+
+        d = len([i for i in p if isinstance(i, int)])
+
+        if d not in summary:
+            summary[d] = 1
+        else:
+            summary[d] += 1
+
+    print("steps | freq")
+    for k, v in sorted(summary.items()):
+        print(k, v)
+    print("it will never take more than", k, "steps to solve 2x3")
+    tot, all = 0, sum(summary.values())
+    for k, v in sorted(summary.items()):
+        tot += v
+        if tot > all / 2:
+            break
+    print("average is", k, "moves")
+    # steps | freq
+    # 0 1
+    # 1 6
+    # 2 28
+    # 3 102
+    # 4 231
+    # 5 248
+    # 6 100
+    # 7 4
+    # it will never take more than 7 steps to solve 2x3. Average is 4 moves
+
+
+def test_api_1():
+    """ A simple loop of 4 locations, where 3 loads need to move
+    clockwise. """
+    g = Graph()
+    edges = [
+        (1, 2, 1),
+        (2, 3, 1),
+        (3, 4, 1),
+        (4, 1, 1),
+    ]
+    for s, e, d in edges:
+        g.add_edge(s, e, d, bidirectional=True)
+
+    loads = {1: [1, 2], 2: [2, 3], 3: [3, 4]}  # position 4 is empty.
+
+    sequence = resolve(g, loads)
+
+    assert sequence == [{3: (3, 4)},  # first move.
+                        {2: (2, 3)},  # second move.
+                        {1: (1, 2)}]  # last move.
+
+
+def test_api_1_1():
+    """ a grid lock is given, solver solves it."""
+    g = Graph()
+    edges = [
+        (1, 2, 1), (1, 4, 1), (2, 3, 1), (2, 5, 1), (3, 6, 1),
+        (4, 5, 1), (5, 6, 1), (4, 7, 1), (5, 8, 1), (6, 9, 1),
+        (7, 8, 1), (8, 9, 1)
+    ]
+    for s, e, d in edges:
+        g.add_edge(s, e, d, bidirectional=True)
+
+    loads = {1: [2, 1], 2: [5, 2], 3: [4, 3], 8: [8], 9: [1, 9]}
+
+    sequence = resolve(g, loads)
+
+    assert sequence == [{2: (5, 6)},
+                         {2: (6, 3)},
+                         {3: (4, 5)},
+                         {3: (5, 6)},
+                         {9: (1, 4)},
+                         {1: (2, 1)},
+                         {2: (3, 2)},
+                         {3: (6, 3)},
+                         {9: (4, 5)},
+                         {9: (5, 6)},
+                         {9: (6, 9)}]
+
+
+def test_api_2():
+    """
+    two trains of loads are approaching each other.
+    train 123 going from 1 to 14
+    train 4567 going from 14 to 1.
+
+    At intersection  4 train 123 can be broken apart and
+    buffered, so that train 4567 can pass.
+
+    The reverse (buffering train 4567) is not possible.
+    """
+    # g = Graph()
+    # edges = [
+    #     (1, 2, 1),
+    #     (2, 3, 1),
+    #     (3, 4, 1),
+    #     (4, 5, 1), (4, 6, 1), (4, 7, 1), (4, 8, 1),
+    #     (5, 9, 1), (6, 9, 1), (7, 9, 1), (8, 9, 1),
+    #     (9, 10, 1),
+    #     (10, 11, 1),
+    #     (11, 12, 1),
+    #     (12, 13, 1),
+    #     (13, 14, 1),
+    # ]
+    # for s, e, d in edges:
+    #     g.add_edge(s, e, d, bidirectional=True)
+    #
+    # loads = {
+    #     1: [1, 2, 3, 4, 5, 9, 10, 11, 12],
+    #     2: [2, 3, 4, 5, 9, 10, 11, 12, 13],
+    #     3: [3, 4, 5, 9, 10, 11, 12, 13, 14],
+    #     4: [11, 10, 9, 5, 4, 3, 2, 1],
+    #     5: [12, 11, 10, 9, 5, 4, 3, 2],
+    #     6: [13, 12, 11, 10, 9, 5, 4, 3],
+    #     7: [14, 13, 12, 11, 10, 9, 5, 4],
+    # }
+    #
+    # sequence = resolve(g, loads)
+    #
+    # assert sequence == [
+    #     {1: [1, 2, 3, 4, 8], 2: [2, 3, 4, 7], 3: [3, 4, 6],
+    #      4: [11, 10, 9, 5], 5: [12, 11, 10, 9], 6: [13, 12, 11, 10], 7: [14, 13, 12, 11]},
+    #     {4: [5, 4, 3, 2, 1], 5: [9, 5, 4, 3, 2], 6: [10, 9, 5, 4, 3], 7: [11, 9, 5, 4]},
+    #     {3: [6, 9]},
+    #     {3: [9, 10], 2: [7, 9]},
+    #     {3: [10, 11], 2: [9, 10], 1: [8, 9]},
+    #     {3: [11, 12, 13, 14], 2: [10, 11, 12, 13], 1: [9, 10, 11, 12]}
+    # ]
+    assert True
+
+
+def test_api_03():
+    """ move through a bottleneck
+    123 -0---0---456
+         |   |
+    789 -0---0---901
+
+    456-123
+    901-789
+
+    901-123
+    456-789
+
+    789-123
+    901-456
+    """
+    assert True
+
+
+def test_random():
+    """
+    Generate random network
+    Add loads at random
+    Try to solve. Add to test suite if failed.
+
+    Remember: The test suite can run forever. But the solver must be quick.
+    """
+    assert True

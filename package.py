@@ -16,7 +16,6 @@ packages = [
     folder / 'graph' / "finite_state_machine.py",
     folder / 'graph' / "hash.py",
     folder / 'graph' / "random.py",
-    # folder / 'graph' / "routing.py",
     # folder / 'graph' / "scheduling_problem.py",
     folder / 'graph' / "transshipment_problem.py",
     folder / 'graph' / "visuals.py",

@@ -1,3 +1,5 @@
+from itertools import permutations, product
+
 from graph import Graph
 import itertools
 
@@ -19,6 +21,8 @@ checks or duties, otherwise a major hindrance for efficient transport.
 
 [1](https://en.wikipedia.org/wiki/Transshipment_problem)
 """
+
+from graph.finite_state_machine import FiniteStateMachine
 
 
 def clondike_transshipment_problem():
@@ -264,5 +268,264 @@ def find_perfect_circuit(graph, start, jobs):
     return []
 
 
+def loop(g, start, end):
+    """ detects the smallest loop in the graph. """
+    _, p = g.shortest_path(start, end)
+    g2 = g.copy()
+    for n in p[1:-1]:
+        g2.del_node(n)
+    _, p2 = g2.shortest_path(end, start)
+    loop = p + p2[1:]
+    return loop
 
 
+def avoids(g, start, end, obstacles):
+    """ determines the shortest path that avoids obstacles"""
+    g2 = g.copy()
+    for o in obstacles:
+        g2.del_node(o)
+    _, p = g2.shortest_path(start, end)
+    return p
+
+
+def clockwise_turn(rows):
+    """ performs a clock wise turn of items in a grid """
+    rows2 = [[v for v in r] for r in rows]
+    rows2[0][1:] = [v for v in rows[0][:-1]]  # first row,
+    rows2[-1][:-1] = [v for v in rows[-1][1:]]  # last row
+    for ix, row in enumerate(rows[1:]):  # left
+        rows2[ix][0] = row[0]
+    for ix, row in enumerate(rows[:-1]):  # right
+        rows2[ix + 1][-1] = row[-1]
+    return rows2
+
+
+def counterclockwise_turn(rows):
+    """ performs a counter clock wise turn of items in a grid """
+    rows2 = [[v for v in r] for r in rows]
+    rows2[0][:-1] = [v for v in rows[0][1:]]  # first row
+    rows2[-1][1:] = [v for v in rows[-1][:-1]]  # last row
+    for ix, row in enumerate(rows[:-1]):  # left side
+        rows2[ix + 1][0] = row[0]
+    for ix, row in enumerate(rows[1:]):  # right side
+        rows2[ix][-1] = row[-1]
+    return rows2
+
+
+def change(items, c, d):
+    if c == 1:
+        square = [v for v in items[0][:2]], [v for v in items[1][:2]]
+    elif c == 2:
+        square = items
+    else:
+        square = [v for v in items[0][1:]], [v for v in items[1][1:]]
+
+    if d == 'cw':
+        square = clockwise_turn(square)
+    else:
+        square = counterclockwise_turn(square)
+
+    if c == 1:
+        items[0][:2] = [v for v in square[0]]
+        items[1][:2] = [v for v in square[1]]
+    elif c == 2:
+        items = [[v for v in row] for row in square]
+    else:
+        items[0][1:] = [v for v in square[0]]
+        items[1][1:] = [v for v in square[1]]
+    return items
+
+
+def resolve2x3(initial_state, desired_state):
+    items = initial_state
+    all_options = list(list(i) for i in permutations(items, 6))
+
+    options = [1, 2, 3]
+    directs = ['cw', 'ccw']
+
+    g = FiniteStateMachine()
+
+    while all_options:
+        items = all_options.pop()
+        current_state = state(items)
+
+        for c, d in list(product(*[options, directs])):
+            new_items = change([items[:3], items[3:]], c, d)
+            new_state = state(new_items[0][:] + new_items[1][:])
+            g.add_transition(state_1=current_state, action=(c, d), state_2=new_state)
+
+    d, p = g.states.shortest_path(initial_state, desired_state)
+    return p,g
+
+
+def state(items):
+    return "".join(str(i) for i in items)
+
+
+def path_to_moves(path):
+    """translate best path into motion sequence."""
+    moves = []
+    s1 = path[0]
+    for s2 in path[1:]:
+        for p1, p2 in zip(s1, s2):
+            if p1 != p2:
+                moves.append(
+                    {
+                        p1[0]: (  # load id.
+                            p1[1],  # location 1.
+                            p2[1]   # location 2.
+                        )
+                    })
+        s1 = s2
+    return moves
+
+
+def small_puzzle_resolve(graph, loads):
+    """ calculates the solution to the transshipment problem."""
+    assert isinstance(graph, Graph)
+    assert isinstance(loads, dict)
+    for v in loads.values():
+        assert isinstance(v, list)
+        assert all(i in graph.nodes() for i in v)
+
+    # 0) where is the conflict?
+    # 1) where are the free spaces?
+    # 2) can detour into free space solve routing conflicts
+    # 3) can an entity just wait?
+    # 4) if all items go to N destinations, can a clockwise or counter clockwise
+    #    preference solve the routing problem for good?
+    # 5) Is thee a max flow that resolves the problem? If not, then there is
+    #    probably a central bottleneck in the system...
+    # 6) If all the quick rudimentary methods don't solve the problem, then engage the puzzle solve mode.
+
+    initial_state = tuple(((load_id, route[0]) for load_id, route in loads.items()))
+    final_state = tuple(((load_id, route[-1]) for load_id, route in loads.items()))
+    # while no conflict: progress forward as given by paths.
+    # longest_path = 0
+    # for load_id, path in loads.items():
+    #     if len(path) > 1:
+    #         if not graph.has_path(path):
+    #             _, path = graph.shortest_path(path[0], path[-1])
+    #             loads[load_id] = path
+    #     longest_path = max(longest_path, len(path))
+    #
+    # step = 0
+    # pre_collision_step = None
+    #
+    # for step in range(longest_path):
+    #     if pre_collision_step is not None:
+    #         break
+    #
+    #     locations = set()
+    #     for path in loads.values():
+    #         if step + 1 < len(path):
+    #             location = tuple(sorted(path[step:step+2]))
+    #         else:
+    #             location = path[-1]
+    #         if location in locations:
+    #             pre_collision_step = step
+    #             break  # step where the conflict is detected.
+    #             # now start backtracking.
+    #         else:
+    #             locations.add(location)
+    #
+    # pre_collision_step = max(0, step-1)  # step before collision.
+    #
+    # initial_state = []
+    # for load_id, route in loads.items():
+    #     if len(route) < pre_collision_step:
+    #         initial_state.append((load_id, route[-1]))
+    #     else:
+    #         initial_state.append((load_id, route[pre_collision_step]))
+    # initial_state = tuple(initial_state)
+
+    # can the problem be solved by having one set of units wait?
+    movements = Graph()
+
+    # at conflict: reverse until solvable.
+    states = [initial_state]
+    while states:
+        state = states.pop(0)
+        occupied = {i[1] for i in state}
+        for load_id, location in state:
+            if final_state in movements:
+                break
+            options = (e for s, e, d in graph.edges(from_node=location) if e not in occupied)
+            for option in options:
+                new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state)
+
+                if new_state in movements:  # abandon branch
+                    continue
+                else:
+                    # assign affinity towards things moving in same direction.
+                    movements.add_edge(state, new_state, 1)
+                    states.append(new_state)
+
+                if final_state in movements:
+                    states.clear()
+                    break
+
+    if final_state not in movements:
+        raise Exception("No solution found")
+
+    steps, best_path = movements.shortest_path(initial_state, final_state)
+    moves = path_to_moves(best_path)
+    return moves
+
+
+def dfs_resolve(graph, loads):
+    """calculates the solution to the transshipment problem."""
+    assert isinstance(graph, Graph)
+    assert isinstance(loads, dict)
+    for v in loads.values():
+        assert isinstance(v, list)
+        assert all(i in graph.nodes() for i in v)
+    initial_state = tuple(((load_id, route[0]) for load_id, route in loads.items()))
+    final_state = tuple(((load_id, route[-1]) for load_id, route in loads.items()))
+    movements = Graph()
+    states = [initial_state]
+    while states:
+        state = states.pop(0)
+        occupied = {i[1] for i in state}
+        for load_id, location in state:
+            if final_state in movements:
+                break
+            options = (e for s, e, d in graph.edges(from_node=location) if e not in occupied)
+            for option in options:
+                new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state)
+
+                if new_state in movements:  # abandon branch
+                    continue
+                else:
+                    movements.add_edge(state, new_state, 1)
+                    states.append(new_state)
+
+                if final_state in movements:
+                    states.clear()
+                    break
+
+    if final_state not in movements:
+        raise Exception("No solution found")
+
+    steps, best_path = movements.shortest_path(initial_state, final_state)
+    moves = path_to_moves(best_path)
+    return moves
+
+
+def train_resolve(graph, loads):
+    return None
+
+# collection of solution methods for the routing problem.
+# insert, delete, append or substitute with your own methods as required.
+methods = [
+    train_resolve,
+    small_puzzle_resolve,
+]
+
+
+def resolve(graph, loads):
+    """ an ensemble solver for the routing problem."""
+    for method in methods:
+        moves = method(graph, loads)
+        if moves:
+            return moves
