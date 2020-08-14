@@ -13,7 +13,7 @@ def graph01():
     return Graph(from_dict=d)
 
 
-def graph02():
+def graph3x3():
     """
     1 -> 2 -> 3
     |    |    |
@@ -35,6 +35,21 @@ def graph02():
          8: {9: 1}
          }
     return Graph(from_dict=d)
+
+
+def graph4x4():
+    edges = [
+        (1, 2, 1), (2, 3, 1), (3, 4, 1), (1, 5, 1),
+        (5, 6, 1), (6, 7, 1), (7, 8, 1), (2, 6, 1),
+        (3, 7, 1), (4, 8, 1), (5, 9, 1), (9, 10, 1),
+        (10, 11, 1), (11, 12, 1), (6, 10, 1), (7, 11, 1),
+        (8, 12, 1), (9, 13, 1), (13, 14, 1), (14, 15, 1),
+        (15, 16, 1), (10, 14, 1), (11, 15, 1), (12, 16, 1)
+    ]
+    g = Graph()
+    for s, e, d in edges:
+        g.add_edge(s, e, d, bidirectional=True)
+    return g
 
 
 def graph03():

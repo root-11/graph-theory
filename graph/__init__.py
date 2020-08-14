@@ -1105,6 +1105,34 @@ def degree_of_separation(graph, n1, n2):
     return d
 
 
+def loop(graph, start, mid, end=None):
+    """ Returns a loop passing through a defined mid-point and returning via a different set of nodes to the outward
+        journey. If end is None we return to the start position. """
+    _, p = graph.shortest_path(start, mid)
+    g2 = graph.copy()
+    if end is not None:
+        for n in p[:-1]:
+            g2.del_node(n)
+        _, p2 = g2.shortest_path(mid, end)
+    else:
+        for n in p[1:-1]:
+            g2.del_node(n)
+        _, p2 = g2.shortest_path(mid, start)
+    l = p + p2[1:]
+    return l
+
+
+def avoids(graph, start, end, obstacles):
+    """ Returns a path through the graph avoiding the obstacles"""
+    g2 = graph.copy()
+    for each in obstacles:
+        assert isinstance(each, int)
+    for o in obstacles:
+        g2.del_node(o)
+    _, p = g2.shortest_path(start, end)
+    return p
+
+
 class Graph(BasicGraph):
     """
     Graph is the base graph that all methods use.
@@ -1312,6 +1340,23 @@ class Graph(BasicGraph):
         :return: degree
         """
         return degree_of_separation(self, n1, n2)
+
+    def loop(self, start, mid, end=None):
+        """ finds a looped path via a mid-point
+        :param start: node
+        :param end: node
+        :return: path as list
+        """
+        return loop(self, start, mid, end)
+
+    def avoids(self, start, end, obstacles):
+        """ finds the shortest path between start and end avoiding the obstacles
+        :param start: node
+        :param end: node
+        :param obstacles: nodes as iterable
+        :return: path as list
+        """
+        return avoids(self, start, end, obstacles)
 
 
 class Graph3D(Graph):

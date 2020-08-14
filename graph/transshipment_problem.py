@@ -148,7 +148,6 @@ def schedule_rail_system(rail_network, trains, jobs):
             select all relevant jobs.
             create itinerary items on the jobs.
             when all itineraries are complete, return the schedule.
-
         """
         assert isinstance(rail_network, Graph)
         assert isinstance(trains, list)
@@ -256,7 +255,7 @@ def find_perfect_circuit(graph, start, jobs):
     g = Graph()
     for A, B in jobs:
         try:
-            g.edge(A,B)
+            g.edge(A, B)
         except KeyError:
             d, p = graph.shortest_path(A, B)
             g.add_edge(A, B, d)
@@ -414,27 +413,6 @@ def path_to_moves(path):
     return moves
 
 
-# solution helpers
-def loop(g, start, end):
-    """ detects the smallest loop in the graph. """
-    _, p = g.shortest_path(start, end)
-    g2 = g.copy()
-    for n in p[1:-1]:
-        g2.del_node(n)
-    _, p2 = g2.shortest_path(end, start)
-    loop = p + p2[1:]
-    return loop
-
-
-def avoids(g, start, end, obstacles):
-    """ determines the shortest path that avoids obstacles"""
-    g2 = g.copy()
-    for o in obstacles:
-        g2.del_node(o)
-    _, p = g2.shortest_path(start, end)
-    return p
-
-
 def clockwise_turn(rows):
     """ performs a clock wise turn of items in a grid """
     rows2 = [[v for v in r] for r in rows]
@@ -505,23 +483,77 @@ def resolve2x3(initial_state, desired_state):
             g.add_transition(state_1=current_state, action=(c, d), state_2=new_state)
 
     d, p = g.states.shortest_path(initial_state, desired_state)
-    return p,g
+    return p, g
+
+
+def find_trains(graph, loads):
+    """ reads the paths and determines all trains (each linear cluster of loads)"""
+    check_user_input(graph, loads)
+    # check that the order of movements are constant.
+    return [(1, 2, 3), (4, 5, 6, 7)]
+
+
+def first_car(train, loads):
+    """ determines the end of the train that is leading. """
+    for end in [0, -1]:
+        first_car = train[end]
+        route = loads[first_car]
+        if len(route) == 1:  # this train isn't moving.
+            return None
+
+        locations = {loads[load_id][0] for load_id in train if load_id != first_car}
+
+        if any(i in locations for i in route):
+            continue  # this is the wrong end of the train.
+        else:
+            return first_car
+    return None
 
 
 # solution methods.
 def train_resolve(graph, loads):
-    """ A forward collision detection algorithm"""
-    return None
+    """ A greedy algorithm that finds and removes trains from the network """
+    check_user_input(graph, loads)
+
+    # 1. who can move?
+    # evidently only the start and end of a train, because the middle
+    # is locked between the two ends.
+    # So, if a train moves in a direction, it means that all wagons follow
+    # the leading wagon (until the paths potentially divide).
+    # The leading wagon must then "know" how long the train is, so that the
+    # solution landscape can be reduce to routes that are passable for whole
+    # trains.
+
+    # 2. as the trains are known, the next question is then how to reduce the
+    # graph to "train-friendly" routes.
+
+    # 3. Let's start with finding the biggest train, then find a route for it.
+    trains = find_trains(graph, loads)
+    assert isinstance(trains, list)
+    assert all(isinstance(i, tuple) for i in trains)
+    trains.sort(key=lambda x: len(x))
+    # 4. Once the biggest train is out of the way, we look for where we can store
+    #    obstacles in the mean time.
+
+    while trains:
+        train = trains.pop(0)
+        first = first_car(train, loads)
+        last = train[-1] if first == train[0] else train[0]
+        path = set(loads[first]).union(loads[last])
+        obstacles = [load_id for load_id, route in loads.items() if load_id not in train and path.intersection(set(route))]
+        # can obstacles move out of the way of first?
+        free_locations = [n for n in graph.nodes() if n not in path]
+        if len(free_locations) < len([lid for lid in obstacles if lid not in train]):
+            return None  # solving using this method not possible.
+        #todo: make a plan that moves the obstacles out of the way.
+        #      get rid of train 1.
+        #      reduce the graph, so that train 1 doesn't have to move again.
+    # 5. Repeat from 3. Until all trains are removed.
+    pass
 
 
-def dfs_resolve(graph, loads, time_limit_ms=200):
+def dfs_resolve(graph, loads, time_limit_ms=10000):
     """calculates the solution to the transshipment problem."""
-
-    assert isinstance(graph, Graph)
-    assert isinstance(loads, dict)
-    for v in loads.values():
-        assert isinstance(v, list)
-        assert all(i in graph.nodes() for i in v)
     assert isinstance(time_limit_ms, (float, int))
 
     initial_state = tuple(((load_id, route[0]) for load_id, route in loads.items()))
@@ -532,7 +564,7 @@ def dfs_resolve(graph, loads, time_limit_ms=200):
 
     states = [initial_state]
     while states:
-        if process_time() - start > time_limit_ms:
+        if process_time() - start > (time_limit_ms / 1000):
             raise TimeoutError(f"No solution found in {time_limit_ms}ms")
 
         state = states.pop(0)
@@ -565,8 +597,7 @@ def dfs_resolve(graph, loads, time_limit_ms=200):
 # collection of solution methods for the routing problem.
 # insert, delete, append or substitute with your own methods as required.
 methods = [
-    train_resolve,
-    small_puzzle_resolve,
+    # train_resolve,
     dfs_resolve
 ]
 

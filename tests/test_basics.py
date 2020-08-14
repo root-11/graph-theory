@@ -1,5 +1,5 @@
 from graph import Graph
-from tests.test_graph import graph02, graph01, graph05, graph_cycle_6, graph_cycle_5
+from tests.test_graph import graph3x3, graph01, graph05, graph_cycle_6, graph_cycle_5
 
 
 def test_to_from_dict():
@@ -48,7 +48,7 @@ def test_setitem():
 
 
 def test_add_node_attr():
-    g = graph02()
+    g = graph3x3()
     g.add_node(1, "this")
     assert set(g.nodes()) == set(range(1, 10))
     node_1 = g.node(1)
@@ -89,7 +89,7 @@ def test_bidirectional_link():
 
 
 def test_edges_with_node():
-    g = graph02()
+    g = graph3x3()
     edges = g.edges(from_node=5)
     assert set(edges) == {(5, 6, 1), (5, 8, 1)}
     assert g.edge(5, 6) == 1
@@ -97,7 +97,7 @@ def test_edges_with_node():
 
 
 def test_nodes_from_node():
-    g = graph02()
+    g = graph3x3()
     nodes = g.nodes(from_node=1)
     assert set(nodes) == {2, 4}
     nodes = g.nodes(to_node=9)
@@ -167,7 +167,7 @@ def test02():
 
 
 def test03():
-    g = graph02()
+    g = graph3x3()
     all_edges = g.edges()
     edges = g.edges(path=[1, 2, 3, 6, 9])
     for edge in edges:
@@ -175,7 +175,7 @@ def test03():
 
 
 def test_subgraph():
-    g = graph02()
+    g = graph3x3()
     g2 = g.subgraph_from_nodes([1, 2, 3, 4])
     d = {1: {2: 1, 4: 1},
          2: {3: 1},
@@ -185,7 +185,7 @@ def test_subgraph():
         for k2, d2 in v.items():
             assert g.edge(k, k2) == g2.edge(k, k2)
 
-    g3 = graph02()
+    g3 = graph3x3()
     g3.add_edge(3, 100, 7)
     assert not g3.is_subgraph(g2)
 
@@ -264,7 +264,7 @@ def test_is_cyclic():
 
 
 def test_is_not_cyclic():
-    g = graph02()
+    g = graph3x3()
     assert not g.has_cycles()
 
 

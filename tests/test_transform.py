@@ -1,9 +1,9 @@
 from graph import Graph
-from tests.test_graph import graph02, graph03
+from tests.test_graph import graph3x3, graph03
 
 
 def test_adjacency_matrix():
-    g = graph02()
+    g = graph3x3()
     am = g.adjacency_matrix()
     g2 = Graph(from_dict=am)
     assert g.is_subgraph(g2)

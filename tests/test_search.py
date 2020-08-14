@@ -3,7 +3,7 @@ import time
 from itertools import combinations, permutations
 
 from graph import Graph
-from tests.test_graph import graph01, graph02, graph03, graph04, graph05, graph_cycle_5
+from tests.test_graph import graph01, graph3x3, graph03, graph04, graph05, graph4x4
 
 
 def test_shortest_path01():
@@ -150,14 +150,14 @@ def test_tsp_larger_problem():
 
 
 def test_shortest_path_fail():
-    g = graph02()
+    g = graph3x3()
     d, p = g.shortest_path(start=9, end=1)  # there is no path.
     assert d == float('inf')
     assert p == []
 
 
 def test_distance():
-    g = graph02()
+    g = graph3x3()
     p = [1, 2, 3, 6, 9]
     assert g.distance_from_path(p) == 4
 
@@ -214,7 +214,7 @@ def test_all_paths_no_path():
 
 
 def test_all_paths_start_is_end():
-    g = graph02()
+    g = graph3x3()
     try:
         g.all_paths(2, 2)
         raise AssertionError("a value error should have been raised.")
@@ -223,14 +223,14 @@ def test_all_paths_start_is_end():
 
 
 def test_all_paths01():
-    g = graph02()
+    g = graph3x3()
     paths = g.all_paths(1, 3)
     assert len(paths) == 1, paths
     assert paths[0] == [1, 2, 3]
 
 
 def test_all_paths02():
-    g = graph02()
+    g = graph3x3()
     paths = g.all_paths(1, 6)
     assert len(paths) == 3
     expected = [[1, 2, 3, 6], [1, 2, 5, 6], [1, 4, 5, 6]]
@@ -238,7 +238,7 @@ def test_all_paths02():
 
 
 def test_all_paths03():
-    g = graph02()
+    g = graph3x3()
     paths = g.all_paths(1, 9)
     assert len(paths) == 6
     expected_result = [[1, 2, 3, 6, 9],
@@ -424,3 +424,14 @@ def test_degree_of_separation():
     g = graph05()
     assert g.degree_of_separation(0, 10) == 3
 
+
+def test_loop():
+    g = graph4x4()
+    p = Graph.loop(g, 1, 16)
+    assert p == [1, 2, 3, 4, 8, 12, 16, 15, 11, 7, 6, 5, 1]
+
+
+def test_avoids():
+    g = graph4x4()
+    p = Graph.avoids(g, 1, 16, (3, 7, 11, 10))
+    assert p == [1, 5, 9, 13, 14, 15, 16], p

@@ -1,8 +1,8 @@
 from itertools import permutations
 
 from graph import Graph
-from graph.transshipment_problem import clondike_transshipment_problem, Train, schedule_rail_system, loop, avoids, \
-    resolve2x3, resolve
+
+from graph.transshipment_problem import clondike_transshipment_problem, Train, schedule_rail_system, resolve2x3, resolve
 
 
 def test_mining_train():
@@ -139,33 +139,6 @@ def test_double_direction_delivery():
     assert s2 == s2_expected
 
 
-def grid():
-    edges = [
-        (1, 2, 1), (2, 3, 1), (3, 4, 1), (1, 5, 1),
-        (5, 6, 1), (6, 7, 1), (7, 8, 1), (2, 6, 1),
-        (3, 7, 1), (4, 8, 1), (5, 9, 1), (9, 10, 1),
-        (10, 11, 1), (11, 12, 1), (6, 10, 1), (7, 11, 1),
-        (8, 12, 1), (9, 13, 1), (13, 14, 1), (14, 15, 1),
-        (15, 16, 1), (10, 14, 1), (11, 15, 1), (12, 16, 1)
-    ]
-    g = Graph()
-    for s, e, d in edges:
-        g.add_edge(s, e, d, bidirectional=True)
-    return g
-
-
-def test_loop():
-    g = grid()
-    p = loop(g, 1, 16)
-    assert p == [1, 2, 3, 4, 8, 12, 16, 15, 11, 7, 6, 5, 1]
-
-
-def test_avoids():
-    g = grid()
-    p = avoids(g, 1, 16, (3, 7, 11, 10))
-    assert p == [1, 5, 9, 13, 14, 15, 16], p
-
-
 def test_01():
     summary = {}
 
@@ -245,16 +218,16 @@ def test_api_1_1():
     sequence = resolve(g, loads)
 
     assert sequence == [{2: (5, 6)},
-                         {2: (6, 3)},
-                         {3: (4, 5)},
-                         {3: (5, 6)},
-                         {9: (1, 4)},
-                         {1: (2, 1)},
-                         {2: (3, 2)},
-                         {3: (6, 3)},
-                         {9: (4, 5)},
-                         {9: (5, 6)},
-                         {9: (6, 9)}]
+                        {2: (6, 3)},
+                        {3: (4, 5)},
+                        {3: (5, 6)},
+                        {9: (1, 4)},
+                        {1: (2, 1)},
+                        {2: (3, 2)},
+                        {3: (6, 3)},
+                        {9: (4, 5)},
+                        {9: (5, 6)},
+                        {9: (6, 9)}]
 
 
 def test_api_2():
@@ -268,44 +241,35 @@ def test_api_2():
 
     The reverse (buffering train 4567) is not possible.
     """
-    # g = Graph()
-    # edges = [
-    #     (1, 2, 1),
-    #     (2, 3, 1),
-    #     (3, 4, 1),
-    #     (4, 5, 1), (4, 6, 1), (4, 7, 1), (4, 8, 1),
-    #     (5, 9, 1), (6, 9, 1), (7, 9, 1), (8, 9, 1),
-    #     (9, 10, 1),
-    #     (10, 11, 1),
-    #     (11, 12, 1),
-    #     (12, 13, 1),
-    #     (13, 14, 1),
-    # ]
-    # for s, e, d in edges:
-    #     g.add_edge(s, e, d, bidirectional=True)
-    #
-    # loads = {
-    #     1: [1, 2, 3, 4, 5, 9, 10, 11, 12],
-    #     2: [2, 3, 4, 5, 9, 10, 11, 12, 13],
-    #     3: [3, 4, 5, 9, 10, 11, 12, 13, 14],
-    #     4: [11, 10, 9, 5, 4, 3, 2, 1],
-    #     5: [12, 11, 10, 9, 5, 4, 3, 2],
-    #     6: [13, 12, 11, 10, 9, 5, 4, 3],
-    #     7: [14, 13, 12, 11, 10, 9, 5, 4],
-    # }
-    #
-    # sequence = resolve(g, loads)
-    #
-    # assert sequence == [
-    #     {1: [1, 2, 3, 4, 8], 2: [2, 3, 4, 7], 3: [3, 4, 6],
-    #      4: [11, 10, 9, 5], 5: [12, 11, 10, 9], 6: [13, 12, 11, 10], 7: [14, 13, 12, 11]},
-    #     {4: [5, 4, 3, 2, 1], 5: [9, 5, 4, 3, 2], 6: [10, 9, 5, 4, 3], 7: [11, 9, 5, 4]},
-    #     {3: [6, 9]},
-    #     {3: [9, 10], 2: [7, 9]},
-    #     {3: [10, 11], 2: [9, 10], 1: [8, 9]},
-    #     {3: [11, 12, 13, 14], 2: [10, 11, 12, 13], 1: [9, 10, 11, 12]}
-    # ]
-    assert True
+    g = Graph()
+    edges = [
+        (1, 2, 1),
+        (2, 3, 1),
+        (3, 4, 1),
+        (4, 5, 1), (4, 6, 1), (4, 7, 1), (4, 8, 1),
+        (5, 9, 1), (6, 9, 1), (7, 9, 1), (8, 9, 1),
+        (9, 10, 1),
+        (10, 11, 1),
+        (11, 12, 1),
+        (12, 13, 1),
+        (13, 14, 1),
+    ]
+    for s, e, d in edges:
+        g.add_edge(s, e, d, bidirectional=True)
+
+    loads = {
+        1: [1, 2, 3, 4, 5, 9, 10, 11, 12],
+        2: [2, 3, 4, 5, 9, 10, 11, 12, 13],
+        3: [3, 4, 5, 9, 10, 11, 12, 13, 14],
+        4: [11, 10, 9, 5, 4, 3, 2, 1],
+        5: [12, 11, 10, 9, 5, 4, 3, 2],
+        6: [13, 12, 11, 10, 9, 5, 4, 3],
+        7: [14, 13, 12, 11, 10, 9, 5, 4],
+    }
+
+    sequence = resolve(g, loads)
+
+    assert sequence is None  # todo
 
 
 def test_api_03():

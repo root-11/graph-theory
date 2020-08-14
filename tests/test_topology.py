@@ -1,11 +1,11 @@
 import time
 from graph import Graph, phase_lines
 from tests import profileit
-from tests.test_graph import graph02, graph_cycle_6, graph_cycle_5, fully_connected_4, mountain_river_map
+from tests.test_graph import graph3x3, graph_cycle_6, graph_cycle_5, fully_connected_4, mountain_river_map
 
 
 def test_subgraph():
-    g = graph02()
+    g = graph3x3()
     g2 = g.subgraph_from_nodes([1, 2, 3, 4])
     d = {1: {2: 1, 4: 1},
          2: {3: 1},
@@ -15,7 +15,7 @@ def test_subgraph():
         for k2, d2 in v.items():
             assert g.edge(k, k2) == g2.edge(k, k2)
 
-    g3 = graph02()
+    g3 = graph3x3()
     g3.add_edge(3, 100, 7)
     assert not g3.is_subgraph(g2)
 
@@ -39,7 +39,7 @@ def test_is_cyclic():
 
 
 def test_is_not_cyclic():
-    g = graph02()
+    g = graph3x3()
     assert not g.has_cycles()
 
 
@@ -70,7 +70,7 @@ def test_components():
 
 
 def test_network_size():
-    g = graph02()
+    g = graph3x3()
     ns1 = g.network_size(n1=1)
     assert len(ns1) == 9  # all nodes.
 
@@ -92,7 +92,7 @@ def test_network_size_when_fully_connected():
 
 
 def test_phase_lines_with_loop():
-    g = graph02()
+    g = graph3x3()
     g.add_edge(9, 1)
     try:
         _ = g.phase_lines()
@@ -102,7 +102,7 @@ def test_phase_lines_with_loop():
 
 
 def test_phase_lines_with_inner_loop():
-    g = graph02()
+    g = graph3x3()
     g.add_edge(9, 2)
     p = g.phase_lines()
     expected = {1: 0,
@@ -114,7 +114,7 @@ def test_phase_lines_with_inner_loop():
 
 
 def test_phase_lines_with_inner_loop2():
-    g = graph02()
+    g = graph3x3()
     g.add_edge(3, 2)
     p = g.phase_lines()
     expected = {1: 0,
@@ -126,7 +126,7 @@ def test_phase_lines_with_inner_loop2():
 
 
 def test_phase_lines_with_inner_loop3():
-    g = graph02()
+    g = graph3x3()
     g.add_edge(9, 10)
     g.add_edge(10, 5)
     p = g.phase_lines()
