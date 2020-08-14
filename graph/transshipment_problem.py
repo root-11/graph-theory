@@ -396,19 +396,15 @@ def check_user_input(graph, loads):
 
 
 def path_to_moves(path):
-    """translate best path into motion sequence."""
+    """ translate best path into motion sequence.
+    :param path: list of tuples with [(load id, location), ... ]
+    """
     moves = []
     s1 = path[0]
     for s2 in path[1:]:
         for p1, p2 in zip(s1, s2):
             if p1 != p2:
-                moves.append(
-                    {
-                        p1[0]: (  # load id.
-                            p1[1],  # location 1.
-                            p2[1]   # location 2.
-                        )
-                    })
+                moves.append({p1[0]: (p1[1], p2[1])})  # {load id: (location1, location2)}
         s1 = s2
     return moves
 
@@ -510,7 +506,81 @@ def first_car(train, loads):
     return None
 
 
+class TimeLocationMap(object):
+    def __init__(self, loads):
+        assert isinstance(loads, dict)
+        assert all([isinstance(i, list) for i in loads.values()])
+        self.time_location = tl = {}  # time-location
+        for load_id, route in loads.items():
+            for step, location in enumerate(route):
+                step_loc = (step, location)
+                content = tl.get(step_loc, None)
+                if not content:
+                    tl[step_loc] = [load_id]
+                else:
+                    tl[step_loc].append(load_id)
+
+    def conflicts(self):
+        for k, v in self.time_location.items():
+            if len(v) > 1:
+                (step, location), loads = k, v
+                yield step, location, loads
+
+    def loads(self, conflict):
+        return self.time_location[conflict]
+
+    def score(self):
+        if [k for k, v in self.time_location.items() if len(v) > 1]:
+            return float('inf')
+        else:
+            return sum([len(v) for v in self.time_location.values()])
+
+
 # solution methods.
+def avoid_resolve(graph, loads):
+    """ detects immediate conflicts and attempts to reroute """
+
+    score, solution = float('inf'), None
+
+    tl = TimeLocationMap(loads)
+    for step, location, conflict_loads in tl.conflicts():
+        for load in conflict_loads:
+            old_route = loads[load]
+            if len(old_route) <= 2:
+                continue
+
+            new_route = graph.avoids(start=old_route[0], end=old_route[-1], obstacles=[location])
+            if not new_route:
+                continue
+            loads2 = {k: v[:] for k, v in loads.items()}
+            loads2[load] = new_route
+            tl2 = TimeLocationMap(loads2)
+            if list(tl2.conflicts()):
+                continue
+            if tl2.score() < score:
+                score = tl2.score()
+
+                solution = loads2
+
+    if isinstance(solution, dict):
+        L = []
+        steps = max([len(route) for route in solution.values()])
+        for step in range(steps):
+            L.append(
+                tuple((load_id, route[step]) if len(route) >= step else (load_id, route[-1])
+                      for load_id, route in solution.items())
+            )
+        moves = path_to_moves(L)
+    else:
+        moves = None
+
+    return moves
+
+
+def loop_resolve(graph, loads):
+    pass
+
+
 def train_resolve(graph, loads):
     """ A greedy algorithm that finds and removes trains from the network """
     check_user_input(graph, loads)
@@ -597,6 +667,8 @@ def dfs_resolve(graph, loads, time_limit_ms=10000):
 # collection of solution methods for the routing problem.
 # insert, delete, append or substitute with your own methods as required.
 methods = [
+    avoid_resolve,
+    loop_resolve,
     # train_resolve,
     dfs_resolve
 ]
