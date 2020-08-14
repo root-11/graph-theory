@@ -180,6 +180,25 @@ def test_01():
     # it will never take more than 7 steps to solve 2x3. Average is 4 moves
 
 
+def test_simple_reroute():
+    """ to loads on a collision path. """
+    g = Graph()
+    edges1 = [(1, 2, 1), (2, 3, 1)]
+    edges2 = [(1, 4, 1), (4, 3, 1)]
+    for s, e, d in edges1:
+        g.add_edge(s, e, d, bidirectional=True)
+    for s, e, d in edges2:
+        g.add_edge(s, e, d, bidirectional=False)
+
+    loads = {1: [1, 2, 3], 2: [3, 2, 1]}
+
+    sequence = resolve(g, loads)
+    assert sequence == [{1: (1, 4)},
+                        {2: (3, 2)},
+                        {1: (4, 3)},
+                        {2: (2, 1)}]
+
+
 def test_api_1():
     """ A simple loop of 4 locations, where 3 loads need to move
     clockwise. """
