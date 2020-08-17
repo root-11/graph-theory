@@ -651,7 +651,9 @@ def tsp(graph):
         # Given tour [...A,B...C,D...], consider reversing B...C to get [...A,C...B,D...]
         a, b, c, d = tour[i - 1], tour[i], tour[j - 1], tour[j % len(tour)]
         # are old links (ab + cd) longer than new ones (ac + bd)? if so, reverse segment.
-        if graph.edge(a, b) + graph.edge(c, d) > graph.edge(a, c) + graph.edge(b, d):
+        A, B, C, D = graph.edge(a, b), graph.edge(c, d), graph.edge(a, c), graph.edge(b, d)
+        # if all are not None and improvement is shorter than previous ...
+        if all((A, B, C, D)) and A + B > C + D:
             tour[i:j] = reversed(tour[i:j])
             return True
 
@@ -686,10 +688,11 @@ def tsp(graph):
 def subgraph(graph, nodes):
     """ Creates a subgraph as a copy from the graph
     :param graph: class Graph
-    :param nodes: list of nodes
+    :param nodes: set or list of nodes
     :return: new instance of Graph.
     """
-    assert isinstance(nodes, list)
+    assert isinstance(nodes, (set, list))
+    node_set = set(nodes)
     G = object.__new__(graph.__class__)
     assert isinstance(G, BasicGraph)
     G.__init__()
@@ -697,7 +700,8 @@ def subgraph(graph, nodes):
         obj = graph.node(n1)
         G.add_node(n1, obj)
         for n2 in graph.nodes(from_node=n1):
-            G.add_edge(n1, n2, graph.edge(n1, n2))
+            if n2 in node_set:
+                G.add_edge(n1, n2, graph.edge(n1, n2))
     return G
 
 
