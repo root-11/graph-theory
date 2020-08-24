@@ -435,3 +435,28 @@ def test_avoids():
     g = graph4x4()
     p = Graph.avoids(g, 1, 16, (3, 7, 11, 10))
     assert p == [1, 5, 9, 13, 14, 15, 16], p
+
+
+def test_incomparable_path_searching():
+    """
+    incomparable type A -> incomparable type A -> incomparable type B
+    |
+    v
+    incomparable type C
+    """
+    g = Graph()
+    g.add_edge(("A", "6"), ("B", "7"))
+    g.add_edge(("A", "6"), 6)
+    g.add_edge(("B", "7"), "B")
+
+    p = g.all_paths(("A", "6"), "B")
+    assert p == [[("A", "6"), ("B", "7"), "B"]]
+
+    p = g.depth_first_search(("A", "6"), "B")
+    assert p == [("A", "6"), ("B", "7"), "B"]
+
+    p = g.breadth_first_search(("A", "6"), "B")
+    assert p == (2, [("A", "6"), ("B", "7"), "B"])
+
+    p = g.shortest_path(("A", "6"), "B")
+    assert p == (2, [("A", "6"), ("B", "7"), "B"])
