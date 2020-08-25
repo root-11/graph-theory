@@ -166,12 +166,10 @@ def test_distance():
 
 def test_bfs():
     g = graph03()
-    d, path = g.breadth_first_search(1, 7)
-    assert d == 2, d
+    path = g.breadth_first_search(1, 7)
     assert path == [1, 3, 7], path
 
-    d, path = g.breadth_first_search(1, 900)  # 900 doesn't exit.
-    assert d == float('inf')
+    path = g.breadth_first_search(1, 900)  # 900 doesn't exit.
     assert path == []
 
 
@@ -428,10 +426,35 @@ def test_degree_of_separation():
 def test_loop():
     g = graph4x4()
     p = Graph.loop(g, 1, 16)
-    assert p == [1, 2, 3, 4, 8, 12, 16, 15, 11, 7, 6, 5, 1]
+    assert p == [1, 2, 3, 4, 8, 12, 16, 15, 14, 13, 9, 5, 1]
 
 
 def test_avoids():
     g = graph4x4()
     p = Graph.avoids(g, 1, 16, (3, 7, 11, 10))
     assert p == [1, 5, 9, 13, 14, 15, 16], p
+
+
+def test_incomparable_path_searching():
+    """
+    incomparable type A -> incomparable type A -> incomparable type B
+    |
+    v
+    incomparable type C
+    """
+    g = Graph()
+    g.add_edge(("A", "6"), ("B", "7"))
+    g.add_edge(("A", "6"), 6)
+    g.add_edge(("B", "7"), "B")
+
+    p = g.all_paths(("A", "6"), "B")
+    assert p == [[("A", "6"), ("B", "7"), "B"]]
+
+    p = g.depth_first_search(("A", "6"), "B")
+    assert p == [("A", "6"), ("B", "7"), "B"]
+
+    p = g.breadth_first_search(("A", "6"), "B")
+    assert p == [("A", "6"), ("B", "7"), "B"]
+
+    p = g.shortest_path(("A", "6"), "B")
+    assert p == (2, [("A", "6"), ("B", "7"), "B"])
