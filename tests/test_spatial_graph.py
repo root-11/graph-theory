@@ -122,8 +122,7 @@ def test_bfs():
     g = fishbone_graph()
     entry_point = (-1, 0, 2)
     exit_point = (-1, 0, 1)
-    d, p = g.breadth_first_search(entry_point, exit_point)
-    assert d == 3, d
+    p = g.breadth_first_search(entry_point, exit_point)
     assert len(p) == 4, p
 
 
@@ -139,8 +138,7 @@ def test_distance_from_path():
     g = fishbone_graph()
     entry_point = (-1, 0, 2)
     exit_point = (-1, 0, 1)
-    d, p = g.breadth_first_search(entry_point, exit_point)
-    assert d == 3
+    p = g.breadth_first_search(entry_point, exit_point)
     assert len(p) == 4
     assert g.distance_from_path(p) == 3
 
@@ -158,10 +156,10 @@ def test_subgraph_from_nodes():
     g = fishbone_graph()
     entry_point = (-1, 0, 2)
     exit_point = (-1, 0, 1)
-    d, p = g.breadth_first_search(entry_point, exit_point)
+    p = g.breadth_first_search(entry_point, exit_point)
     subgraph = g.subgraph_from_nodes(p)
     assert isinstance(subgraph, Graph3D), type(subgraph)
-    new_d, new_p = subgraph.breadth_first_search(entry_point, exit_point)
+    new_p = subgraph.breadth_first_search(entry_point, exit_point)
     assert p == new_p, (p, new_p)
 
 

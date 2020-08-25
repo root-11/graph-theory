@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, deque
 from functools import lru_cache
 from heapq import heappop, heappush
 from itertools import combinations
@@ -328,9 +328,10 @@ def shortest_path(graph, start, end):
     for n1, n2, dist in graph.edges():
         g[n1].append((dist, n2))
 
-    q, visited, mins = [(0, start, ())], set(), {start: 0}
+    q, visited, mins = [(0, 0, start, ())], set(), {start: 0}
+    i = 1
     while q:
-        (cost, v1, path) = heappop(q)
+        (cost, _, v1, path) = heappop(q)
         if v1 not in visited:
             visited.add(v1)
             path = (v1, path)
@@ -350,7 +351,8 @@ def shortest_path(graph, start, end):
                 next_node = cost + dist
                 if prev is None or next_node < prev:
                     mins[v2] = next_node
-                    heappush(q, (next_node, v2, path))
+                    heappush(q, (next_node, i, v2, path))
+                    i += 1
     return float("inf"), []
 
 
@@ -361,34 +363,21 @@ def breadth_first_search(graph, start, end):
     :param end: end node
     :return: path
     """
-    g = defaultdict(list)
-    for n1, n2, dist in graph.edges():
-        g[n1].append((dist, n2))
-
-    q, visited, mins = [(0, start, ())], set(), {start: 0}
+    visited = {start: None}
+    q = deque([start])
     while q:
-        (cost, v1, path) = heappop(q)
-        if v1 not in visited:
-            visited.add(v1)
-            path = (v1, path)
-
-            if v1 == end:  # exit criteria.
-                L = []
-                while path:
-                    v, path = path[0], path[1]
-                    L.append(v)
-                L.reverse()
-                return cost, L  # <-- exit if end is found.
-
-            for dist, v2 in g.get(v1, ()):
-                if v2 in visited:
-                    continue
-                prev = mins.get(v2, None)
-                next_node = cost + 1
-                if prev is None or next_node < prev:
-                    mins[v2] = next_node
-                    heappush(q, (next_node, v2, path))
-    return float("inf"), []  # <-- exit if end is not found.
+        node = q.popleft()
+        if node == end:
+            path = deque()
+            while node is not None:
+                path.appendleft(node)
+                node = visited[node]
+            return list(path)
+        for next_node in graph.nodes(from_node=node):
+            if next_node not in visited:
+                visited[next_node] = node
+                q.append(next_node)
+    return []
 
 
 def depth_first_search(graph, start, end):
@@ -1105,8 +1094,8 @@ def all_paths(graph, start, end):
 def degree_of_separation(graph, n1, n2):
     """ Calculates the degree of separation between 2 nodes."""
     assert n1 in graph.nodes()
-    d, p = breadth_first_search(graph, n1, n2)
-    return d
+    p = breadth_first_search(graph, n1, n2)
+    return len(p)-1
 
 
 def loop(graph, start, mid, end=None):
