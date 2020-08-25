@@ -166,12 +166,10 @@ def test_distance():
 
 def test_bfs():
     g = graph03()
-    d, path = g.breadth_first_search(1, 7)
-    assert d == 2, d
+    path = g.breadth_first_search(1, 7)
     assert path == [1, 3, 7], path
 
-    d, path = g.breadth_first_search(1, 900)  # 900 doesn't exit.
-    assert d == float('inf')
+    path = g.breadth_first_search(1, 900)  # 900 doesn't exit.
     assert path == []
 
 
@@ -456,7 +454,7 @@ def test_incomparable_path_searching():
     assert p == [("A", "6"), ("B", "7"), "B"]
 
     p = g.breadth_first_search(("A", "6"), "B")
-    assert p == (2, [("A", "6"), ("B", "7"), "B"])
+    assert p == [("A", "6"), ("B", "7"), "B"]
 
     p = g.shortest_path(("A", "6"), "B")
     assert p == (2, [("A", "6"), ("B", "7"), "B"])
