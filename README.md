@@ -113,3 +113,4 @@ All module functions are available from Graph and Graph3D (where applicable).
 - Harry Darby for the mountain river map.
 - Kyle Downey for depth_scan algorithm.
 - Ross Blandford for new transshipment test cases.
+- Avi Kelman for type-tolerant search.
