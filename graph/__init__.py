@@ -328,9 +328,10 @@ def shortest_path(graph, start, end):
     for n1, n2, dist in graph.edges():
         g[n1].append((dist, n2))
 
-    q, visited, mins = [(0, start, ())], set(), {start: 0}
+    q, visited, mins = [(0, 0, start, ())], set(), {start: 0}
+    i = 1
     while q:
-        (cost, v1, path) = heappop(q)
+        (cost, _, v1, path) = heappop(q)
         if v1 not in visited:
             visited.add(v1)
             path = (v1, path)
@@ -350,7 +351,8 @@ def shortest_path(graph, start, end):
                 next_node = cost + dist
                 if prev is None or next_node < prev:
                     mins[v2] = next_node
-                    heappush(q, (next_node, v2, path))
+                    heappush(q, (next_node, i, v2, path))
+                    i += 1
     return float("inf"), []
 
 

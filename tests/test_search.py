@@ -426,7 +426,7 @@ def test_degree_of_separation():
 def test_loop():
     g = graph4x4()
     p = Graph.loop(g, 1, 16)
-    assert p == [1, 2, 3, 4, 8, 12, 16, 15, 11, 7, 6, 5, 1]
+    assert p == [1, 2, 3, 4, 8, 12, 16, 15, 14, 13, 9, 5, 1]
 
 
 def test_avoids():
