@@ -615,11 +615,13 @@ def avoid_resolve(graph, loads):
 
 
 def loop_resolve(graph, loads):
+    """ The solution is some rotation of the current state"""
     pass
 
 
 def train_resolve(graph, loads):
-    """ A greedy algorithm that finds and removes trains from the network """
+    """ A greedy algorithm that finds loads that can move to their final
+    destination as a group. """
     check_user_input(graph, loads)
 
     # 1. who can move?
@@ -663,9 +665,6 @@ def train_resolve(graph, loads):
                         continue  # no path.
                     new_route = A + B[1:]
 
-
-
-
         exits = [n for n in graph.nodes()]
 
         #todo: make a plan that moves the obstacles out of the way.
@@ -675,9 +674,13 @@ def train_resolve(graph, loads):
     pass
 
 
-def dfs_resolve(graph, loads):
-    """calculates the solution to the transshipment problem."""
-
+def bfs_resolve(graph, loads):
+    """
+    calculates the solution to the transshipment problem by
+    constructing the solution space as a finite state machine
+    and then finding the shortest path through the fsm from the
+    initial state to the desired state.
+    """
     initial_state = tuple(((load_id, route[0]) for load_id, route in loads.items()))
     final_state = tuple(((load_id, route[-1]) for load_id, route in loads.items()))
     movements = Graph()
@@ -685,15 +688,16 @@ def dfs_resolve(graph, loads):
     start = process_time()
 
     states = [initial_state]
-    while states:
+    solved = False
+
+    while not solved:
         if process_time() - start > (TIMEOUT / 1000):
             raise TimeoutError(f"No solution found in {TIMEOUT}ms")
 
         state = states.pop(0)
         occupied = {i[1] for i in state}
         for load_id, location in state:
-            if final_state in movements:
-                break
+            if solved: break
             options = (e for s, e, d in graph.edges(from_node=location) if e not in occupied)
             for option in options:
                 new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state)
@@ -704,16 +708,78 @@ def dfs_resolve(graph, loads):
                     movements.add_edge(state, new_state, 1)
                     states.append(new_state)
 
-                if final_state in movements:
-                    states.clear()
+                if final_state == new_state:
+                    solved = True
                     break
-
-    if final_state not in movements:
-        raise Exception("No solution found")
+        if not states:
+            raise Exception("No solution found")
 
     steps, best_path = movements.shortest_path(initial_state, final_state)
     moves = path_to_moves(best_path)
     return moves
+
+
+def dfs_resolve(graph, loads):
+    """
+    calculates the solution to the transshipment problem by
+    search along a line of movements and backtracking when it
+    no longer leads anywhere (DFS).
+    """
+    initial_state = tuple(((load_id, route[0]) for load_id, route in loads.items()))
+    final_state = tuple(((load_id, route[-1]) for load_id, route in loads.items()))
+
+    state = initial_state
+    states = [initial_state]  # q
+    path = []
+    movements = Graph()
+    visited = set()
+    start = process_time()
+
+    while states:
+        if process_time() - start > (TIMEOUT / 1000):
+            raise TimeoutError(f"No solution found in {TIMEOUT}ms")
+
+        state = states.pop(0)  # n1
+        visited.add(state)  # visited
+        path.append(state)  # path
+        if state == final_state:
+            states.clear()  # return path  # exit if final state is found.
+            break
+
+        for new_state in new_states(graph, movements, state):  # for n2 in g.from(n1)
+            if new_state in visited:  # if n2 in visited
+                continue
+            states.append(new_state)  # q.append(n2)
+            break
+        else:
+            path.remove(state)  # path.remove(n1)
+            while not states and path:  # while not q and path
+                for new_state in new_states(graph, movements, state=path[-1]):  # for n2 in g.from_node(path[-1]):..
+                    if new_state in visited:  # if n2 in visited
+                        continue
+                    states.append(new_state)
+                    break
+                else:
+                    path = path[:-1]
+    if state != final_state:
+        return None  # <-- exit if not path was found.
+
+    steps, best_path = movements.shortest_path(initial_state, final_state)
+    moves = path_to_moves(best_path)
+    return moves
+
+
+
+def new_states(graph, movements, state):
+        occupied = {i[1] for i in state}
+        for load_id, location in state:
+            options = (e for s, e, d in graph.edges(from_node=location) if e not in occupied)
+            for option in options:
+                new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state)
+                if new_state in movements:
+                    continue
+                movements.add_edge(state, new_state, 1)
+                yield new_state
 
 
 class Load(object):
@@ -792,7 +858,7 @@ class Schedule(object):
         #         else:
         #             d[tloc].append(load)
 
-        # Two opposite timesteps must be detected.
+        # Two opposite time steps must be detected.
         durations = {len(load.path) for load in loads}
         if len(durations) != 1:  # "routes have different lengths."
             for load in loads:
@@ -887,10 +953,11 @@ def action_resolve(graph, loads):
 # collection of solution methods for the routing problem.
 # insert, delete, append or substitute with your own methods as required.
 methods = [
-    action_resolve,
-    avoid_resolve,
-    loop_resolve,
-    train_resolve,
-    dfs_resolve
+    # action_resolve,
+    # avoid_resolve,
+    # loop_resolve,
+    # train_resolve,
+    dfs_resolve,
+    bfs_resolve
 ]
 
