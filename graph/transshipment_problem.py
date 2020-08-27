@@ -1,6 +1,8 @@
 from time import process_time
 from itertools import permutations, product
 
+TIMEOUT = 10_000_000_000  # ms.
+
 from graph import Graph
 import itertools
 
@@ -375,6 +377,7 @@ def resolve(graph, loads):
         except TimeoutError:
             pass
         if moves:
+            print(f"{method.__name__} found a solution.")
             return moves
     return moves
 
@@ -482,11 +485,50 @@ def resolve2x3(initial_state, desired_state):
     return p, g
 
 
+def merge(paths):
+    """
+    :param paths: [list of nodes]
+    :return: path as list of nodes
+    """
+    g = Graph()
+    for path in paths:
+        a = path[0]
+        for b in path[1:]:
+            v = g.edge(a, b)
+            if v is None:
+                g.add_edge(a, b, 1)
+            else:
+                g.add_edge(a, b, v + 1)
+            a = b
+    start, end = g.nodes(in_degree=0), g.nodes(out_degree=0)
+    d, p = g.shortest_path(start[0], end[0])
+    return p
+
+
+def test_merge():
+    common_path = merge([[1, 2, 3, 4, 5, 9, 10, 11, 12],
+                         [2, 3, 4, 5, 9, 10, 11, 12, 13],
+                         [3, 4, 5, 9, 10, 11, 12, 13, 14]])
+    assert common_path == [1, 2, 3, 4, 5, 9, 10, 11, 12, 13, 14], common_path
+
+
 def find_trains(graph, loads):
     """ reads the paths and determines all trains (each linear cluster of loads)"""
     check_user_input(graph, loads)
     # check that the order of movements are constant.
-    return [(1, 2, 3), (4, 5, 6, 7)]
+    initial_locations = [v[0] for v in loads.values()]
+    g = graph.subgraph_from_nodes(initial_locations)
+    train_locations = g.components()
+
+    reverse_load = {v[0]: k for k, v in loads.items()}
+    trains = [[reverse_load[loc] for loc in train_locs] for train_locs in train_locations]
+
+    train_routes = {}
+    for z in trains[:]:  # for each train get the route
+        routes = {lid: route for lid, route in loads.items() if lid in z}
+        common_path = merge(routes.values())
+        train_routes[tuple(z)] = common_path  # sort the tuple in order of travel: First element must move first.
+    return train_routes
 
 
 def first_car(train, loads):
@@ -526,49 +568,44 @@ class TimeLocationMap(object):
                 (step, location), loads = k, v
                 yield step, location, loads
 
-    def loads(self, conflict):
-        return self.time_location[conflict]
-
-    def score(self):
-        if [k for k, v in self.time_location.items() if len(v) > 1]:
-            return float('inf')
-        else:
-            return sum([len(v) for v in self.time_location.values()])
-
 
 # solution methods.
 def avoid_resolve(graph, loads):
     """ detects immediate conflicts and attempts to reroute """
 
-    score, solution = float('inf'), None
-
     tl = TimeLocationMap(loads)
+
+    loads2 = {k: v[:] for k, v in loads.items()}
+    tl2 = TimeLocationMap(loads2)
+
+    obstacles = set()
     for step, location, conflict_loads in tl.conflicts():
-        for load in conflict_loads:
+        for load in conflict_loads:  # should always be 2.
             old_route = loads[load]
-            if len(old_route) <= 2:
+            if len(old_route) <= 2:  # this load isn't moving.
                 continue
 
-            new_route = graph.avoids(start=old_route[0], end=old_route[-1], obstacles=[location])
+            new_route = graph.avoids(start=old_route[0], end=old_route[-1], obstacles=[location] + list(obstacles))
             if not new_route:
                 continue
-            loads2 = {k: v[:] for k, v in loads.items()}
+            else:
+                obstacles.update(set(old_route).difference(set(new_route)))
+            # make a copy of the loads and check if it works.
             loads2[load] = new_route
             tl2 = TimeLocationMap(loads2)
             if list(tl2.conflicts()):
                 continue
-            if tl2.score() < score:
-                score = tl2.score()
 
-                solution = loads2
+    if tl2.conflicts():
+        return None
 
-    if isinstance(solution, dict):
+    if isinstance(loads2, dict):
         L = []
-        steps = max([len(route) for route in solution.values()])
+        steps = max([len(route) for route in loads2.values()])
         for step in range(steps):
             L.append(
                 tuple((load_id, route[step]) if len(route) >= step else (load_id, route[-1])
-                      for load_id, route in solution.items())
+                      for load_id, route in loads2.items())
             )
         moves = path_to_moves(L)
     else:
@@ -599,22 +636,38 @@ def train_resolve(graph, loads):
 
     # 3. Let's start with finding the biggest train, then find a route for it.
     trains = find_trains(graph, loads)
-    assert isinstance(trains, list)
-    assert all(isinstance(i, tuple) for i in trains)
-    trains.sort(key=lambda x: len(x))
     # 4. Once the biggest train is out of the way, we look for where we can store
     #    obstacles in the mean time.
+    trains = [(k, v) for k, v in trains.items()]
+    trains.sort(key=lambda x: len(x[0]), reverse=True)
 
+    loads2 = {}
     while trains:
-        train = trains.pop(0)
-        first = first_car(train, loads)
-        last = train[-1] if first == train[0] else train[0]
-        path = set(loads[first]).union(loads[last])
-        obstacles = [load_id for load_id, route in loads.items() if load_id not in train and path.intersection(set(route))]
+        train, route = trains.pop(0)
+        train_locations = [loads[t][0] for t in train]
+        obstacles = [load_id for load_id, route in loads.items() if load_id not in train and set(route).intersection(set(route))]
         # can obstacles move out of the way of first?
-        free_locations = [n for n in graph.nodes() if n not in path]
+        free_locations = [n for n in graph.nodes() if n not in route]
         if len(free_locations) < len([lid for lid in obstacles if lid not in train]):
             return None  # solving using this method not possible.
+        # is it possible to take a train to a free location?
+        paths = []
+        for train2, route2 in trains:
+            for lid in train2:
+                for free_location in free_locations:
+                    a, x = route2[0], free_location
+                    x, b = free_location, route2[-1]
+                    da, A = graph.shortest_path(a, x)
+                    db, B = graph.shortest_path(x, b)
+                    if da + db == float('inf'):
+                        continue  # no path.
+                    new_route = A + B[1:]
+
+
+
+
+        exits = [n for n in graph.nodes()]
+
         #todo: make a plan that moves the obstacles out of the way.
         #      get rid of train 1.
         #      reduce the graph, so that train 1 doesn't have to move again.
@@ -622,9 +675,8 @@ def train_resolve(graph, loads):
     pass
 
 
-def dfs_resolve(graph, loads, time_limit_ms=10000):
+def dfs_resolve(graph, loads):
     """calculates the solution to the transshipment problem."""
-    assert isinstance(time_limit_ms, (float, int))
 
     initial_state = tuple(((load_id, route[0]) for load_id, route in loads.items()))
     final_state = tuple(((load_id, route[-1]) for load_id, route in loads.items()))
@@ -634,8 +686,8 @@ def dfs_resolve(graph, loads, time_limit_ms=10000):
 
     states = [initial_state]
     while states:
-        if process_time() - start > (time_limit_ms / 1000):
-            raise TimeoutError(f"No solution found in {time_limit_ms}ms")
+        if process_time() - start > (TIMEOUT / 1000):
+            raise TimeoutError(f"No solution found in {TIMEOUT}ms")
 
         state = states.pop(0)
         occupied = {i[1] for i in state}
@@ -664,12 +716,181 @@ def dfs_resolve(graph, loads, time_limit_ms=10000):
     return moves
 
 
+class Load(object):
+    def __init__(self, id, path, schedule):
+        self.id = id
+        assert isinstance(path, list)
+        self.path = path
+        self.schedule = schedule
+
+    def __repr__(self):
+        return f"Load({self.id}): {self.path}"
+
+    def avoid(self, step, location, loads):
+        g = self.schedule.graph
+        assert isinstance(g, Graph)
+        s, e = self.path[step - 1], self.path[step + 1]
+
+        current_path = new_path = self.path[:]
+        if s == location == e:  # only option is to step out of the way (and `avoid` wont work).
+            for a, b, d in g.edges(from_node=location):  # for each neighbour,
+                _, p = g.shortest_path(b, location)  # what's the shortest path back.
+                alt_path = self.path[:step] + p[:-1] + self.path[step + 1:]  # what is the alternative route?
+                self.path = alt_path[:]
+
+                remaining_conflicts = list(self.schedule.conflicts(loads))  # did the conflict vanish?
+                if remaining_conflicts:
+                    for s, l, loads_ in remaining_conflicts:
+                        if all([s == step, l == location, not set([L.id for L in loads]).difference([L.id for L in loads_])]):
+                            self.path = current_path[:]  # change didn't help. return to pre-change.
+                            break
+                    else:
+                        return  # problem solved.
+                else:
+                    return  # problem solved.
+
+        elif s != location != e:  # change the route.
+            detour = g.avoids(s, e, [location])
+            new_path = self.path[:step] + detour + self.path[step + 1:]
+
+        else:  # wait to see if others move.
+            new_path = self.path[:step] + [self.path[step - 1]] + self.path[step + 1:]
+
+        assert self.path[0] == new_path[0] and self.path[-1] == new_path[-1], "bad route!"
+        self.path = new_path
+
+
+class Schedule(object):
+    def __init__(self, graph, loads=None):
+        self.graph = graph
+        self.loads = {}
+        if loads is not None:
+            for k, v in loads.items():
+                self.loads[k] = Load(k, v, self)
+            duration = self.duration()
+            for load in self.loads.values():
+                if len(load.path) < duration:
+                    dx = duration - len(load.path)
+                    load.path = load.path + [load.path[-1]] * dx
+        assert len({len(v.path) for v in self.loads.values()}) == 1, "routes have different lengths."
+
+    def duration(self):
+        return max(len(load.path) for load in self.loads.values())
+
+    def conflicts(self, loads=None):
+        if loads is None:
+            loads = self.loads.values()
+
+        d = {}
+        # for load in loads:
+        #     assert isinstance(load, Load)
+        #     for t, loc in enumerate(load.path):
+        #         tloc = (t, loc)
+        #         content = d.get(tloc, None)
+        #         if not content:
+        #             d[tloc] = [load]
+        #         else:
+        #             d[tloc].append(load)
+
+        # Two opposite timesteps must be detected.
+        durations = {len(load.path) for load in loads}
+        if len(durations) != 1:  # "routes have different lengths."
+            for load in loads:
+                if len(load.path) < max(durations):
+                    load.path = load.path + [load.path[-1]] * (max(durations) - len(load.path))
+        duration = max(durations)
+
+        for step in range(duration-1):
+            for load in loads:
+                swops = {(L2.path[step], L2.path[step + 1]):L2 for L2 in loads if L2 is not load}
+                # swops are cases where the load change places by passing through each other
+                # (impossible move): Load A: 1 --> 2, whilst Load B: 2 --> 1.
+
+                swop_value = (load.path[step+1], load.path[step])
+                if swop_value not in swops:
+                    continue
+                L2 = swops[swop_value]
+
+                tloc = (step, load.path[step])
+
+                conflict = d.get(tloc, None)
+
+                if not conflict:
+                    d[tloc] = [load, L2]
+                else:
+                    if load not in d[tloc]:
+                        d[tloc].append(load)
+                    if L2 not in d[tloc]:
+                        d[tloc].append(L2)
+
+        for step in range(duration):
+            for load in loads:
+                if load.path[step] in {L2.path[step] for L2 in loads if L2 is not load}:
+                    tloc = (step, load.path[step])
+                    conflict = d.get(tloc, None)
+                    if not conflict:
+                        d[tloc] = [load]
+                    else:
+                        if load not in d[tloc]:
+                            d[tloc].append(load)
+                else:
+                    pass  # everything is ok.
+
+        for k, v in sorted(d.items()):
+            if len(v) > 1:
+                (step, loc), loads = k, v
+                yield step, loc, loads
+
+
+def action_resolve(graph, loads):
+    """calculates the solution to the transshipment problem."""
+    initial_state = tuple(((load_id, route[0]) for load_id, route in loads.items()))
+    final_state = tuple(((load_id, route[-1]) for load_id, route in loads.items()))
+
+    start = process_time()
+
+    s = Schedule(graph, loads)
+    conflicts = list(s.conflicts())
+
+    while conflicts:
+        if process_time() - start > (TIMEOUT / 1000):
+            raise TimeoutError(f"No solution found in {TIMEOUT}ms")
+
+        conflict = conflicts.pop(0)
+        step, location, c_loads = conflict
+
+        resolved = False
+        for load in c_loads:
+            load.avoid(step, location, c_loads)
+            if not list(s.conflicts(c_loads)):
+                resolved = True
+                break
+
+        if resolved:
+            for load in c_loads:
+                loads[load.id] = load.path[:]
+
+        s = Schedule(graph, loads)
+        loads = {lid: load.path for lid, load in s.loads.items()}
+        conflicts = list(s.conflicts())
+
+    print(good, "good,", bad, "bad", flush=True)
+
+    if final_state not in movements:
+        raise Exception("No solution found")
+
+    steps, best_path = movements.shortest_path(initial_state, final_state)
+    moves = path_to_moves(best_path)
+    return moves
+
+
 # collection of solution methods for the routing problem.
 # insert, delete, append or substitute with your own methods as required.
 methods = [
+    action_resolve,
     avoid_resolve,
     loop_resolve,
-    # train_resolve,
+    train_resolve,
     dfs_resolve
 ]
 

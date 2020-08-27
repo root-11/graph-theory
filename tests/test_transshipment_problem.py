@@ -1,6 +1,7 @@
 from itertools import permutations
 
 from graph import Graph
+from tests.test_graph import graph5x5
 
 from graph.transshipment_problem import clondike_transshipment_problem, Train, schedule_rail_system, resolve2x3, resolve
 
@@ -183,12 +184,10 @@ def test_01():
 def test_simple_reroute():
     """ to loads on a collision path. """
     g = Graph()
-    edges1 = [(1, 2, 1), (2, 3, 1)]
-    edges2 = [(1, 4, 1), (4, 3, 1)]
-    for s, e, d in edges1:
-        g.add_edge(s, e, d, bidirectional=True)
-    for s, e, d in edges2:
-        g.add_edge(s, e, d, bidirectional=False)
+    for s, e in [(1, 2), (2, 3)]:
+        g.add_edge(s, e, 1, bidirectional=True)
+    for s, e in [(1, 4), (4, 3)]:
+        g.add_edge(s, e, 1, bidirectional=False)
 
     loads = {1: [1, 2, 3], 2: [3, 2, 1]}
 
@@ -197,6 +196,74 @@ def test_simple_reroute():
                         {2: (3, 2)},
                         {1: (4, 3)},
                         {2: (2, 1)}]
+
+
+def test_simple_reroute_2():
+    """ to loads on a collision path. """
+    g = Graph()
+    for s, e in [(1, 2), (2, 3), (3, 4)]:
+        g.add_edge(s, e, 1, bidirectional=True)
+    for s, e in [(1, 5), (5, 6), (6, 4)]:
+        g.add_edge(s, e, 1, bidirectional=False)
+
+    loads = {1: [1, 2, 3, 4], 2: [4, 3, 2, 1]}
+
+    sequence = resolve(g, loads)
+    assert sequence == [{1: (1, 5)},
+                        {1: (5, 6)},
+                        {2: (4, 3)},
+                        {1: (6, 4)},
+                        {2: (3, 2)},
+                        {2: (2, 1)}]
+
+
+def test_simple_reroute_3():
+    """ Loop with 6 nodes:
+    1 <--> 2 <--> 3 <--> 4 <-- 5 <--> 6 <--> (1)
+    """
+    g = Graph()
+    edges = [(1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 1)]
+    for s, e in edges:
+        g.add_edge(s, e, 1, bidirectional=True)
+    g.del_edge(4, 5)
+
+    loads = {1: [1, 2, 3], 2: [3, 2, 1]}
+
+    sequence = resolve(g, loads)
+
+    assert sequence == [{1: (1, 6)},
+                        {1: (6, 5)},
+                        {1: (5, 4)},
+                        {2: (3, 2)},
+                        {1: (4, 3)},
+                        {2: (2, 1)}]
+
+
+def test_simple_reroute_4():
+    """
+        1
+       / \
+      6---2
+     / \ / \
+    5 - 4 - 3
+    """
+    g = Graph()
+    edges = [(1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 1), (2, 6), (2, 4), (6, 2)]
+    for s, e in edges:
+        g.add_edge(s, e, 1, bidirectional=True)
+    g.del_edge(4, 5)
+
+    loads = {1: [1, 2, 3, 4],
+             3: [3, 2, 1],
+             6: [6, 2]}
+
+    sequence = resolve(g, loads)
+    assert sequence == [{1: (1, 2)}, {1: (2, 4)}, {3: (3, 2)}, {3: (2, 1)}, {6: (6, 2)}]
+
+    g.del_edge(2,4)
+
+    sequence = resolve(g, loads)
+    assert sequence == [{1: (1, 2)}, {3: (3, 4)}, {1: (2, 3)}, {3: (4, 2)}, {1: (3, 4)}, {3: (2, 1)}, {6: (6, 2)}]
 
 
 def test_api_1():
@@ -249,6 +316,14 @@ def test_api_1_1():
                         {9: (6, 9)}]
 
 
+def test_api_2_1():
+    g = graph5x5()
+    loads = {'a': [6], 'b': [11, 1], 'c': [16, 2], 'd': [17, 4], 'e': [19, 5], 'f': [20, 3]}
+    sequence = resolve(g, loads)
+    assert sequence
+
+
+
 def test_api_2():
     """
     two trains of loads are approaching each other.
@@ -277,13 +352,13 @@ def test_api_2():
         g.add_edge(s, e, d, bidirectional=True)
 
     loads = {
-        1: [1, 2, 3, 4, 5, 9, 10, 11, 12],
-        2: [2, 3, 4, 5, 9, 10, 11, 12, 13],
-        3: [3, 4, 5, 9, 10, 11, 12, 13, 14],
-        4: [11, 10, 9, 5, 4, 3, 2, 1],
-        5: [12, 11, 10, 9, 5, 4, 3, 2],
-        6: [13, 12, 11, 10, 9, 5, 4, 3],
-        7: [14, 13, 12, 11, 10, 9, 5, 4],
+        41: [1, 2, 3, 4, 5, 9, 10, 11, 12],
+        42: [2, 3, 4, 5, 9, 10, 11, 12, 13],
+        43: [3, 4, 5, 9, 10, 11, 12, 13, 14],
+        44: [11, 10, 9, 5, 4, 3, 2, 1],
+        45: [12, 11, 10, 9, 5, 4, 3, 2],
+        46: [13, 12, 11, 10, 9, 5, 4, 3],
+        47: [14, 13, 12, 11, 10, 9, 5, 4],
     }
 
     sequence = resolve(g, loads)
