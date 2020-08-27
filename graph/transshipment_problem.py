@@ -769,7 +769,6 @@ def dfs_resolve(graph, loads):
     return moves
 
 
-
 def new_states(graph, movements, state):
         occupied = {i[1] for i in state}
         for load_id, location in state:
@@ -780,6 +779,13 @@ def new_states(graph, movements, state):
                     continue
                 movements.add_edge(state, new_state, 1)
                 yield new_state
+
+
+def clear_the_way(graph, loads):
+    """ a bastardised version of the train algorithm, that seeks
+    to make everyone get out of everyone elses way.
+    """
+    pass
 
 
 class Load(object):
@@ -953,11 +959,12 @@ def action_resolve(graph, loads):
 # collection of solution methods for the routing problem.
 # insert, delete, append or substitute with your own methods as required.
 methods = [
+    # clear_the_way,
     # action_resolve,
     # avoid_resolve,
     # loop_resolve,
     # train_resolve,
-    dfs_resolve,
+    # dfs_resolve,  <--- this simply doesn't work.
     bfs_resolve
 ]
 
