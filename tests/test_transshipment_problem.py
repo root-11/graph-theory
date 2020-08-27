@@ -323,7 +323,6 @@ def test_api_2_1():
     assert sequence
 
 
-
 def test_api_2():
     """
     two trains of loads are approaching each other.
@@ -365,6 +364,18 @@ def test_api_2():
 
     assert sequence is None  # todo
 
+
+def test_api_02_1():
+    """
+    Two trains (abc & d) are going east. One train is going west (efgh).
+
+    abc--000--d--0--efgh
+        \-0-/  \-0-/
+
+
+    The solution is given by side stepping abc & d and letting efgh pass.
+    """
+    assert True
 
 def test_api_03():
     """ move through a bottleneck
