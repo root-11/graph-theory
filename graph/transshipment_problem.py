@@ -1,7 +1,7 @@
 from time import process_time
 from itertools import permutations, product
 
-TIMEOUT = 10_000_000_000  # ms.
+TIMEOUT = 10_000  # ms.
 
 from graph import Graph
 import itertools
@@ -719,7 +719,70 @@ def bfs_resolve(graph, loads):
     return moves
 
 
-def dfs_resolve(graph, loads):
+def bi_directional_bfs(graph, loads):
+    """ calculates the solution to the transshipment problem using BFS
+    from both initial and final state """
+    initial_state = tuple(((load_id, route[0]) for load_id, route in loads.items()))
+    final_state = tuple(((load_id, route[-1]) for load_id, route in loads.items()))
+
+    movements = Graph()
+    forward_queue = [initial_state]
+    forward_states = {initial_state}
+    reverse_queue = [final_state]
+    reverse_states = {final_state}
+
+    start = process_time()
+    solved = False
+
+    while not solved:
+        if process_time() - start > (TIMEOUT / 1000):
+            raise TimeoutError(f"No solution found in {TIMEOUT}ms")
+
+        # forward
+        state = forward_queue.pop(0)
+        occupied = {i[1] for i in state}
+        for load_id, location in state:
+            if solved:
+                break
+            options = [e for s, e, d in graph.edges(from_node=location) if e not in occupied]
+            for option in options:
+                new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state)
+                if new_state not in movements:
+                    forward_queue.append(new_state)
+
+                movements.add_edge(state, new_state, 1)
+                forward_states.add(new_state)
+
+                if new_state in reverse_states:
+                    solved = True
+                    break
+
+        # backwards
+        state = reverse_queue.pop(0)
+        occupied = {i[1] for i in state}
+        for load_id, location in state:
+            if solved:
+                break
+            options = [s for s, e, d in graph.edges(to_node=location) if s not in occupied]
+            for option in options:
+                new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state)
+
+                if new_state not in movements:  # add to queue
+                    reverse_queue.append(new_state)
+
+                movements.add_edge(new_state, state, 1)
+                reverse_states.add(new_state)
+
+                if new_state in forward_states:
+                    solved = True
+                    break
+
+    steps, best_path = movements.shortest_path(initial_state, final_state)
+    moves = path_to_moves(best_path)
+    return moves
+
+
+def dfs_resolve(graph, loads):  # <-- this is useless.
     """
     calculates the solution to the transshipment problem by
     search along a line of movements and backtracking when it
@@ -783,7 +846,7 @@ def new_states(graph, movements, state):
 
 def clear_the_way(graph, loads):
     """ a bastardised version of the train algorithm, that seeks
-    to make everyone get out of everyone elses way.
+    to make everyone get out of everyone else's way.
     """
     pass
 
@@ -946,14 +1009,14 @@ def action_resolve(graph, loads):
         loads = {lid: load.path for lid, load in s.loads.items()}
         conflicts = list(s.conflicts())
 
-    print(good, "good,", bad, "bad", flush=True)
-
-    if final_state not in movements:
-        raise Exception("No solution found")
-
-    steps, best_path = movements.shortest_path(initial_state, final_state)
-    moves = path_to_moves(best_path)
-    return moves
+    # print(good, "good,", bad, "bad", flush=True) # fixme
+    #
+    # if final_state not in movements:
+    #     raise Exception("No solution found")
+    #
+    # steps, best_path = movements.shortest_path(initial_state, final_state)
+    # moves = path_to_moves(best_path)
+    # return moves
 
 
 # collection of solution methods for the routing problem.
@@ -965,6 +1028,7 @@ methods = [
     # loop_resolve,
     # train_resolve,
     # dfs_resolve,  <--- this simply doesn't work.
-    bfs_resolve
+    bi_directional_bfs,  # <-- best method so far.
+    # bfs_resolve
 ]
 
