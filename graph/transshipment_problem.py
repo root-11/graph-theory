@@ -1,7 +1,7 @@
 from time import process_time
 from itertools import permutations, product
 
-TIMEOUT = 10_000  # ms.
+TIMEOUT = 100_000  # ms.
 
 from graph import Graph
 import itertools
