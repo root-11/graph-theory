@@ -366,9 +366,13 @@ def small_puzzle_resolve(graph, loads):
 # ----------------- #
 # The main solver   #
 # ----------------- #
-def resolve(graph, loads):
+def resolve(graph, loads, timeout=None):
     """ an ensemble solver for the routing problem."""
     check_user_input(graph, loads)
+    if timeout:
+        assert isinstance(timeout, (int,float))
+        global TIMEOUT
+        TIMEOUT = timeout
 
     moves = None
     for method in methods:
@@ -719,6 +723,89 @@ def bfs_resolve(graph, loads):
     return moves
 
 
+def bi_directional_progressive_bfs(graph, loads):
+    """ Bi-directional search which searches to the end of open options for each load. """
+    initial_state = tuple(((load_id, route[0]) for load_id, route in loads.items()))
+    final_state = tuple(((load_id, route[-1]) for load_id, route in loads.items()))
+
+    movements = Graph()
+    forward_queue = [initial_state]
+    forward_states = {initial_state}
+    reverse_queue = [final_state]
+    reverse_states = {final_state}
+
+    start = process_time()
+    solved = False
+
+    while not solved:
+        if process_time() - start > (TIMEOUT / 1000):
+            raise TimeoutError(f"No solution found in {TIMEOUT}ms")
+
+        # forward
+        state = forward_queue.pop(0)
+        occupied = {i[1] for i in state}
+        for load_id, location in state:
+            if solved:
+                break
+            options = {e: state for s, e, d in graph.edges(from_node=location) if e not in occupied}
+            if not options:
+                continue
+
+            been = {i for i in occupied}
+            while options:
+                option = list(options.keys())[0]
+                old_state = options.pop(option)  # e from s,e,d
+
+                new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in old_state)
+                if new_state not in movements:
+                    forward_queue.append(new_state)
+
+                movements.add_edge(old_state, new_state, 1)
+                forward_states.add(new_state)
+
+                been.add(option)
+                options.update({e: new_state for s, e, d in graph.edges(from_node=option) if e not in been})
+
+                if new_state in reverse_states:
+                    solved = True
+                    break
+
+        # backwards
+        state = reverse_queue.pop(0)
+        occupied = {i[1] for i in state}
+        for load_id, location in state:
+            if solved:
+                break
+
+            options = {s: state for s, e, d in graph.edges(to_node=location) if s not in occupied}
+            if not options:
+                continue
+
+            been = {i for i in occupied}
+            while options:
+                option = list(options.keys())[0]  # s from s,e,d
+                old_state = options.pop(option)
+
+                new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in old_state)
+
+                if new_state not in movements:  # add to queue
+                    reverse_queue.append(new_state)
+
+                movements.add_edge(new_state, old_state, 1)
+                reverse_states.add(new_state)
+
+                been.add(option)
+                options.update({s: new_state for s, e, d in graph.edges(to_node=option) if s not in been})
+
+                if new_state in forward_states:
+                    solved = True
+                    break
+
+    steps, best_path = movements.shortest_path(initial_state, final_state)
+    moves = path_to_moves(best_path)
+    return moves
+
+
 def bi_directional_bfs(graph, loads):
     """ calculates the solution to the transshipment problem using BFS
     from both initial and final state """
@@ -1028,6 +1115,7 @@ methods = [
     # loop_resolve,
     # train_resolve,
     # dfs_resolve,  <--- this simply doesn't work.
+    bi_directional_progressive_bfs,  # <-- the fastest, but not always the best method.
     bi_directional_bfs,  # <-- best method so far.
     # bfs_resolve
 ]

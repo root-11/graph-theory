@@ -1,9 +1,12 @@
 from itertools import permutations
+from time import process_time
 
 from graph import Graph
 from tests.test_graph import graph5x5
 
-from graph.transshipment_problem import clondike_transshipment_problem, Train, schedule_rail_system, resolve2x3, resolve
+from graph.transshipment_problem import clondike_transshipment_problem, Train, schedule_rail_system
+from graph.transshipment_problem import resolve2x3, resolve, bi_directional_bfs, bi_directional_progressive_bfs
+from graph.transshipment_problem import check_user_input
 
 
 def test_mining_train():
@@ -231,12 +234,8 @@ def test_simple_reroute_3():
 
     sequence = resolve(g, loads)
 
-    assert sequence == [{1: (1, 6)},
-                        {1: (6, 5)},
-                        {2: (3, 2)},
-                        {2: (2, 1)},
-                        {1: (5, 4)},
-                        {1: (4, 3)}]
+    assert sequence == [{1: (1, 6)}, {2: (3, 2)}, {2: (2, 1)}, {1: (6, 5)}, {1: (5, 4)}, {1: (4, 3)}], sequence
+    # assert sequence == [{1: (1, 6)}, {1: (6, 5)}, {2: (3, 2)}, {2: (2, 1)}, {1: (5, 4)}, {1: (4, 3)}], sequence
 
 
 def test_simple_reroute_4():
@@ -266,18 +265,13 @@ def test_simple_reroute_4():
     assert sequence == [{1: (1, 2)}, {3: (3, 4)}, {1: (2, 3)}, {3: (4, 2)}, {3: (2, 1)}, {6: (6, 2)}, {1: (3, 4)}]
 
 
-def test_api_1():
+def test_clockwise_rotation():
     """ A simple loop of 4 locations, where 3 loads need to move
     clockwise. """
     g = Graph()
-    edges = [
-        (1, 2, 1),
-        (2, 3, 1),
-        (3, 4, 1),
-        (4, 1, 1),
-    ]
-    for s, e, d in edges:
-        g.add_edge(s, e, d, bidirectional=True)
+    edges = [(1, 2), (2, 3), (3, 4), (4, 1), ]
+    for s, e in edges:
+        g.add_edge(s, e, 1, bidirectional=True)
 
     loads = {1: [1, 2], 2: [2, 3], 3: [3, 4]}  # position 4 is empty.
 
@@ -285,68 +279,92 @@ def test_api_1():
 
     assert sequence == [{3: (3, 4)},  # first move.
                         {2: (2, 3)},  # second move.
-                        {1: (1, 2)}]  # last move.
+                        {1: (1, 2)}], sequence  # last move.
 
 
-def test_api_1_1():
+def test_small_gridlock():
     """ a grid lock is given, solver solves it."""
     g = Graph()
     edges = [
-        (1, 2, 1), (1, 4, 1), (2, 3, 1), (2, 5, 1), (3, 6, 1),
-        (4, 5, 1), (5, 6, 1), (4, 7, 1), (5, 8, 1), (6, 9, 1),
-        (7, 8, 1), (8, 9, 1)
+        (1, 2), (1, 4), (2, 3), (2, 5), (3, 6), (4, 5), (5, 6), (4, 7), (5, 8), (6, 9), (7, 8), (8, 9)
     ]
-    for s, e, d in edges:
-        g.add_edge(s, e, d, bidirectional=True)
+    for s, e in edges:
+        g.add_edge(s, e, 1, bidirectional=True)
 
-    loads = {1: [2, 1], 2: [5, 2], 3: [4, 3], 8: [8], 9: [1, 9]}
+    loads = {'a': [2, 1], 'b': [5, 2], 'c': [4, 3], 'd': [8], 'e': [1, 9]}
+    check_user_input(g, loads)
 
-    sequence = resolve(g, loads)
+    start = process_time()
+    sequence = bi_directional_progressive_bfs(g, loads)
+    end = process_time()
+    print("duration:", end-start, "bi_directional_progressive_bfs")
 
-    assert sequence == [{2: (5, 6)},
-                        {2: (6, 3)},
-                        {3: (4, 5)},
-                        {3: (5, 6)},
-                        {9: (1, 4)},
-                        {1: (2, 1)},
-                        {9: (4, 5)},
-                        {2: (3, 2)},
-                        {3: (6, 3)},
-                        {9: (5, 6)},
-                        {9: (6, 9)}]
+    assert sequence == [{'a': (2, 3)},
+                        {'a': (3, 6)},
+                        {'a': (6, 9)},
+                        {'b': (5, 2)},
+                        {'c': (4, 5)},
+                        {'c': (5, 6)},
+                        {'c': (6, 3)},
+                        {'a': (9, 6)},
+                        {'a': (6, 5)},
+                        {'a': (5, 4)},
+                        {'a': (4, 7)},
+                        {'e': (1, 4)},
+                        {'e': (4, 5)},
+                        {'e': (5, 6)},
+                        {'e': (6, 9)},
+                        {'a': (7, 4)},
+                        {'a': (4, 1)}]
+    start = process_time()
+    sequence = bi_directional_bfs(g, loads)
+    end = process_time()
+    print("duration:", end - start, "bi_directional_bfs", flush=True)
+
+    assert sequence == [{'b': (5, 6)},
+                        {'b': (6, 3)},
+                        {'c': (4, 5)},
+                        {'c': (5, 6)},
+                        {'e': (1, 4)},
+                        {'a': (2, 1)},
+                        {'e': (4, 5)},
+                        {'b': (3, 2)},
+                        {'c': (6, 3)},
+                        {'e': (5, 6)},
+                        {'e': (6, 9)}], sequence
 
 
-def test_api_2_1():
+def test_5x5_graph():
     g = graph5x5()
     loads = {'a': [6], 'b': [11, 1], 'c': [16, 2], 'd': [17, 4], 'e': [19, 5], 'f': [20, 3]}
 
     sequence = resolve(g, loads)
-    if sequence is not None:
-        assert sequence == [{'d': (17, 12)},
-                            {'c': (16, 17)},
-                            {'d': (12, 7)},
-                            {'c': (17, 12)},
-                            {'d': (7, 2)},
-                            {'c': (12, 7)},
-                            {'d': (2, 3)},
-                            {'c': (7, 2)},
-                            {'a': (6, 7)},
-                            {'b': (11, 6)},
-                            {'f': (20, 15)},
-                            {'f': (15, 10)},
-                            {'f': (10, 9)},
-                            {'f': (9, 8)},
-                            {'d': (3, 4)},
-                            {'f': (8, 3)},
-                            {'e': (19, 14)},
-                            {'e': (14, 9)},
-                            {'e': (9, 10)},
-                            {'e': (10, 5)},
-                            {'b': (6, 1)},
-                            {'a': (7, 6)}]
+
+    assert sequence == [{'a': (6, 7)},
+                        {'b': (11, 6)},
+                        {'b': (6, 1)},
+                        {'a': (7, 6)},
+                        {'c': (16, 11)},
+                        {'d': (17, 18)},
+                        {'d': (18, 13)},
+                        {'d': (13, 14)},
+                        {'d': (14, 9)},
+                        {'d': (9, 4)},
+                        {'f': (20, 15)},
+                        {'f': (15, 14)},
+                        {'f': (14, 13)},
+                        {'f': (13, 8)},
+                        {'f': (8, 3)},
+                        {'e': (19, 20)},
+                        {'e': (20, 15)},
+                        {'e': (15, 10)},
+                        {'e': (10, 5)},
+                        {'c': (11, 12)},
+                        {'c': (12, 7)},
+                        {'c': (7, 2)}], sequence
 
 
-def test_api_2():
+def test_2_trains():
     """
     two trains of loads are approaching each other.
     train 123 going from 1 to 14
@@ -359,19 +377,19 @@ def test_api_2():
     """
     g = Graph()
     edges = [
-        (1, 2, 1),
-        (2, 3, 1),
-        (3, 4, 1),
-        (4, 5, 1), (4, 6, 1), (4, 7, 1), (4, 8, 1),
-        (5, 9, 1), (6, 9, 1), (7, 9, 1), (8, 9, 1),
-        (9, 10, 1),
-        (10, 11, 1),
-        (11, 12, 1),
-        (12, 13, 1),
-        (13, 14, 1),
+        (1, 2),
+        (2, 3),
+        (3, 4),
+        (4, 5), (4, 6), (4, 7), (4, 8),
+        (5, 9), (6, 9), (7, 9), (8, 9),
+        (9, 10),
+        (10, 11),
+        (11, 12),
+        (12, 13),
+        (13, 14),
     ]
-    for s, e, d in edges:
-        g.add_edge(s, e, d, bidirectional=True)
+    for s, e in edges:
+        g.add_edge(s, e, 1, bidirectional=True)
 
     loads = {
         41: [1, 2, 3, 4, 5, 9, 10, 11, 12],
@@ -384,35 +402,49 @@ def test_api_2():
     }
 
     sequence = resolve(g, loads)
-    if sequence is not None:
-        assert sequence == [{43: (3, 4)}, {42: (2, 3)}, {41: (1, 2)}, {43: (4, 6)}, {42: (3, 4)}, {41: (2, 3)},
-                            {42: (4, 7)}, {41: (3, 4)}, {41: (4, 5)},
-                            {44: (11, 10)}, {44: (10, 9)}, {44: (9, 8)},
-                            {44: (8, 4)}, {44: (4, 3)}, {44: (3, 2)}, {44: (2, 1)},
-                            {45: (12, 11)}, {45: (11, 10)}, {45: (10, 9)}, {45: (9, 8)}, {45: (8, 4)}, {45: (4, 3)}, {45: (3, 2)},
-                            {46: (13, 12)}, {46: (12, 11)}, {46: (11, 10)}, {46: (10, 9)},
-                            {47: (14, 13)}, {47: (13, 12)}, {47: (12, 11)}, {47: (11, 10)},
-                            {46: (9, 8)}, {47: (10, 9)}, {46: (8, 4)}, {47: (9, 8)},
-                            {46: (4, 3)}, {47: (8, 4)},
-                            {43: (6, 9)}, {43: (9, 10)}, {43: (10, 11)}, {43: (11, 12)},
-                            {43: (12, 13)}, {43: (13, 14)}, {42: (7, 9)}, {42: (9, 10)}, {42: (10, 11)}, {42: (11, 12)},
-                            {42: (12, 13)}, {41: (5, 9)}, {41: (9, 10)}, {41: (10, 11)}, {41: (11, 12)}]
+
+    assert sequence == [{43: (3, 4)}, {43: (4, 6)}, {42: (2, 3)}, {42: (3, 4)}, {42: (4, 7)}, {41: (1, 2)},
+                        {41: (2, 3)}, {41: (3, 4)}, {41: (4, 5)}, {44: (11, 10)}, {44: (10, 9)}, {44: (9, 8)},
+                        {44: (8, 4)}, {44: (4, 3)}, {44: (3, 2)}, {44: (2, 1)}, {45: (12, 11)}, {45: (11, 10)},
+                        {45: (10, 9)}, {45: (9, 8)}, {45: (8, 4)}, {45: (4, 3)}, {45: (3, 2)}, {46: (13, 12)},
+                        {46: (12, 11)}, {46: (11, 10)}, {46: (10, 9)}, {46: (9, 8)}, {46: (8, 4)}, {46: (4, 3)},
+                        {47: (14, 13)}, {47: (13, 12)}, {47: (12, 11)}, {47: (11, 10)}, {47: (10, 9)}, {47: (9, 8)},
+                        {47: (8, 4)}, {43: (6, 9)}, {43: (9, 10)}, {43: (10, 11)}, {43: (11, 12)}, {43: (12, 13)},
+                        {43: (13, 14)}, {42: (7, 9)}, {42: (9, 10)}, {42: (10, 11)}, {42: (11, 12)}, {42: (12, 13)},
+                        {41: (5, 9)}, {41: (9, 10)}, {41: (10, 11)}, {41: (11, 12)}], sequence
 
 
-def test_api_02_1():
+def test_3_trains():
     """
     Two trains (abc & d) are going east. One train is going west (efgh).
 
-    abc--000--d--0--efgh
-        \-0-/  \-0-/
+    a-b-c--0-0-0--d--0--e-f-g-h
+         \---0---/ \-0-/
 
+    1-2-3--4-5-6--7--8---9-10-11-12
+         \---13--/ \-14-/
 
     The solution is given by side stepping abc & d and letting efgh pass.
     """
-    assert True
+    g = Graph()
+    edges = [
+        (3, 13), (13, 7), (7, 14), (14, 9)
+    ]
+    for a, b in zip(range(1, 12), range(2, 13)):
+        edges.append((a, b))
+    for s, e in edges:
+        g.add_edge(s, e, 1, bidirectional=True)
 
+    loads = {
+        'a': [1, 10], 'b': [2, 11], 'c': [3, 12], 'd': [8, 9],  # east bound
+        'e': [9, 1], 'f': [10, 2], 'g': [11, 3], 'h': [12, 4]  # west bound
+    }
 
-def test_api_03():
+    sequence = resolve(g, loads)
+    assert sequence is not None
+    
+
+def test_4_trains():
     """ move through a bottleneck
     123 -0---0---456
          |   |
