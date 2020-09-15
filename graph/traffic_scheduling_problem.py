@@ -13,7 +13,15 @@ a traffic scheduling problem.
 # The main solver   #
 # ----------------- #
 def jam_solver(graph, loads, timeout=None):
-    """ an ensemble solver for the routing problem."""
+    """ an ensemble solver for the routing problem.
+
+    :param graph network available for routing.
+    :param loads: dictionary with load id and preferred route. Example:
+
+        loads = {1: [1, 2, 3], 2: [3, 2, 1]}
+
+    :param timeout: None, float or int timeout in milliseconds.
+    """
     check_user_input(graph, loads)
     if timeout:
         assert isinstance(timeout, (int, float))
@@ -39,12 +47,18 @@ class Timer(object):
 
     def timeout_check(self):
         if process_time() - self.start > (self.limit / 1000):
-            raise TimeoutError(f"No solution found in {TIMEOUT}ms")
+            raise TimeoutError(f"No solution found in {self.limit} ms")
 
 
 # helpers
 def check_user_input(graph, loads):
-    """ checks the user inputs to be valid. """
+    """ checks the user inputs to be valid.
+
+    :param graph network available for routing.
+    :param loads: dictionary with load id and preferred route. Example:
+
+        loads = {1: [1, 2, 3], 2: [3, 2, 1]}
+    """
     assert isinstance(graph, Graph)
     assert isinstance(loads, dict)
     for v in loads.values():
@@ -105,6 +119,14 @@ def bfs_resolve(graph, loads, timeout=None):
     constructing the solution space as a finite state machine
     and then finding the shortest path through the fsm from the
     initial state to the desired state.
+
+    :param graph network available for routing.
+    :param loads: dictionary with load id and preferred route. Example:
+
+        loads = {1: [1, 2, 3], 2: [3, 2, 1]}
+
+    :param timeout: None, float or int timeout in milliseconds.
+
     """
     initial_state = tuple(((load_id, route[0]) for load_id, route in loads.items()))
     final_state = tuple(((load_id, route[-1]) for load_id, route in loads.items()))
@@ -144,7 +166,16 @@ def bfs_resolve(graph, loads, timeout=None):
 
 
 def bi_directional_progressive_bfs(graph, loads, timeout=None):
-    """ Bi-directional search which searches to the end of open options for each load. """
+    """ Bi-directional search which searches to the end of open options for each load.
+
+    :param graph network available for routing.
+    :param loads: dictionary with load id and preferred route. Example:
+
+        loads = {1: [1, 2, 3], 2: [3, 2, 1]}
+
+    :param timeout: None, float or int timeout in milliseconds.
+
+    """
     initial_state = tuple(((load_id, route[0]) for load_id, route in loads.items()))
     final_state = tuple(((load_id, route[-1]) for load_id, route in loads.items()))
 
@@ -227,7 +258,15 @@ def bi_directional_progressive_bfs(graph, loads, timeout=None):
 
 def bi_directional_bfs(graph, loads, timeout=None):
     """ calculates the solution to the transshipment problem using BFS
-    from both initial and final state """
+    from both initial and final state
+
+    :param graph network available for routing.
+    :param loads: dictionary with load id and preferred route. Example:
+
+        loads = {1: [1, 2, 3], 2: [3, 2, 1]}
+
+    :param timeout: None, float or int timeout in milliseconds.
+    """
     initial_state = tuple(((load_id, route[0]) for load_id, route in loads.items()))
     final_state = tuple(((load_id, route[-1]) for load_id, route in loads.items()))
 
@@ -292,6 +331,14 @@ def dfs_resolve(graph, loads, timeout=None):  # <-- this is useless.
     calculates the solution to the transshipment problem by
     search along a line of movements and backtracking when it
     no longer leads anywhere (DFS).
+
+    :param graph network available for routing.
+    :param loads: dictionary with load id and preferred route. Example:
+
+        loads = {1: [1, 2, 3], 2: [3, 2, 1]}
+
+    :param timeout: None, float or int timeout in milliseconds.
+
     """
     initial_state = tuple(((load_id, route[0]) for load_id, route in loads.items()))
     final_state = tuple(((load_id, route[-1]) for load_id, route in loads.items()))
@@ -338,15 +385,16 @@ def dfs_resolve(graph, loads, timeout=None):  # <-- this is useless.
 
 
 def new_states(graph, movements, state):
-        occupied = {i[1] for i in state}
-        for load_id, location in state:
-            options = (e for s, e, d in graph.edges(from_node=location) if e not in occupied)
-            for option in options:
-                new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state)
-                if new_state in movements:
-                    continue
-                movements.add_edge(state, new_state, 1)
-                yield new_state
+    """ generator for new states for DFS. """
+    occupied = {i[1] for i in state}
+    for load_id, location in state:
+        options = (e for s, e, d in graph.edges(from_node=location) if e not in occupied)
+        for option in options:
+            new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state)
+            if new_state in movements:
+                continue
+            movements.add_edge(state, new_state, 1)
+            yield new_state
 
 
 # collection of solution methods for the routing problem.
