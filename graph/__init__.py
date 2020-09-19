@@ -166,12 +166,12 @@ class BasicGraph(object):
             return list(self._nodes.keys())
 
         if from_node is not None:
-            if self._edges.get(from_node, None) is not None:
-                return [n2 for n2 in self._edges[from_node]]
+            if from_node in self._edges:
+                return list(self._edges[from_node])
             return []
 
         if to_node is not None:
-            return [n1 for n1 in self._edges for n2 in self._edges[n1] if n2 == to_node]
+            return [n1 for n1 in self._edges if to_node in self._edges[n1]]
 
         if in_degree is not None:
             if not isinstance(in_degree, int) or in_degree < 0:
@@ -219,17 +219,16 @@ class BasicGraph(object):
 
         if from_node:
             if from_node in self._edges:
-                return [(from_node, n2, self._edges[from_node][n2]) for n2 in self._edges[from_node]]
+                return [(from_node, n2, cost) for n2, cost in self._edges[from_node].items()]
             else:
                 return []
 
         if to_node:
-            return [(n1, n2, self._edges[n1][n2])
-                    for n1 in self._edges
-                    for n2 in self._edges[n1]
-                    if n2 == to_node]
+            return [(n1, to_node, out[to_node]) 
+                    for n1, out in self._edges.items() 
+                    if to_node in out]
 
-        return [(n1, n2, self._edges[n1][n2]) for n1 in self._edges for n2 in self._edges[n1]]
+        return [(n1, n2, out[n2]) for n1, out in self._edges.items() for n2 in out]
 
     def from_dict(self, dictionary):
         """
