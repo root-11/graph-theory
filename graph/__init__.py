@@ -257,15 +257,9 @@ class BasicGraph(object):
         """ creates a nested dictionary from the graph.
         :return dict d[n1][n2] = distance
         """
-        d = {}
+        d = {n: {} for n in self.nodes()}
         for n1, n2, dist in self.edges():
-            if n1 not in d:
-                d[n1] = {}
             d[n1][n2] = dist
-
-        for n in self.nodes():
-            if n not in d:
-                d[n] = {}
         return d
 
     def from_list(self, links):
