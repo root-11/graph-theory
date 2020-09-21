@@ -298,19 +298,20 @@ class BasicGraph(object):
     @lru_cache(maxsize=128)
     def is_connected(self, n1, n2):
         """ helper determining if two nodes are connected using BFS. """
-        q = [n1]
-        visited = set()
-        while q:
-            n = q.pop(0)
-            if n not in visited:
-                visited.add(n)
-            for c in self._edges[n]:
-                if c == n2:
-                    return True  # <-- Exit if connected.
-                if c in visited:
-                    continue
-                else:
-                    q.append(c)
+        if n1 in self._edges:
+            q = [n1]
+            visited = set()
+            while q:
+                n = q.pop(0)
+                if n not in visited:
+                    visited.add(n)
+                for c in self._edges[n]:
+                    if c == n2:
+                        return True  # <-- Exit if connected.
+                    if c in visited:
+                        continue
+                    else:
+                        q.append(c)
         return False  # <-- Exit if not connected.
 
 
