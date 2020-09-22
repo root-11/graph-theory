@@ -18,6 +18,7 @@ packages = [
     folder / 'graph' / "random.py",
     # folder / 'graph' / "scheduling_problem.py",
     folder / 'graph' / "transshipment_problem.py",
+    folder / 'graph' / "traffic_scheduling_problem.py",
     folder / 'graph' / "visuals.py",
     folder / 'LICENSE',
     folder / 'README.md',
