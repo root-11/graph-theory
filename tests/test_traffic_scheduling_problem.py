@@ -308,30 +308,4 @@ def test_3_trains():
     assert sequence is not None
 
 
-def test_4_trains():
-    """ move through a bottleneck
-    123 -0---0---456
-         |   |
-    789 -0---0---901
 
-    456-123
-    901-789
-
-    901-123
-    456-789
-
-    789-123
-    901-456
-    """
-    assert True  # TODO
-
-
-def test_random():
-    """
-    Generate random network
-    Add loads at random
-    Try to solve. Add to test suite if failed.
-
-    Remember: The test suite can run forever. But the solver must be quick.
-    """
-    assert True  # TODO
