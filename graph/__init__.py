@@ -2,6 +2,7 @@ from collections import defaultdict, deque
 from functools import lru_cache
 from heapq import heappop, heappush
 from itertools import combinations
+from bisect import insort
 
 from graph.visuals import plot_3d
 
@@ -475,7 +476,7 @@ def distance(graph, path):
     :param path: list of nodes
     :return: distance
     """
-    assert isinstance(path, list)
+    assert isinstance(path, (tuple, list))
     cache = defaultdict(dict)
     path_length = 0
     for idx in range(len(path) - 1):
@@ -581,11 +582,88 @@ def maximum_flow(graph, start, end):
     return total_flow, flow_graph
 
 
-def tsp(graph):
+def tsp_branch_and_bound(graph):
     """
-    Attempts to solve the traveling salesmans problem TSP for the graph.
+    Solve the traveling salesmans problem for the graph.
+    :param graph: instance of class Graph
+    :return: tour_length, path
 
-    Runtime approximation: seconds = 10**(-5) * (points)**2.31
+    solution quality 100%
+    """
+    assert isinstance(graph, Graph)
+
+    def lower_bound(graph, nodes):
+        # return sum(min(d for s, e, d in graph.edges(from_node=node)) for node in nodes)
+        L = []
+        for n in nodes:
+            n2, d = nn(graph, n, nodes - {n})
+            if n2 is None:
+                continue
+            L.append((n, n2, d))
+        return L
+
+    def nn(graph, n, n2s):
+        L = [(d, e) for s, e, d in graph.edges(from_node=n) if e in n2s]
+        if L:
+            L.sort()
+            d, n = L[0]
+            return n, d
+        else:
+            return None,None
+
+    global_lower_bound = sum(d for n, n2, d in lower_bound(graph, set(graph.nodes())))
+
+    q = []
+    all_nodes = set(graph.nodes())
+
+    # create initial tree.
+    start = graph.nodes()[0]
+    for start, end, distance in graph.edges(from_node=start):
+        lb = lower_bound(graph, all_nodes - {start})
+        dist = sum(d for s, e, d in lb)
+        insort(q, (distance + dist,  # lower bound of distance.
+                   (start, end))  # locations visited.
+        )
+
+    while q:  # walk the tree.
+        d, tour = q.pop(0)
+        tour_set = set(tour)
+        if tour_set == all_nodes:
+            assert d >= global_lower_bound, "Solution not possible."
+            return d, list(tour)
+
+        remaining_nodes = all_nodes - tour_set
+        tour_end = tour[-1]
+
+        n2, d = nn(graph, tour_end, remaining_nodes)
+        if n2 is None:
+            raise NotImplementedError
+        new_tour = tour + (n2, )
+
+        lb_set = remaining_nodes - {n2}
+        if len(lb_set) > 1:
+            lb_dists = lower_bound(graph, lb_set)
+            lb = sum(d for n, n2, d in lb_dists)
+            # to_start = nn_to(graph, tour[0], lb_set)
+            new_lb = graph.distance_from_path(new_tour) + d + lb #+ to_start
+        elif len(lb_set) == 1:
+            last_node = lb_set.pop()
+            new_tour = new_tour + (last_node, )
+            new_lb = graph.distance_from_path(new_tour + (tour[0], ))
+        else:
+            raise NotImplementedError
+
+        insort(q, (new_lb, new_tour))
+        continue
+
+    return float('inf'), []  # <-- exit path if not solvable.
+
+
+def tsp_greedy(graph):
+    """
+    Solves the traveling salesmans problem for the graph.
+
+    Runtime approximation: seconds = 10**(-5) * (nodes)**2.31
     Solution quality: Range 98.1% - 100% optimal.
 
     :param graph: instance of class Graph
@@ -620,6 +698,8 @@ def tsp(graph):
     def tsp_tour_length(graph, tour):
         """ The TSP tour length WITH return to the starting point."""
         return sum(graph.edge(tour[i - 1], tour[i]) for i in range(len(tour)))
+        # note to above: If there's an error it's probably because the graph isn't
+        # fully connected.
 
     def improve_tour(graph, tour):
         assert tour, "no tour to improve?"
@@ -1199,13 +1279,25 @@ class Graph(BasicGraph):
         """
         return maximum_flow(self, start, end)
 
-    def solve_tsp(self):
+    def solve_tsp(self, method='greedy'):
         """ solves the traveling salesman problem for the graph
         (finds the shortest path through all nodes)
+
+        :param method: str: 'greedy'
+
+        options:
+            'greedy' see tsp_greedy
+            'bnb' see tsp_branch_and_bound
+
         :return: tour length (path+retrun to starting point),
                  path travelled.
         """
-        return tsp(self)
+        methods = {
+            'greedy': tsp_greedy,
+            'bnb': tsp_branch_and_bound
+        }
+        solver = methods.get(method, 'greedy')
+        return solver(self)
 
     def subgraph_from_nodes(self, nodes):
         """
