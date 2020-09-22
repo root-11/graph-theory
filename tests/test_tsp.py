@@ -23,33 +23,35 @@ def lec_24_graph():
     )
 
 
-lec_24_tsp_path = [1, 3, 4, 2, 5]
-
-
 def test_tsp_brute_force():
-
+    """ Generates all combinations of solutions """
     g = lec_24_graph()
     L = []
     shortest_tour = float('inf')
     for tour in itertools.permutations(g.nodes(), len(g.nodes())):
         d = g.distance_from_path(tour + (tour[0],))
         if d <= shortest_tour:
-            insort(L, (d, tour))
+            insort(L, (d, tour))  # solutions are inserted by ascending distance.
             shortest_tour = d
 
     solutions = set()
-    p1 = L[0][1]
+    p1 = L[0][1]  # first solution == shortest tour.
     for d, t in L:
         if d == shortest_tour:
             t_reverse = tuple(list(t)[::-1])
-            if any([g.same_path(t, p1), g.same_path(t_reverse, p1)]):
+            if any(
+                    [g.same_path(t, p1),  # same path just offset in sequence.
+                    g.same_path(t_reverse, p1)]  # same path reversed.
+            ):
                 solutions.add(t)
             else:
                 raise AssertionError
     return solutions
 
 
+lec_24_tsp_path = [1, 3, 4, 2, 5]
 lec_24_valid_solutions = test_tsp_brute_force()
+assert tuple(lec_24_tsp_path) in lec_24_valid_solutions
 
 
 def test_greedy():
@@ -91,5 +93,5 @@ def test_bnb():
               )
     d1, tour1 = g.solve_tsp('bnb')
     d2, tour2 = g.solve_tsp('greedy')
-    assert d1 <= d2
+    assert d1 == d2
 
