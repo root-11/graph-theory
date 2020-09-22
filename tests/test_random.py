@@ -1,4 +1,4 @@
-from graph import Graph, tsp
+from graph import Graph, tsp_greedy
 from graph.random import random_xy_graph, xy_distance
 from graph.visuals import plot_2d, visuals_enabled
 
@@ -53,7 +53,7 @@ def test_random_graph_2():
 
 def test_random_graph_3():
     g = random_xy_graph(200, x_max=800, y_max=400)  # a fully connected graph.
-    dist, tour = tsp(g)
+    dist, tour = tsp_greedy(g)
 
     # convert the route to a graph.
     g = Graph()
