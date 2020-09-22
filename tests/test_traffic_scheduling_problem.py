@@ -66,7 +66,7 @@ def test_simple_reroute_3():
         b.remove(d)
         c.remove(d)
     # all moves known in a have been removed from b and c.
-    assert b == c == {}
+    assert b == c == []
 
 
 def test_simple_reroute_4():
