@@ -186,11 +186,7 @@ class BasicGraph(object):
         if out_degree is not None:
             if not isinstance(out_degree, int) or out_degree < 0:
                 raise ValueError("out_degree must be int >= 0")
-
-            rev = {n: set() for n in self._nodes}
-            for n1, n2, d in self.edges():
-                rev[n1].add(n2)
-            return [n for n, n_set in rev.items() if len(n_set) == out_degree]
+            return [n1 for n1, n2s in self._edges.items() if out_degree == len(n2s)]
 
     def edges(self, path=None, from_node=None, to_node=None):
         """
