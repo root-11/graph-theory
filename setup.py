@@ -19,7 +19,8 @@ keywords = list({
     'graph-generation', 'graph-theory', 'graph-visualization', 'graphs', 'math', 'Mathematics', 'maths',
     'minimum-spanning-trees', 'network', 'Networks', 'optimization', 'python', 'shortest-path', 'tsp', 'tsp-solver',
     'assignment problem', 'flow-problem', 'hash', 'graph-hash', 'random graph', 'search', 'cycle', 'path',
-    'component', 'components', 'adjacency', 'matrix', 'all pairs shortest path', 'finite state machine', 'fsm'
+    'component', 'components', 'adjacency', 'matrix', 'all pairs shortest path', 'finite state machine', 'fsm',
+    'traffic-jam', 'traffic-jam-solver', 'solver'
 })
 
 keywords.sort(key=lambda x: x.lower())
@@ -27,7 +28,7 @@ keywords.sort(key=lambda x: x.lower())
 
 setup(
     name="graph-theory",
-    version="2020.9.1.45051",
+    version="2020.9.1.45222",
     url="https://github.com/root-11/graph-theory",
     license="MIT",
     author="Bjorn Madsen",
