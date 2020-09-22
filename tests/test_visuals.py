@@ -1,6 +1,6 @@
 from graph.random import random_xy_graph, xy_distance
 from graph.visuals import plot_2d
-from graph import Graph, tsp
+from graph import Graph
 from tests.test_spatial_graph import spiral_graph, fishbone_graph
 
 
@@ -50,7 +50,7 @@ def test_bad_input3():
 
 def test_random_graph_3():
     g = random_xy_graph(200, x_max=800, y_max=400)  # a fully connected graph.
-    dist, tour = tsp(g)
+    dist, tour = g.solve_tsp()
 
     # convert the route to a graph.
     g = Graph()
