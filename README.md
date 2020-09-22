@@ -36,6 +36,7 @@ Modules:
 | `from graph.hash import ...` | graph hash functions: graph hash, merkle tree, flow graph hash | 
 | `from graph.random import ...` | graph generators for random, 2D and 3D graphs. |
 | `from graph.transshipment_problem import ...` | solvers for the transshipment problem |
+| `from graph.traffic_scheduling_problem import ...` | solvers for the traffic jams (and slide puzzle) |
 | `from graph.visuals import ...` | methods for creating matplotlib plots |
 | `from graph.finite_state_machine import ...` | finite state machine |
 
