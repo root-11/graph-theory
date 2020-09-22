@@ -271,3 +271,23 @@ def test_is_not_cyclic():
 def test_is_really_cyclic():
     g = Graph(from_list=[(1, 1, 1), (2, 2, 1)])  # two loops onto themselves.
     assert g.has_cycles()
+
+
+def test_no_edge_connected():
+    g = Graph()
+    g.add_node(4)
+    g.add_node(5)
+    assert g.is_connected(4, 5) == False
+
+
+def test_edge_connected():
+    g = Graph()
+    g.add_edge(4, 5)
+    assert g.is_connected(4, 5) == True
+
+
+def test_edge_not_connected():
+    g = Graph()
+    g.add_edge(3, 4)
+    g.add_edge(5, 4)
+    assert g.is_connected(3, 5) == False
