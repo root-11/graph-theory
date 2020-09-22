@@ -3,7 +3,7 @@ from time import process_time
 from graph import Graph
 from tests.test_graph import graph5x5
 
-from graph.traffic_scheduling_problem import jam_solver, bi_directional_bfs, bi_directional_progressive_bfs
+from graph.traffic_scheduling_problem import jam_solver, bi_directional_bfs, bi_directional_progressive_bfs, bfs_resolve
 from graph.traffic_scheduling_problem import check_user_input
 
 
@@ -58,7 +58,15 @@ def test_simple_reroute_3():
     sequence = jam_solver(g, loads)
 
     assert sequence == [{1: (1, 6)}, {2: (3, 2)}, {2: (2, 1)}, {1: (6, 5)}, {1: (5, 4)}, {1: (4, 3)}], sequence
-    # assert sequence == [{1: (1, 6)}, {1: (6, 5)}, {2: (3, 2)}, {2: (2, 1)}, {1: (5, 4)}, {1: (4, 3)}], sequence
+
+    a = bfs_resolve(g, loads)
+    b = bi_directional_bfs(g, loads)
+    c = bi_directional_progressive_bfs(g, loads)
+    for d in a:
+        b.remove(d)
+        c.remove(d)
+    # all moves known in a have been removed from b and c.
+    assert b == c == {}
 
 
 def test_simple_reroute_4():
