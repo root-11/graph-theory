@@ -1,7 +1,10 @@
+import math
 import itertools
+
 from bisect import insort
 
 from graph import Graph
+from graph.random import random_xy_graph
 
 
 def lec_24_graph():
@@ -41,7 +44,7 @@ def test_tsp_brute_force():
             t_reverse = tuple(list(t)[::-1])
             if any(
                     [g.same_path(t, p1),  # same path just offset in sequence.
-                    g.same_path(t_reverse, p1)]  # same path reversed.
+                     g.same_path(t_reverse, p1)]  # same path reversed.
             ):
                 solutions.add(t)
             else:
@@ -94,4 +97,31 @@ def test_bnb():
     d1, tour1 = g.solve_tsp('bnb')
     d2, tour2 = g.solve_tsp('greedy')
     assert d1 == d2
+
+
+def simplify(graph):
+    """ helper that simplifies the xy to mere node ids."""
+    d = {}
+    cnt = itertools.count(1)
+    c2 = []
+    for s, e, dst in graph.edges():
+        if s not in d:
+            d[s] = next(cnt)
+        if e not in d:
+            d[e] = next(cnt)
+        c2.append((d[s], d[e], dst))
+
+    g = Graph(from_list=c2)
+    return g
+
+
+def test_random_graph_3_bnb():
+    for i in range(8, 15):
+        g = random_xy_graph(i, x_max=800, y_max=400)  # a fully connected graph.
+        g = simplify(g)
+        d1, t1 = g.solve_tsp('bnb')
+        d2, t2 = g.solve_tsp('greedy')
+        assert d1 <= d2 or math.isclose(d1, d2), (d1, d2, g.edges())
+        print(i, round(100 * ((d2 - d1) / d1)), "% greedy dist / bnb dist")
+
 

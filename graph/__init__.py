@@ -583,23 +583,25 @@ def tsp_branch_and_bound(graph):
     assert isinstance(graph, Graph)
 
     def lower_bound(graph, nodes):
-        # return sum(min(d for s, e, d in graph.edges(from_node=node)) for node in nodes)
+        """ Calculates the lower bound of distances for given nodes. """
         L = []
+        edges = set()
         for n in nodes:
-            n2, d = nn(graph, n, nodes - {n})
-            if n2 is None:
-                continue
-            L.append((n, n2, d))
-        return L
 
-    def nn(graph, n, n2s):
-        L = [(d, e) for s, e, d in graph.edges(from_node=n) if e in n2s]
-        if L:
-            L.sort()
-            d, n = L[0]
-            return n, d
-        else:
-            return None,None
+            L2 = [(d, e) for s, e, d in graph.edges(from_node=n) if e in nodes - {n}]
+            if not L2:
+                continue
+            L2.sort()
+
+            for d, n2 in L2:
+                if (n2, n) in edges:  # Solution is not valid as it creates a loop.
+                    continue
+                else:
+                    edges.add((n, n2))  # remember!
+                    L.append((n, n2, d))
+                    break
+
+        return L
 
     global_lower_bound = sum(d for n, n2, d in lower_bound(graph, set(graph.nodes())))
 
@@ -611,40 +613,38 @@ def tsp_branch_and_bound(graph):
     for start, end, distance in graph.edges(from_node=start):
         lb = lower_bound(graph, all_nodes - {start})
         dist = sum(d for s, e, d in lb)
-        insort(q, (distance + dist,  # lower bound of distance.
-                   (start, end))  # locations visited.
-        )
+        insort(q,
+               (distance + dist,  # lower bound of distance.
+                -2,  # number of nodes in tour.
+                (start, end))  # locations visited.
+               )
 
     while q:  # walk the tree.
-        d, tour = q.pop(0)
+        d, _, tour = q.pop(0)
         tour_set = set(tour)
         if tour_set == all_nodes:
             assert d >= global_lower_bound, "Solution not possible."
-            return d, list(tour)
+            return d, list(tour[:-1])
 
         remaining_nodes = all_nodes - tour_set
-        tour_end = tour[-1]
 
-        n2, d = nn(graph, tour_end, remaining_nodes)
-        if n2 is None:
-            raise NotImplementedError
-        new_tour = tour + (n2, )
+        for n2 in remaining_nodes:
 
-        lb_set = remaining_nodes - {n2}
-        if len(lb_set) > 1:
-            lb_dists = lower_bound(graph, lb_set)
-            lb = sum(d for n, n2, d in lb_dists)
-            # to_start = nn_to(graph, tour[0], lb_set)
-            new_lb = graph.distance_from_path(new_tour) + d + lb #+ to_start
-        elif len(lb_set) == 1:
-            last_node = lb_set.pop()
-            new_tour = new_tour + (last_node, )
-            new_lb = graph.distance_from_path(new_tour + (tour[0], ))
-        else:
-            raise NotImplementedError
+            new_tour = tour + (n2, )
 
-        insort(q, (new_lb, new_tour))
-        continue
+            lb_set = remaining_nodes - {n2}
+            if len(lb_set) > 1:
+                lb_dists = lower_bound(graph, lb_set)
+                lb = sum(d for n, n2, d in lb_dists)
+                new_lb = graph.distance_from_path(new_tour) + lb
+            elif len(lb_set) == 1:
+                last_node = lb_set.pop()
+                new_tour = new_tour + (last_node, tour[0])
+                new_lb = graph.distance_from_path(new_tour)
+            else:
+                raise Exception("bad logic!")
+
+            insort(q, (new_lb, -len(new_tour), new_tour))
 
     return float('inf'), []  # <-- exit path if not solvable.
 
