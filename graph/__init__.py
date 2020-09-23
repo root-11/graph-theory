@@ -619,12 +619,20 @@ def tsp_branch_and_bound(graph):
                 (start, end))  # locations visited.
                )
 
+    hit, switch, q2 = 0, True, []
     while q:  # walk the tree.
         d, _, tour = q.pop(0)
         tour_set = set(tour)
+
         if tour_set == all_nodes:
-            assert d >= global_lower_bound, "Solution not possible."
-            return d, list(tour[:-1])
+            if hit < len(all_nodes):  # to overcome premature exit.
+                hit += 1
+                insort(q2, (d, tour))
+                continue
+            else:
+                d, tour = q2.pop(0)
+                assert d >= global_lower_bound, "Solution not possible."
+                return d, list(tour[:-1])
 
         remaining_nodes = all_nodes - tour_set
 

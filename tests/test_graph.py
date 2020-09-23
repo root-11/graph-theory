@@ -13,6 +13,9 @@ def graph01():
     return Graph(from_dict=d)
 
 
+def test_graph01():
+    graph01()
+
 def graph3x3():
     """
     1 -> 2 -> 3
@@ -37,6 +40,10 @@ def graph3x3():
     return Graph(from_dict=d)
 
 
+def test_graph3x3():
+    graph3x3()
+
+
 def graph4x4():
     edges = [
         (1, 2, 1), (2, 3, 1), (3, 4, 1), (1, 5, 1),
@@ -50,6 +57,10 @@ def graph4x4():
     for s, e, d in edges:
         g.add_edge(s, e, d, bidirectional=True)
     return g
+
+
+def test_graph4x4():
+    graph3x3()
 
 
 def graph5x5():
@@ -70,6 +81,10 @@ def graph5x5():
     return g
 
 
+def test_graph5x5():
+    graph5x5()
+
+
 def graph03():
     d = {1: {2: 1, 3: 9, 4: 4, 5: 13, 6: 20},
          2: {1: 7, 3: 7, 4: 2, 5: 11, 6: 18},
@@ -82,6 +97,10 @@ def graph03():
     return Graph(from_dict=d)
 
 
+def test_graph03():
+    graph03()
+
+
 def graph04():
     d = {1: {2: 1, 3: 9, 4: 4, 5: 11, 6: 17},
          2: {1: 7, 3: 7, 4: 2, 5: 9, 6: 15},
@@ -92,6 +111,10 @@ def graph04():
          7: {8: 3},
          8: {7: 5}}
     return Graph(from_dict=d)
+
+
+def test_graph04():
+    graph04()
 
 
 def graph05():
@@ -125,6 +148,10 @@ def graph05():
     return Graph(from_list=links)
 
 
+def test_graph05():
+    graph05()
+
+
 def graph_cycle_5():
     """ cycle of 5 nodes """
     links = [
@@ -136,6 +163,10 @@ def graph_cycle_5():
     ]
     links.extend([(n2, n1, d) for n1, n2, d in links])
     return Graph(from_list=links)
+
+
+def test_graph_cycle_5():
+    graph_cycle_5()
 
 
 def graph_cycle_6():
@@ -154,6 +185,10 @@ def graph_cycle_6():
     return Graph(from_list=links)
 
 
+def test_graph_cycle_6():
+    graph_cycle_6()
+
+
 def fully_connected_4():
     """
     fully connected graph with 4 nodes.
@@ -165,6 +200,10 @@ def fully_connected_4():
     ]
     g = Graph(from_list=L)
     return g
+
+
+def test_fully_connected_4():
+    fully_connected_4()
 
 
 def mountain_river_map():
@@ -226,6 +265,10 @@ def mountain_river_map():
          (249, 158, 1), (250,), (250, 80, 1), (250, 84, 1), (251,), (251, 114, 1), (252,), (252, 178, 1)]
     g = Graph(from_list=L)
     return g
+
+
+def test_mountain_river_map():
+    mountain_river_map()
 
 
 def london_underground():
@@ -968,4 +1011,6 @@ def london_underground():
     return g
 
 
+def test_london_underground():
+    london_underground()
 
