@@ -73,6 +73,7 @@ All module functions are available from Graph and Graph3D (where applicable).
 | + | + | `g.shortest_path(start,end)` | returns the distance and path for path with smallest edge sum |
 | + | + | `g.is_connected(start,end)` | determines if there is a path from start to end |
 | + | + | `g.breadth_first_search(start,end)` | returns the number of edges and path with fewest edges |
+| + | + | `g.breadth_first_walk(start,end)` | returns a generator for a BFS walk |
 | + | + | `g.degree_of_separation(n1,n2)` | returns the distance between two nodes using BFS |
 | + | + | `g.network_size(n1, degree_of_separation)` | returns the nodes within the range given by `degree_of_separation` |
 | + | + | `g.phase_lines()` | returns a dictionary with the phase_lines for a non-cyclic graph. |
@@ -81,6 +82,7 @@ All module functions are available from Graph and Graph3D (where applicable).
 | + | + | `g.depth_scan(start, criteria)` | returns set of nodes where criteria is True |
 | + | + | `g.distance_from_path(path)` | returns the distance for path. |
 | + | + | `g.maximum_flow(source,sink)` | finds the maximum flow between a source and a sink |
+| + | + | `g.maximum_flow_min_cut(source,sink)` | finds the maximum flow minimum cut between a source and a sink |
 | + | + | `g.solve_tsp()` | solves the traveling salesman problem for the graph |
 | + | + | `g.subgraph_from_nodes(nodes)` | returns the subgraph of `g` involving `nodes` |
 | + | + | `g.is_subgraph(g2)` | determines if graph `g2` is a subgraph in g |

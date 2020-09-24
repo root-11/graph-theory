@@ -371,6 +371,28 @@ def breadth_first_search(graph, start, end):
     return []
 
 
+def breadth_first_walk(graph, start, end=None):
+    """
+    :param graph: Graph
+    :param start: start node
+    :param end: end node.
+    :return: generator for walk.
+
+    To walk all nodes use: `[n for n in g.breadth_first_walk(start)]`
+    """
+    visited = {start: None}
+    q = deque([start])
+    while q:
+        node = q.popleft()
+        yield node
+        if node == end:
+            break
+        for next_node in graph.nodes(from_node=node):
+            if next_node not in visited:
+                visited[next_node] = node
+                q.append(next_node)
+
+
 def depth_first_search(graph, start, end):
     """
     Determines path from start to end using
@@ -510,7 +532,7 @@ def maximum_flow(graph, start, end):
     # The algorithm
     # I reviewed a number of algorithms, such as Ford-fulkerson algorithm,
     # Edmonson-Karp and Dinic, but I didn't like them due to their naive usage
-    # of BFS, which leads to a lot of node visits.
+    # of DFS, which leads to a lot of node visits.
     #
     # I therefore choose to invert the capacities of the graph so that the
     # capacity any G[u][v] = c becomes 1/c in G_inverted.
@@ -529,9 +551,9 @@ def maximum_flow(graph, start, end):
     # -----------------------------------------------------------------------
 
     edges = [(n1, n2, 1 / d) for n1, n2, d in graph.edges() if d > 0]
-    inverted_graph = BasicGraph(from_list=edges)  # create G_inverted.
-    capacity_graph = BasicGraph()  # Create structure to record capacity left.
-    flow_graph = BasicGraph()  # Create structure to record flows.
+    inverted_graph = Graph(from_list=edges)  # create G_inverted.
+    capacity_graph = Graph()  # Create structure to record capacity left.
+    flow_graph = Graph()  # Create structure to record flows.
 
     while unassigned_flow:
         # 1. find the best path
@@ -570,6 +592,34 @@ def maximum_flow(graph, start, end):
             else:
                 inverted_graph.del_edge(n1, n2)
     return total_flow, flow_graph
+
+
+def maximum_flow_min_cut(graph, start, end):
+    """
+    Finds the edges in the maximum flow min cut.
+    :param graph: Graph
+    :param start: start
+    :param end: end
+    :return: list of edges
+    """
+    flow, mfg = maximum_flow(graph, start, end)
+    if flow == 0:
+        return []
+
+    working_graph = Graph(from_list=mfg.to_list())
+
+    min_cut = []
+    for n1 in mfg.breadth_first_walk(start, end):
+        n2s = mfg.nodes(from_node=n1)
+        for n2 in n2s:
+            if graph.edge(n1, n2) - mfg.edge(n1, n2) == 0:
+                working_graph.del_edge(n1, n2)
+                min_cut.append((n1, n2))
+
+    min_cut_nodes = set(working_graph.nodes(out_degree=0))
+    min_cut_nodes.remove(end)
+    min_cut = [(n1, n2) for (n1, n2) in min_cut if n1 in min_cut_nodes]
+    return min_cut
 
 
 def tsp_branch_and_bound(graph):
@@ -1240,6 +1290,14 @@ class Graph(BasicGraph):
         """
         return breadth_first_search(graph=self, start=start, end=end)
 
+    def breadth_first_walk(self, start, end=None):
+        """
+        :param start: start node
+        :param end: end node
+        :return: generator for breadth-first walk
+        """
+        return breadth_first_walk(graph=self, start=start, end=end)
+
     def depth_first_search(self, start, end):
         """
         Finds a path from start to end using DFS.
@@ -1276,6 +1334,16 @@ class Graph(BasicGraph):
         :return: flow, graph of flow.
         """
         return maximum_flow(self, start, end)
+
+    def maximum_flow_min_cut(self, start,end):
+        """
+        Finds the edges in the maximum flow min cut.
+        :param graph: Graph
+        :param start: start
+        :param end: end
+        :return: list of edges
+        """
+        return maximum_flow_min_cut(self, start, end)
 
     def solve_tsp(self, method='greedy'):
         """ solves the traveling salesman problem for the graph
@@ -1345,7 +1413,6 @@ class Graph(BasicGraph):
 
     def phase_lines(self):
         """ Determines the phase lines (cuts) of the graph
-        :param: check_if_cyclic: bool: performs check to detect if graph is cyclic.
         :returns: dictionary with phase: nodes in phase
         """
         return phase_lines(self)

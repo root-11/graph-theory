@@ -27,6 +27,33 @@ def test_maximum_flow():
     assert flow == 23, flow
 
 
+
+def test_min_cut():
+    """ [2] ----- [5]
+       /    +   /  | +
+    [1]      [4]   |  [7]
+       +    /   +  | /
+        [3] ----- [6]
+    """
+    edges = [
+        (1, 2, 18),
+        (1, 3, 18),  # different from test_maximum_flow
+        (2, 4, 7),
+        (2, 5, 6),
+        (3, 4, 2),
+        (3, 6, 8),
+        (4, 5, 10),
+        (4, 6, 10),
+        (5, 6, 16),
+        (5, 7, 9),
+        (6, 7, 18)
+    ]
+    g = Graph(from_list=edges)
+
+    max_flow_min_cut = g.maximum_flow_min_cut(1,7)
+    assert set(max_flow_min_cut) == {(2, 5), (2, 4), (3, 4), (3, 6)}
+
+
 def test_maximum_flow01():
     edges = [
         (1, 2, 1)

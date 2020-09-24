@@ -172,6 +172,16 @@ def test_bfs():
     path = g.breadth_first_search(1, 900)  # 900 doesn't exit.
     assert path == []
 
+def test_bfw():
+    g = graph03()
+    bfw = g.breadth_first_walk(1)
+    walk = [n for n in bfw]
+    assert walk == [1, 2, 3, 4, 5, 6, 8, 7], walk
+
+    bfw = g.breadth_first_walk(1,5)
+    walk = [n for n in bfw]
+    assert walk == [1, 2, 3, 4, 5]
+
 
 def test_shortest_tree_all_pairs01():
     g = Graph()
