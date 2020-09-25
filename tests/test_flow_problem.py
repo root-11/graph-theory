@@ -132,3 +132,6 @@ def test_maximum_flow06():
     assert flow == 2, flow
     assert set(g2.edges()) == set(edges)
 
+
+def min_cost_max_flow():
+    pass
