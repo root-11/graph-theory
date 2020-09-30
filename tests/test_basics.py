@@ -128,6 +128,10 @@ def test_nodes_from_node():
 
     nodes = g.nodes(out_degree=0)
     assert set(nodes) == {9}
+
+    g.add_node(44)
+    assert set(g.nodes(out_degree=0)) == {9, 44}
+
     nodes = g.nodes(out_degree=1)
     assert set(nodes) == {3, 6, 7, 8}
     nodes = g.nodes(out_degree=2)
