@@ -1,6 +1,6 @@
 from collections import defaultdict, deque
-from functools import lru_cache
 from heapq import heappop, heappush
+import functools
 from itertools import combinations
 from bisect import insort
 
@@ -288,7 +288,6 @@ class BasicGraph(object):
         """ returns list of edges and nodes."""
         return self.edges() + [(i,) for i in self.nodes()]
 
-    @lru_cache(maxsize=128)
     def is_connected(self, n1, n2):
         """ helper determining if two nodes are connected using BFS. """
         if n1 in self._edges:
@@ -760,7 +759,7 @@ def tsp_greedy(graph):
             if improvements == {None} or len(improvements) == 0:
                 return tour
 
-    @lru_cache()
+    @functools.lru_cache()
     def sub_segments(n):
         """ Return (i, j) pairs denoting tour[i:j] sub_segments of a tour of length N."""
         return [(i, i + length) for length in reversed(range(2, n))
@@ -801,6 +800,8 @@ def tsp_greedy(graph):
     assert first_path_length >= second_path_length, "first path was better than improved tour?! {} {}".format(
         first_path_length, second_path_length
     )
+
+    sub_segments.cache_clear()
 
     return second_path_length, improved_tour
 
@@ -970,6 +971,8 @@ def phase_lines(graph):
         sinks[e].add(s)
         edges[s].add(e)
 
+    cache = Cache(graph)
+
     level = 0
     while sinks:
         sources = [e for e in sinks if not sinks[e]]  # these nodes have in_degree=0
@@ -985,7 +988,7 @@ def phase_lines(graph):
                 sinks[e].discard(s)
                 # but also check if their descendants are loops.
                 for s2 in list(sinks[e]):
-                    if graph.is_connected(e, s2):
+                    if cache.is_connected(e, s2):
                         sinks[e].discard(s2)
         level += 1
 
@@ -1180,9 +1183,11 @@ def all_paths(graph, start, end):
     :param end: node
     :return: list of paths unique from start to end.
     """
+    cache = Cache(graph)
+
     if start == end:
         raise ValueError("start is end")
-    if not graph.is_connected(start, end):
+    if not cache.is_connected(start, end):
         return []
     paths = [(start,)]
     q = [start]
@@ -1198,7 +1203,7 @@ def all_paths(graph, start, end):
             if n2 in skip_list:
                 continue
             n3s = graph.nodes(from_node=n2)
-            if len(n3s) > 1 and graph.is_connected(n2, n1):
+            if len(n3s) > 1 and cache.is_connected(n2, n1):
                 # it's a fork and it's a part of a loop!
                 # is the sequence n2,n3 already in the path?
                 for n3 in n3s:
@@ -1255,6 +1260,22 @@ def avoids(graph, start, end, obstacles):
         g2.del_node(o)
     _, p = g2.shortest_path(start, end)
     return p
+
+
+class Cache(BasicGraph):
+    def __init__(self, graph):
+        super().__init__()
+        self.graph = graph
+
+    def is_connected(self, start, end):
+        """ cache function for reducing repeated calls. """
+        c = self.edge(start, end)
+        if c is None:
+            v = self.graph.is_connected(start, end)
+            assert isinstance(v, bool)
+            self.add_edge(start, end, v)
+            c = v
+        return c
 
 
 class Graph(BasicGraph):
@@ -1315,7 +1336,6 @@ class Graph(BasicGraph):
         traverses the descendants of node `start` using callable `criteria` to determine
         whether to terminate search along each branch in `graph`.
 
-        :param graph: class Graph
         :param start: start node
         :param criteria: function to terminate scan along a branch must return bool
         :return: set of nodes
@@ -1338,10 +1358,9 @@ class Graph(BasicGraph):
         """
         return maximum_flow(self, start, end)
 
-    def maximum_flow_min_cut(self, start,end):
+    def maximum_flow_min_cut(self, start, end):
         """
         Finds the edges in the maximum flow min cut.
-        :param graph: Graph
         :param start: start
         :param end: end
         :return: list of edges
@@ -1407,7 +1426,6 @@ class Graph(BasicGraph):
     def network_size(self, n1, degrees_of_separation=None):
         """ Determines the nodes within the range given by
         a degree of separation
-        :param graph: Graph
         :param n1: start node
         :param degrees_of_separation: integer
         :return: set of nodes within given range
