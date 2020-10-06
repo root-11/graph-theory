@@ -133,5 +133,14 @@ def test_maximum_flow06():
     assert set(g2.edges()) == set(edges)
 
 
-def min_cost_max_flow():
-    pass
+def test_min_cost_flow():
+    edges = [(1, 2, 8), (1, 3, 6), (2, 4, 5), (2, 5, 7), (3, 4, 6), (3, 5, 3), (4, 5, 4)]  # s,e,cost/unit
+    g = Graph(from_list=edges)
+    stock = {1: 6, 2: 0, 3: 4, 4: -5, 5: -5}  # supply > 0 > demand, stock == 0
+    costs, flow_graph = g.capacitated_min_cost_flow(stock)
+
+
+def capacitated_min_cost_flow():
+    pass  #
+
+

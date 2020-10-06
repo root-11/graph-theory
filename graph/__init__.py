@@ -625,6 +625,83 @@ def maximum_flow_min_cut(graph, start, end):
     return min_cut
 
 
+def capacitated_min_cost_flow(graph, stock, capacity=None):
+    """
+    :param graph: Graph with `cost per unit` as edge
+    :param demand: dict {node: stock, ...}
+        stock < 0 is demand
+        stock > 0 is supply
+    :param capacity: None or Graph with `capacity` as edge.
+    :return: total costs, flow graph
+    """
+    limit = float('inf')
+    if not all(d >= 0 for s, e, d in graph.edges()):
+        raise ValueError("negative costs?!")
+    if not isinstance(stock, dict):
+        raise TypeError("stock must be dict")
+    if not all(n in graph for n in stock):
+        raise ValueError("node reference in stock is not in graph.")
+    if not all(isinstance(v, (float, int)) for v in stock.values()):
+        raise ValueError("not all stock is numeric.")
+
+    if capacity is None:
+        capacity = Graph(from_list=[(s, e, limit) for s, e, d in graph.edges()])
+    else:
+        capacity = capacity.copy()
+
+    if not isinstance(capacity, Graph):
+        raise TypeError("Expected capacity as a Graph")
+    if any(d < 0 for s, e, d in capacity.edges()):
+        nn = [(s, e) for s, e, d in capacity.edges() if d < 0]
+        raise ValueError(f"negative capacity on edges: {nn}")
+
+    inverted = Graph(from_list=[(s, e, 1 / d) for s, e, d in graph.edges()])
+    apsp = inverted.all_pairs_shortest_paths()
+    solution = Graph(from_list=[(s, e, 0) for s, e, d in graph.edges()])
+
+    supplies = [(s, n) for n, s in stock.items() if s > 0]
+    supplies.sort(reverse=True)
+    demands = [(abs(s), n) for n, s in stock.items() if s < 0]
+    demands.sort(reverse=False)
+
+    while supplies and any(d for d, n2 in demands):
+        stock_in_n, n = supplies.pop(0)  # largest volume moves first as
+        # largest volume * N would be the largest cost if all costs are equal.
+        costs = [(d, n2) for n2, d in apsp[n].items()]
+        costs.sort()  # lowest cost destination comes first.
+        for ix in range(len(demands)):
+            demand, n2 = demands[ix]
+            if demand == 0:
+                continue
+            transfer_cost, path = inverted.shortest_path(n, n2)
+            capacity_limit = path_capacity_limit = float('inf')
+
+            for s, e in zip(path[:-1], path[1:]):
+                transfer_limit = capacity.edge(s, e) - solution.edge(s, e)  # edge capacity - used capacity.
+                capacity_limit = min(path_capacity_limit, transfer_limit)  # bottle neck capacity.
+
+            transfer = min(capacity_limit, stock_in_n, demand)
+            stock_in_n -= transfer
+            demands[ix] = (demand - transfer, n2)  # update the pending demand.
+
+            for s, e in zip(path[:-1], path[1:]):
+                flow = transfer + solution.edge(s, e)
+                solution.add_edge(s, e, flow)  # update the used capacity.
+                if capacity.edge(s, e) == flow:  # if there's no capacity left, remove the
+                    inverted.del_edge(s, e)  # edge so that the shortest path is updated.
+
+            if stock_in_n == 0:
+                break
+
+    total_cost = 0
+    for s, e, flow in solution.edges():
+        if flow > 0:
+            total_cost += flow * graph.edge(s, e)
+    return total_cost, solution
+    # 1. compute the initial solution using greedy.
+    # 2. compute the exact solution using complimentary slackness.
+
+
 def tsp_branch_and_bound(graph):
     """
     Solve the traveling salesmans problem for the graph.
@@ -1347,6 +1424,17 @@ class Graph(BasicGraph):
         :return: list of edges
         """
         return maximum_flow_min_cut(self, start, end)
+
+    def capacitated_min_cost_flow(self, stock, capacity=None):
+        """
+        :param demand: dict {node: stock, ...}
+            stock < 0 is demand
+            stock > 0 is supply
+        :param capacity: Graph where edge is capacity limit.
+            If None, capacity is inf.
+        :return: total costs, flow graph
+        """
+        return capacitated_min_cost_flow(self, stock)
 
     def solve_tsp(self, method='greedy'):
         """ solves the traveling salesman problem for the graph
