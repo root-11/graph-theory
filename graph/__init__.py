@@ -195,7 +195,7 @@ class BasicGraph(object):
         """
         :param path (optional) list of nodes for which the edges are wanted.
         :param from_node (optional) for which outgoing edges are returned.
-        :param to_node (optiona) for which incoming edges are returned.
+        :param to_node (optional) for which incoming edges are returned.
         :return list of edges (n1, n2, value)
         """
         inputs = sum([1 for i in (from_node, to_node, path) if i is not None])
@@ -759,7 +759,6 @@ def tsp_greedy(graph):
             if improvements == {None} or len(improvements) == 0:
                 return tour
 
-    @functools.lru_cache()
     def sub_segments(n):
         """ Return (i, j) pairs denoting tour[i:j] sub_segments of a tour of length N."""
         return [(i, i + length) for length in reversed(range(2, n))
@@ -800,8 +799,6 @@ def tsp_greedy(graph):
     assert first_path_length >= second_path_length, "first path was better than improved tour?! {} {}".format(
         first_path_length, second_path_length
     )
-
-    sub_segments.cache_clear()
 
     return second_path_length, improved_tour
 
@@ -971,7 +968,7 @@ def phase_lines(graph):
         sinks[e].add(s)
         edges[s].add(e)
 
-    cache = Cache(graph)
+    cache = {}
 
     level = 0
     while sinks:
@@ -988,7 +985,13 @@ def phase_lines(graph):
                 sinks[e].discard(s)
                 # but also check if their descendants are loops.
                 for s2 in list(sinks[e]):
-                    if cache.is_connected(e, s2):
+
+                    con = cache.get((e, s2))  # check if the edge has been seen before.
+                    if con is None:
+                        con = graph.is_connected(e, s2)  # if not seen before, search...
+                        cache[(e, s2)] = con
+
+                    if con:
                         sinks[e].discard(s2)
         level += 1
 
@@ -1183,11 +1186,11 @@ def all_paths(graph, start, end):
     :param end: node
     :return: list of paths unique from start to end.
     """
-    cache = Cache(graph)
+    cache = {}
 
     if start == end:
         raise ValueError("start is end")
-    if not cache.is_connected(start, end):
+    if not graph.is_connected(start, end):
         return []
     paths = [(start,)]
     q = [start]
@@ -1203,7 +1206,13 @@ def all_paths(graph, start, end):
             if n2 in skip_list:
                 continue
             n3s = graph.nodes(from_node=n2)
-            if len(n3s) > 1 and cache.is_connected(n2, n1):
+
+            con = cache.get((n2, n1))
+            if con is None:
+                con = graph.is_connected(n2, n1)
+                cache[(n2, n1)] = con
+
+            if len(n3s) > 1 and con:
                 # it's a fork and it's a part of a loop!
                 # is the sequence n2,n3 already in the path?
                 for n3 in n3s:
@@ -1260,22 +1269,6 @@ def avoids(graph, start, end, obstacles):
         g2.del_node(o)
     _, p = g2.shortest_path(start, end)
     return p
-
-
-class Cache(BasicGraph):
-    def __init__(self, graph):
-        super().__init__()
-        self.graph = graph
-
-    def is_connected(self, start, end):
-        """ cache function for reducing repeated calls. """
-        c = self.edge(start, end)
-        if c is None:
-            v = self.graph.is_connected(start, end)
-            assert isinstance(v, bool)
-            self.add_edge(start, end, v)
-            c = v
-        return c
 
 
 class Graph(BasicGraph):
