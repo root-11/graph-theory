@@ -634,7 +634,6 @@ def capacitated_min_cost_flow(graph, stock, capacity=None):
     :param capacity: None or Graph with `capacity` as edge.
     :return: total costs, flow graph
     """
-    limit = float('inf')
     if not all(d >= 0 for s, e, d in graph.edges()):
         raise ValueError("negative costs?!")
     if not isinstance(stock, dict):
@@ -645,10 +644,7 @@ def capacitated_min_cost_flow(graph, stock, capacity=None):
         raise ValueError("not all stock is numeric.")
 
     if capacity is None:
-        capacity = Graph(from_list=[(s, e, limit) for s, e, d in graph.edges()])
-    else:
-        capacity = capacity.copy()
-
+        capacity = Graph(from_list=[(s, e, float('inf')) for s, e, d in graph.edges()])
     if not isinstance(capacity, Graph):
         raise TypeError("Expected capacity as a Graph")
     if any(d < 0 for s, e, d in capacity.edges()):
@@ -693,10 +689,7 @@ def capacitated_min_cost_flow(graph, stock, capacity=None):
             if stock_in_n == 0:
                 break
 
-    total_cost = 0
-    for s, e, flow in solution.edges():
-        if flow > 0:
-            total_cost += flow * graph.edge(s, e)
+    total_cost = sum(flow * graph.edge(s, e) for s, e, flow in solution.edges())
     return total_cost, solution
     # 1. compute the initial solution using greedy.
     # 2. compute the exact solution using complimentary slackness.
@@ -1434,7 +1427,7 @@ class Graph(BasicGraph):
             If None, capacity is inf.
         :return: total costs, flow graph
         """
-        return capacitated_min_cost_flow(self, stock)
+        return capacitated_min_cost_flow(self, stock, capacity=capacity)
 
     def solve_tsp(self, method='greedy'):
         """ solves the traveling salesman problem for the graph
