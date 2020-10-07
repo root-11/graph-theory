@@ -1,6 +1,5 @@
 from collections import defaultdict, deque
 from heapq import heappop, heappush
-import functools
 from itertools import combinations
 from bisect import insort
 
@@ -753,16 +752,15 @@ def tsp_greedy(graph):
 
     def improve_tour(graph, tour):
         assert tour, "no tour to improve?"
+        n = len(tour)
+
+        # Return (i, j) pairs denoting tour[i:j] sub_segments of a tour of length N.
+        sub_segments = [(i, i + length) for length in reversed(range(2, n)) for i in reversed(range(n - length + 1))]
+
         while True:
-            improvements = {reverse_segment_if_improvement(graph, tour, i, j)
-                            for (i, j) in sub_segments(len(tour))}
+            improvements = {reverse_segment_if_improvement(graph, tour, i, j) for (i, j) in sub_segments}
             if improvements == {None} or len(improvements) == 0:
                 return tour
-
-    def sub_segments(n):
-        """ Return (i, j) pairs denoting tour[i:j] sub_segments of a tour of length N."""
-        return [(i, i + length) for length in reversed(range(2, n))
-                for i in reversed(range(n - length + 1))]
 
     def reverse_segment_if_improvement(graph, tour, i, j):
         """If reversing tour[i:j] would make the tour shorter, then do it."""
@@ -772,7 +770,7 @@ def tsp_greedy(graph):
         A, B, C, D = graph.edge(a, b), graph.edge(c, d), graph.edge(a, c), graph.edge(b, d)
         # if all are not None and improvement is shorter than previous ...
         if all((A, B, C, D)) and A + B > C + D:
-            tour[i:j] = reversed(tour[i:j])
+            tour[i:j] = reversed(tour[i:j])  # ..retain the solution.
             return True
 
     # The core TSP solver
