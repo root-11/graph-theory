@@ -144,4 +144,4 @@ def test_capacitated_min_cost_flow_limited():
     edges = [(1, 2, 8), (1, 3, 6), (2, 4, 5), (2, 5, 7), (3, 4, 6), (3, 5, 3), (4, 5, 4)]  # s,e,cost/unit
     g = Graph(from_list=edges)
     stock = {1: 6, 2: 0, 3: 4, 4: -5, 5: -5}  # supply > 0 > demand, stock == 0
-    costs, flow_graph = g.capacitated_min_cost_flow(stock, capacity=edges)  # limited !
+    costs, flow_graph = g.capacitated_min_cost_flow(stock, capacity=g)  # limited using cost as capacity (same graph).
