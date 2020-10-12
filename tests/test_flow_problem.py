@@ -133,15 +133,35 @@ def test_maximum_flow06():
     assert set(g2.edges()) == set(edges)
 
 
-def test_capacitated_min_cost_flow_unlimited():
+def lecture_23_max_flow_problem():
+    """ graph and stock from https://youtu.be/UtSrgTsKUfU """
     edges = [(1, 2, 8), (1, 3, 6), (2, 4, 5), (2, 5, 7), (3, 4, 6), (3, 5, 3), (4, 5, 4)]  # s,e,cost/unit
     g = Graph(from_list=edges)
     stock = {1: 6, 2: 0, 3: 4, 4: -5, 5: -5}  # supply > 0 > demand, stock == 0
+    return g, stock
+
+
+lec_23_optimum_cost = 81
+
+
+def test_capacitated_min_cost_flow_unlimited():
+    g, stock = lecture_23_max_flow_problem()
     costs, flow_graph = g.capacitated_min_cost_flow(stock, capacity=None)  # unlimited.
+    err = round(100 * (costs - lec_23_optimum_cost) / lec_23_optimum_cost, 0)
+    assert costs == lec_23_optimum_cost, f"error: {err}% from optimal @ {costs}"
 
 
 def test_capacitated_min_cost_flow_limited():
-    edges = [(1, 2, 8), (1, 3, 6), (2, 4, 5), (2, 5, 7), (3, 4, 6), (3, 5, 3), (4, 5, 4)]  # s,e,cost/unit
-    g = Graph(from_list=edges)
-    stock = {1: 6, 2: 0, 3: 4, 4: -5, 5: -5}  # supply > 0 > demand, stock == 0
+    g, stock = lecture_23_max_flow_problem()
     costs, flow_graph = g.capacitated_min_cost_flow(stock, capacity=g)  # limited using cost as capacity (same graph).
+    err = round(100 * (costs - lec_23_optimum_cost) / lec_23_optimum_cost, 0)
+    assert costs == lec_23_optimum_cost, f"error: {err}% from optimal @ {costs}"
+
+
+def e_complementary_slackness():
+    g = Graph(from_list=[
+        (1, 2, 6), (1, 3, 0), (2, 4, 6), (2, 5, 0), (3, 4, 4), (3, 5, 0), (4, 5, 5)
+    ])
+
+    # Six hours later: Use Bertsekas alternating iterative auction: It scales better.
+    

@@ -625,7 +625,7 @@ def maximum_flow_min_cut(graph, start, end):
     return min_cut
 
 
-def capacitated_min_cost_flow(graph, stock, capacity=None):
+def capacitated_min_cost_flow(graph, stock, capacity=None):  # greedy algorithm.
     """
     :param graph: Graph with `cost per unit` as edge
     :param demand: dict {node: stock, ...}
@@ -633,6 +633,9 @@ def capacitated_min_cost_flow(graph, stock, capacity=None):
         stock > 0 is supply
     :param capacity: None or Graph with `capacity` as edge.
     :return: total costs, flow graph
+
+    For details see:
+        https://en.wikipedia.org/wiki/Minimum-cost_flow_problem
     """
     if not all(d >= 0 for s, e, d in graph.edges()):
         raise ValueError("negative costs?!")
@@ -651,9 +654,11 @@ def capacitated_min_cost_flow(graph, stock, capacity=None):
         nn = [(s, e) for s, e, d in capacity.edges() if d < 0]
         raise ValueError(f"negative capacity on edges: {nn}")
 
-    inverted = Graph(from_list=[(s, e, 1 / d) for s, e, d in graph.edges()])
+    inverted = Graph(from_list=[(s, e, 1 / d) for s, e, d in graph.edges()])  # this permits usage
+    # of the shortest path algorithm as guide for lowest costs between any node pair.
     apsp = inverted.all_pairs_shortest_paths()
-    solution = Graph(from_list=[(s, e, 0) for s, e, d in graph.edges()])
+
+    solution = Graph(from_list=[(s, e, 0) for s, e, d in graph.edges()]) # placeholder for the solution.
 
     supplies = [(s, n) for n, s in stock.items() if s > 0]
     supplies.sort(reverse=True)
