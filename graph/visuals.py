@@ -61,13 +61,15 @@ def plot_2d(graph, nodes=True, edges=True):
         if not isinstance(y, (float, int)):
             raise ValueError(f"expected node in graph.nodes() to have (x,y) as float or int, but got {type(y)}")
 
-    xs, ys = [a[0] for a in graph.nodes()], [a[1] for a in graph.nodes()]
     plt.figure()
-    plt.plot(xs, ys)
+    if nodes:
+        xs, ys = [a[0] for a in graph.nodes()], [a[1] for a in graph.nodes()]
+        plt.plot(xs, ys)
 
-    for edge in graph.edges():
-        s, e, d = edge  # s: (x1,y1), e: (x2,y2), d: distance
-        plt.plot([s[0], e[0]], [s[1], e[1]], 'bo-', clip_on=False)
+    if edges:
+        for edge in graph.edges():
+            s, e, d = edge  # s: (x1,y1), e: (x2,y2), d: distance
+            plt.plot([s[0], e[0]], [s[1], e[1]], 'bo-', clip_on=False)
 
     plt.axis('scaled')
     plt.axis('off')
