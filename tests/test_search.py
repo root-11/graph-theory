@@ -4,7 +4,7 @@ from itertools import combinations, permutations
 
 from graph import Graph
 from tests.test_graph import graph01, graph3x3, graph03, graph04, graph05, graph4x4
-
+from tests.test_graph import london_underground,munich_firebrigade_centre
 
 def test_shortest_path01():
     g = graph03()
@@ -468,3 +468,78 @@ def test_incomparable_path_searching():
 
     p = g.shortest_path(("A", "6"), "B")
     assert p == (2, [("A", "6"), ("B", "7"), "B"])
+
+
+def test_cached_graph():
+    g = Graph(from_list=[(s, e, d + (s / 100)) for s, e, d in graph4x4().edges()])
+    g2 = g.copy()
+    a, b = 1, 16
+    d2, p2 = g2.shortest_path(a, b, memoize=True)
+    d1, p1 = g.shortest_path(a, b)
+    assert d1 == d2, (d1, d2)
+    assert p1 == p2, (p1, p2)
+
+
+def test_cached_graph2():
+    g = london_underground()
+    seds = list(g.edges())
+    for s, e, d in seds:
+        g.add_edge(s, e, d + s / len(seds) ** 2)  # adding minor variances so that no paths are the same length.
+
+    r1 = g.shortest_path(74, 89, memoize=True)
+    r2 = g.shortest_path(74, 89, memoize=True)
+    assert r1 == r2
+    r3 = g.shortest_path(99, 89, memoize=True)
+    r4 = g.shortest_path(99, 89, memoize=True)
+    assert r3 == r4
+
+    a1, b1 = 10,89
+    for a, b in combinations(g.nodes(), 2):
+        if a == a1 and b == b1:
+            d1, p1 = g.shortest_path(a, b)
+            d2, p2 = g.shortest_path(a, b, memoize=True)
+            assert d1 == d2
+            assert p1 == p2
+            break
+        else:
+            g.shortest_path(a, b, memoize=True)
+
+
+def test_incremental_search():
+    # g = london_underground()
+    g = munich_firebrigade_centre()
+    print(len(g.nodes()), "nodes")
+    seds = list(g.edges())
+    for s, e, d in seds:
+        g.add_edge(s, e, d + s / len(seds)**2)  # adding minor variances so that no paths are the same length.
+
+    t_repeated, t_memoized = 0.0, 0.0
+
+    cnt = 0
+
+    for i in range(20):
+        for a, b in combinations(g.nodes(), 2):
+            start = time.process_time()
+            d1, p1 = g.shortest_path(a, b)
+            end = time.process_time()
+            t_repeated += end - start
+
+            start = time.process_time()
+            d2, p2 = g.shortest_path(a, b, memoize=True)
+            end = time.process_time()
+            t_memoized += end - start
+            assert d1 == d2, (d1, d2)
+            assert p1 == p2, (p1, p2)
+
+            cnt += 1
+
+            if cnt > 200:
+                break
+
+    pct = round(100 * t_memoized / t_repeated)
+    print("dumb repeats", t_repeated, "secs."
+          "\nmemoized:", t_memoized, "secs."
+          "\ntime saved memoising: ", t_repeated - t_memoized, pct, "%",
+          flush=True)
+    assert t_repeated > t_memoized
+
