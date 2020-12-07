@@ -70,7 +70,7 @@ All module functions are available from Graph and Graph3D (where applicable).
 | + | + | `g.to_dict()` | returns the graph as a dictionary |
 | + | + | `g.from_list(L)` | updates the graph from a list |
 | + | + | `g.to_list()` | return the graph as a list of edges |
-| + | + | `g.shortest_path(start,end)` | returns the distance and path for path with smallest edge sum |
+| + | + | `g.shortest_path(start,end [, memoize])` | returns the distance and path for path with smallest edge sum <br> If `memoize=True`, sub results are cached for faster access if repeated calls.|
 | + | + | `g.is_connected(start,end)` | determines if there is a path from start to end |
 | + | + | `g.breadth_first_search(start,end)` | returns the number of edges and path with fewest edges |
 | + | + | `g.breadth_first_walk(start,end)` | returns a generator for a BFS walk |
@@ -107,7 +107,8 @@ All module functions are available from Graph and Graph3D (where applicable).
 | want to... | doesn't work... | do instead... | ...but why? |
 |:---|:---|:---|:---|
 | have multiple edges between two nodes | `Graph(from_list=[(1,2,3), (1,2,4)]` | Add dummy nodes<br>`[(1,a,3), (a,2,0),`<br>` (1,b,4),(b,2,0)]` | Explicit is better than implicit. |
-| multiple values on an edge | `g.add_edge(1,2,{'a':3, 'b':4})` | Have two graphs<br>`g_a.add_edge(1,2,3)`<br>`g_b.add_edge(1,2,4)` | Most graph algorithms don't work with multiple values |   
+| multiple values on an edge | `g.add_edge(1,2,{'a':3, 'b':4})` | Have two graphs<br>`g_a.add_edge(1,2,3)`<br>`g_b.add_edge(1,2,4)` | Most graph algorithms don't work with multiple values |
+|do repeated calls to shortest path|`g.shortest_path(a,b)` is slow|Use `g.shortest_path(a,b,memoize=True)` instead|memoize uses bidirectional search and caches sub-results along the shortest path for future retrievals|
 
 ## Credits:
 
@@ -115,5 +116,5 @@ All module functions are available from Graph and Graph3D (where applicable).
 - Peter Norvig for inspiration on TSP from [pytudes](https://github.com/norvig/pytudes/blob/master/ipynb/TSP.ipynb).
 - Harry Darby for the mountain river map.
 - Kyle Downey for depth_scan algorithm.
-- Ross Blandford for traffic jam and slide puzzle test cases.
+- Ross Blandford for munich firebrigade centre -, traffic jam - and slide puzzle - test cases.
 - Avi Kelman for type-tolerant search and a number of micro optimizations.
