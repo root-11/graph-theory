@@ -488,12 +488,11 @@ def test_cached_graph2():
 
     r1 = g.shortest_path(74, 89, memoize=True)
     r2 = g.shortest_path(74, 89, memoize=True)
-    assert r1 == r2
-    r3 = g.shortest_path(99, 89, memoize=True)
-    r4 = g.shortest_path(99, 89, memoize=True)
-    assert r3 == r4
+    assert r1 == r2, "cache call should be the same as the previous"
+    r3 = g.shortest_path(99, 89, memoize=True)  # this is a cache call as p(99,89) is in p(74,89)
+    assert r3 == (14.003052109588591, [74, 99, 236, 229, 273, 107, 192, 277, 89])
 
-    a1, b1 = 10,89
+    a1, b1 = 10, 89
     for a, b in combinations(g.nodes(), 2):
         if a == a1 and b == b1:
             d1, p1 = g.shortest_path(a, b)
@@ -506,40 +505,37 @@ def test_cached_graph2():
 
 
 def test_incremental_search():
-    # g = london_underground()
     g = munich_firebrigade_centre()
-    print(len(g.nodes()), "nodes")
+
     seds = list(g.edges())
     for s, e, d in seds:
         g.add_edge(s, e, d + s / len(seds)**2)  # adding minor variances so that no paths are the same length.
 
-    t_repeated, t_memoized = 0.0, 0.0
+    t_repeated, t_memoized, cnt = 0.0, 0.0, 0
 
-    cnt = 0
+    for a, b in combinations(g.nodes(), 2):
+        start = time.process_time()
+        d1, p1 = g.shortest_path(a, b)
+        end = time.process_time()
+        t_repeated += end - start
 
-    for i in range(20):
-        for a, b in combinations(g.nodes(), 2):
-            start = time.process_time()
-            d1, p1 = g.shortest_path(a, b)
-            end = time.process_time()
-            t_repeated += end - start
+        start = time.process_time()
+        d2, p2 = g.shortest_path(a, b, memoize=True)
+        end = time.process_time()
+        t_memoized += end - start
+        assert d1 == d2, (d1, d2)
+        assert p1 == p2, (p1, p2)
 
-            start = time.process_time()
-            d2, p2 = g.shortest_path(a, b, memoize=True)
-            end = time.process_time()
-            t_memoized += end - start
-            assert d1 == d2, (d1, d2)
-            assert p1 == p2, (p1, p2)
+        cnt += 1
 
-            cnt += 1
-
-            if cnt > 200:
-                break
+        if cnt > 200:
+            break
 
     pct = round(100 * t_memoized / t_repeated)
-    print("dumb repeats", t_repeated, "secs."
-          "\nmemoized:", t_memoized, "secs."
-          "\ntime saved memoising: ", t_repeated - t_memoized, pct, "%",
+    print("repeated searches", t_repeated, "secs."
+          "\nmemoized searches:", t_memoized, "secs."
+          "\ntime using memoising: ", pct, "%",
           flush=True)
     assert t_repeated > t_memoized
+
 
