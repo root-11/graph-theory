@@ -1294,10 +1294,6 @@ class BiDirectionalSearch(object):
         self.boundary = set()  # visited.
         self.mins = {start: 0}
         self.paths = {start: ()}
-        self._name = "-->"
-
-    def __str__(self):
-        return self._name
 
 
 def shortest_path_bidrectional(graph, start, end, reverse_graph=None):
@@ -1327,7 +1323,6 @@ def shortest_path_bidrectional(graph, start, end, reverse_graph=None):
 
     forward = BiDirectionalSearch(graph, start=start)
     backward = BiDirectionalSearch(reverse_graph, start=end)
-    backward._name = "<--"
 
     sp = ()
     sp_length = float('inf')
