@@ -172,6 +172,7 @@ def test_bfs():
     path = g.breadth_first_search(1, 900)  # 900 doesn't exit.
     assert path == []
 
+
 def test_bfw():
     g = graph03()
     bfw = g.breadth_first_walk(1)
