@@ -1304,16 +1304,65 @@ def shortest_path_bidrectional(graph, start, end, reverse_graph=None):
     :param reverse_graph: an existing reverse graph of graph
     :return: shortest path
 
-    The search is initiated at start, but alternates from between
-    search from start and end, to expand the frontier of the search.
+    In Section 3.4.6 of Artificial Intelligence: A Modern Approach, Russel and
+    Norvig write:
 
-    When the frontier from respectively start and end intersect, a lower
-    bound is set as the minimum distance.
-    The search continues from until a lower boundry is found, or all
-    frontier distances exceed the lower bound.
+    Bidirectional search is implemented by replacing the goal test with a check
+    to see whether the frontiers of the two searches intersect; if they do,
+    a solution has been found. It is important to realize that the first solution
+    found may not be optimal, even if the two searches are both breadth-first;
+    some additional search is required to make sure there isn't a shortcut
+    across the gap.
 
-    This method requires 50% of the search time/memory of single source
-    shortest path.
+    To overcome this limit for weighted graphs, I've added a lower bound, so
+    that when the two searches intersect, the lower bound is updated, and the
+    search continues until any search step, would exceed the lower bound, which
+    then must be the shortest path.
+
+    ----------------
+
+    The algorithms works as follows:
+
+    Lower bound = float('infinite')
+    shortest path = None
+
+    Two queues (forward scan and backward scan) are initiated with respectively 
+    the start and end node as starting point for each scan.
+
+    while there are nodes in the forward- and backward-scan queues:
+        1. select direction from (forward, backward) in alternations.
+        2. pop the top item from the queue of the direction. 
+           (The top item contains the node N that is nearest the starting point for the scan)
+        3. Add the node N to the scan-directions frontier.
+        4. If the node N is in the other directions frontier:
+            the path distance from the directions _start_ to the _end_ via 
+            the point of intersection (N), is compared with the lower bound.
+            
+            If the path distance is less than the lower bound:
+            *lower bound* is updated with path distance, and, 
+            the *shortest path* is recorded.
+    
+        5. for each node N2 (to N if backward, from N if forward):
+            the distance D is accumulated
+        
+            if D > lower bound, the node N2 is ignored.
+        
+            if N2 is within the other directions frontier and D + D.other > lower bound, the node N2 is ignored.
+        
+            otherwise:
+                the path P recorded
+                and N2, D and P are added to the directions scan queue
+        
+    The algorithm terminates when the scan queues are exhausted.
+    ----------------
+
+    Given that:
+    - `c` is the connectivity of the nodes in the graph,
+    - `R` is the length of the path,
+    the explored solution landscape can be estimated as:
+
+    A = c * (R**2), for single source shortest path
+    A = c * 2 * (1/2 * R) **2, for bidirectional shortest path
     """
     assert isinstance(graph, Graph)
     if reverse_graph is None:
@@ -1375,9 +1424,11 @@ class ShortestPathCache(object):
         self.cache = {}
 
     def _update_cache(self, path):
-        """ Method for updating the cache for future lookups.
+        """ private method for updating the cache for future lookups.
         :param path: tuple of nodes
-        :return: None
+
+        Given a shortest path, all steps along the shortest path,
+        also constitute the shortest path between each pair of steps.
         """
         assert isinstance(path, tuple)
         b = len(path)
