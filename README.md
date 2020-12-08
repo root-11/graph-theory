@@ -71,6 +71,7 @@ All module functions are available from Graph and Graph3D (where applicable).
 | + | + | `g.from_list(L)` | updates the graph from a list |
 | + | + | `g.to_list()` | return the graph as a list of edges |
 | + | + | `g.shortest_path(start,end [, memoize])` | returns the distance and path for path with smallest edge sum <br> If `memoize=True`, sub results are cached for faster access if repeated calls.|
+| + | + | `g.shortest_path_bidirectional(start,end)` | returns distance and path for the path with smallest edge sum using bidrectional search. |
 | + | + | `g.is_connected(start,end)` | determines if there is a path from start to end |
 | + | + | `g.breadth_first_search(start,end)` | returns the number of edges and path with fewest edges |
 | + | + | `g.breadth_first_walk(start,end)` | returns a generator for a BFS walk |

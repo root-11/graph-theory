@@ -1296,7 +1296,7 @@ class BiDirectionalSearch(object):
         self.paths = {start: ()}
 
 
-def shortest_path_bidrectional(graph, start, end, reverse_graph=None):
+def shortest_path_bidirectional(graph, start, end, reverse_graph=None):
     """ Bidirectional search using lower bound.
     :param graph: Graph
     :param start: start node
@@ -1366,9 +1366,9 @@ def shortest_path_bidrectional(graph, start, end, reverse_graph=None):
     """
     assert isinstance(graph, Graph)
     if reverse_graph is None:
-        reverse_graph = Graph(from_list=((e, s, d) for s, e, d in graph.to_list()))
+        reverse_graph = Graph(from_list=((e, s, d) for s, e, d in graph.edges()))
     else:
-        assert isinstance(reverse_graph,Graph)
+        assert isinstance(reverse_graph, Graph)
 
     forward = BiDirectionalSearch(graph, start=start)
     backward = BiDirectionalSearch(reverse_graph, start=end)
@@ -1412,7 +1412,7 @@ def shortest_path_bidrectional(graph, start, end, reverse_graph=None):
                     direction.paths[n2] = path
                     insort(direction.q, ScanThread(n2_dist, n2, path))
 
-    return sp_length, sp
+    return sp_length, list(sp)
 
 
 class ShortestPathCache(object):
@@ -1430,12 +1430,12 @@ class ShortestPathCache(object):
         Given a shortest path, all steps along the shortest path,
         also constitute the shortest path between each pair of steps.
         """
-        assert isinstance(path, tuple)
+        assert isinstance(path, (list,tuple))
         b = len(path)
         if b < 2:
             return
         for a, _ in enumerate(path):
-            section = path[a:b - a]
+            section = tuple(path[a:b - a])
             if len(section) < 3:
                 break
             dist = self.graph.distance_from_path(section)
@@ -1444,7 +1444,7 @@ class ShortestPathCache(object):
 
         end = path[-1]
         for ix, start in enumerate(path[1:-1]):
-            section = path[ix:]
+            section = tuple(path[ix:])
             dist = self.graph.distance_from_path(section)
             self.cache[(start, end)] = (dist, section)
 
@@ -1459,7 +1459,7 @@ class ShortestPathCache(object):
                 d, p = self.graph.edge(start, end), (start, end)
 
         if d is None:
-            d, p = shortest_path_bidrectional(self.graph, start, end, reverse_graph=self.reverse_graph)
+            d, p = shortest_path_bidirectional(self.graph, start, end, reverse_graph=self.reverse_graph)
             self._update_cache(p)
         return d, list(p)
 
@@ -1497,6 +1497,14 @@ class Graph(BasicGraph):
         if self._cache is None:
             self._cache = ShortestPathCache(graph=self)
         return self._cache.shortest_path(start, end)
+
+    def shortest_path_bidirectional(self, start, end):
+        """
+        :param start: start node
+        :param end: end node
+        :return: distance, path as list
+        """
+        return shortest_path_bidirectional(self, start, end)
 
     def breadth_first_search(self, start, end):
         """ Determines the path with fewest nodes.

@@ -498,8 +498,10 @@ def test_cached_graph2():
         if a == a1 and b == b1:
             d1, p1 = g.shortest_path(a, b)
             d2, p2 = g.shortest_path(a, b, memoize=True)
-            assert d1 == d2
-            assert p1 == p2
+            d3, p3 = g.shortest_path_bidirectional(a,b)
+            assert d1 == d2 == d3
+            assert p1 == p2 == p3, (p1,p2,p3)
+
             break
         else:
             g.shortest_path(a, b, memoize=True)
