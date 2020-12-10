@@ -1315,9 +1315,10 @@ def shortest_path_bidirectional(graph, start, end, reverse_graph=None):
     across the gap.
 
     To overcome this limit for weighted graphs, I've added a lower bound, so
-    that when the two searches intersect, the lower bound is updated, and the
-    search continues until any search step, would exceed the lower bound, which
-    then must be the shortest path.
+    that when the two searches intersect, the lower bound is updated and the
+    lower bound path is stored. In subsequent searches any path shorter than
+    the lower bound, leads to an update of the lower bound and shortest path.
+    The algorithm stops when all nodes on the frontier exceed the lower bound.
 
     ----------------
 
@@ -1416,9 +1417,13 @@ def shortest_path_bidirectional(graph, start, end, reverse_graph=None):
 
 
 class ShortestPathCache(object):
-    """ Datastructure used by shortest path when using keyword `memoize=True` """
+    """
+    Datastructure optimised for repeated calls to shortest path.
+    Used by shortest path when using keyword `memoize=True`
+    """
     def __init__(self, graph):
-        assert isinstance(graph, Graph)
+        if not isinstance(graph, Graph):
+            raise TypeError(f"expected type Graph, not {type(graph)}")
         self.graph = graph
         self.reverse_graph = Graph(from_list=((e, s, d) for s, e, d in graph.edges()))
         self.cache = {}
@@ -1430,7 +1435,7 @@ class ShortestPathCache(object):
         Given a shortest path, all steps along the shortest path,
         also constitute the shortest path between each pair of steps.
         """
-        assert isinstance(path, (list,tuple))
+        assert isinstance(path, (list, tuple))
         b = len(path)
         if b < 2:
             return
@@ -1450,17 +1455,19 @@ class ShortestPathCache(object):
 
     def shortest_path(self, start, end):
         """ Shortest path method that utilizes caching and bidirectional search """
-        if start == end:
-            return 0, []
-        d, p = self.cache.get((start, end), (None, None))  # is it cached?
+        d = 0 if start == end else None
+        p = ()
 
-        if d is None:  # is it a plain edge?
-            if self.graph.edge(start, end) is not None:
-                d, p = self.graph.edge(start, end), (start, end)
+        if d is None:  # is it cached?
+            d, p = self.cache.get((start, end), (None, None))
 
-        if d is None:
+        if d is None and self.graph.edge(start, end) is not None:  # is it a plain edge?
+            d, p = self.graph.edge(start, end), (start, end)
+
+        if d is None:  # search for it.
             d, p = shortest_path_bidirectional(self.graph, start, end, reverse_graph=self.reverse_graph)
             self._update_cache(p)
+
         return d, list(p)
 
 
