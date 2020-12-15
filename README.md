@@ -97,6 +97,7 @@ All module functions are available from Graph and Graph3D (where applicable).
 | + | + | `g.minmax()` | finds the node(s) with shortest maximum distance to all other nodes |
 | + | + | `g.shortest_tree_all_pairs()` | finds the shortest tree for all pairs |
 | + | + | `g.has_path(p)` | asserts whether a path `p` exists in g |
+| + | + | `g.all_simple_paths(start,end)` | finds all simple paths between 2 nodes|
 | + | + | `g.all_paths(start,end)` | finds all combinations of paths between 2 nodes|
 | - | + | `g3d.distance(n1,n2)` | returns the spatial distance between `n1` and `n2` |
 | - | + | `g3d.n_nearest_neighbour(n1, [n])` | returns the `n` nearest neighbours to node `n1` |
@@ -118,4 +119,5 @@ All module functions are available from Graph and Graph3D (where applicable).
 - Harry Darby for the mountain river map.
 - Kyle Downey for depth_scan algorithm.
 - Ross Blandford for munich firebrigade centre -, traffic jam - and slide puzzle - test cases.
-- Avi Kelman for type-tolerant search and a number of micro optimizations.
+- Avi Kelman for type-tolerant search, and a number of micro optimizations.
+- Joshua Crestone for all simple paths test.

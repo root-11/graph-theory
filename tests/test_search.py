@@ -301,7 +301,12 @@ def test_all_paths06():
     assert True, "All permutations of start and end passed."
 
 
-def test_all_paths07():
+def test_all_simple_paths():
+    """
+    [1] -- [2] -- [3]
+            |   /  |
+           [4] -- [5]
+    """
     g = Graph()
     edges = (1, 2), (2, 3), (2, 4), (3, 4), (3, 5), (4, 5)
     for s, e in edges:
