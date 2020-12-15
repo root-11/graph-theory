@@ -279,7 +279,7 @@ class BasicGraph(object):
         assert isinstance(links, Iterable)
         for item in links:
             assert isinstance(item, (list, tuple))
-            if len(item) == 3:
+            if len(item) > 1:
                 self.add_edge(*item)
             else:
                 self.add_node(item[0])
@@ -1178,8 +1178,35 @@ def has_path(graph, path):
     return True
 
 
-def all_paths(graph, start, end):
+def all_simple_paths(graph, start, end):
     """
+    finds all simple (non-looping) paths from start to end
+    :param start: node
+    :param end: node
+    :return: list of paths
+    """
+    if start == end:
+        raise ValueError("start is end")
+    if not graph.is_connected(start, end):
+        return []
+
+    paths = []
+    q = [(start,)]
+    while q:
+        path = q.pop(0)
+        for s, e, d in graph.edges(from_node=path[0]):
+            if e in path:
+                continue
+            new_path = (e,) + path
+            if e == end:
+                paths.append(new_path)
+            else:
+                q.append(new_path)
+    return [list(reversed(p)) for p in paths]
+
+
+def all_paths(graph, start, end):
+    """ finds all (simple and non-simple) paths from start to end
     :param graph: instance of Graph
     :param start: node
     :param end: node
@@ -1702,11 +1729,21 @@ class Graph(BasicGraph):
         """
         return has_path(graph=self, path=path)
 
+    def all_simple_paths(self, start, end):
+        """
+        finds all simple (non-looping) paths from start to end
+        :param start: node
+        :param end: node
+        :return: list of paths
+        """
+        return all_simple_paths(self, start, end)
+
     def all_paths(self, start, end):
         """
         finds all paths from start to end
         :param start: node
         :param end: node
+        :param simple: return simple paths only.
         :return: list of paths
         """
         return all_paths(graph=self, start=start, end=end)

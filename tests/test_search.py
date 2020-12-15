@@ -280,11 +280,14 @@ def test_all_paths05():
     """
     links = [(1, 2), (2, 3), (3, 4), (4, 5), (4, 6), (6, 2), (6, 7), (7, 8), (8, 9), (9, 10), (10, 2)]
     g = Graph(from_list=[(a, b, 1) for a, b in links])
+    paths = g.all_simple_paths(start=1, end=5)
+    assert paths == [[1, 2, 3, 4, 5]]
+
     paths = g.all_paths(start=1, end=5)
     expected = [[1, 2, 3, 4, 5],
                 [1, 2, 3, 4, 6, 2, 3, 4, 5],
                 [1, 2, 3, 4, 6, 7, 8, 9, 10, 2, 3, 4, 5]]
-    assert all(i in expected for i in paths) and all(i in paths for i in expected)
+    assert all(i in expected for i in paths) and all(i in paths for i in expected), paths
 
 
 def test_all_paths06():
@@ -292,7 +295,9 @@ def test_all_paths06():
     g = Graph(from_list=[(a, b, 1) for a, b in links])
     for comb in permutations(list(range(1, 11)), 2):
         start, end = comb
-        _ = g.all_paths(start, end)
+        paths = g.all_paths(start, end)
+        for path in paths:
+            assert (path[0], path[-1]) == (start, end), path
     assert True, "All permutations of start and end passed."
 
 
@@ -301,15 +306,9 @@ def test_all_paths07():
     edges = (1, 2), (2, 3), (2, 4), (3, 4), (3, 5), (4, 5)
     for s, e in edges:
         g.add_edge(s, e, 1, bidirectional=True)
-
-    paths = g.all_paths(start=5, end=1)
-
+    paths = g.all_simple_paths(start=5, end=1)
     expected = [[5, 3, 2, 1], [5, 4, 2, 1], [5, 3, 4, 2, 1], [5, 4, 3, 2, 1]]
-
-    assert len(paths) == len(expected)
-    for path in paths:
-        expected.remove(path)
-    assert expected == []
+    assert all(i in expected for i in paths) and all(i in paths for i in expected)
 
 
 def test_dfs():
@@ -552,8 +551,8 @@ def test_incremental_search():
             break
 
     pct = round(100 * t_memoized / t_repeated)
-    print("repeated searches", t_repeated, "secs."
-                                           "\nmemoized searches:", t_memoized, "secs."
-                                                                               "\ntime using memoising: ", pct, "%",
+    print("repeated searches", t_repeated, "secs.",
+          "\nmemoized searches:", t_memoized, "secs.",
+          "\ntime using memoising: ", pct, "% of repeated searches",
           flush=True)
     assert t_repeated > t_memoized
