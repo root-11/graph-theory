@@ -1,7 +1,7 @@
 """
 graph-theory
 """
-build_tag = "8508e4f8fb457ca739d839d361838847b403abb4a4524a314082b36931993ad0"
+build_tag = "4bcad335eb1e781060fef90bc6a6c56cf2381e13bded0c2c9b1c8126bf66923e"
 from setuptools import setup
 from pathlib import Path
 
@@ -20,7 +20,7 @@ keywords = list({
     'minimum-spanning-trees', 'network', 'Networks', 'optimization', 'python', 'shortest-path', 'tsp', 'tsp-solver',
     'assignment problem', 'flow-problem', 'hash', 'graph-hash', 'random graph', 'search', 'cycle', 'path',
     'component', 'components', 'adjacency', 'matrix', 'all pairs shortest path', 'finite state machine', 'fsm',
-    'traffic-jam', 'traffic-jam-solver', 'solver'
+    'traffic-jam', 'traffic-jam-solver', 'solver', 'hill-climbing', 'simple', 'simple-path'
 })
 
 keywords.sort(key=lambda x: x.lower())
@@ -28,7 +28,7 @@ keywords.sort(key=lambda x: x.lower())
 
 setup(
     name="graph-theory",
-    version="2020.12.7.63358",
+    version="2020.12.17.52432",
     url="https://github.com/root-11/graph-theory",
     license="MIT",
     author="Bjorn Madsen",
@@ -50,6 +50,7 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
     ],
 )
 
