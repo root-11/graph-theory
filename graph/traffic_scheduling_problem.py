@@ -364,7 +364,7 @@ def moves_to_synchronous_moves(moves, loads):
     assert isinstance(loads, dict)
     assert all(isinstance(t, (list, tuple)) for t in loads.values())
 
-    occupied_locations = {L[0] for L in loads.values()}
+    occupied_locations = {L[0] for L in loads.values()}  # loads are required in case that a load doesn't move.
     synchronuous_moves = []
 
     while moves:
