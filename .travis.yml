@@ -52,7 +52,12 @@ matrix:
         - pip install coverage
         - pip install codecov
 
-    - python: pypy3
+    - python: pypy3.7
+      before_install:
+        - pip install coverage
+        - pip install codecov
+
+    - python: pypy3.10
       before_install:
         - pip install coverage
         - pip install codecov
