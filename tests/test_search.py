@@ -528,6 +528,17 @@ def test_cached_graph2():
             g.shortest_path(a, b, memoize=True)
 
 
+def test_cached_graph3():
+    g = Graph()
+    g.add_edge(1, 2, 3, False)
+    g.add_edge(2, 3, 4, False)
+    g.add_edge(1, 3, 10, False)
+    p1 = g.shortest_path(1, 3)
+    assert p1 == (7, [1, 2, 3])
+    p2 = g.shortest_path(1, 3, memoize=True)
+    assert p1 == p2
+
+
 def test_incremental_search():
     g = munich_firebrigade_centre()
 

@@ -121,3 +121,4 @@ All module functions are available from Graph and Graph3D (where applicable).
 - Ross Blandford for munich firebrigade centre -, traffic jam - and slide puzzle - test cases.
 - Avi Kelman for type-tolerant search, and a number of micro optimizations.
 - Joshua Crestone for all simple paths test.
+- CodeMartyLikeYou for detecting a bug in @memoize 
