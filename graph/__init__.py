@@ -1488,9 +1488,6 @@ class ShortestPathCache(object):
         if d is None:  # is it cached?
             d, p = self.cache.get((start, end), (None, None))
 
-        if d is None and self.graph.edge(start, end) is not None:  # is it a plain edge?
-            d, p = self.graph.edge(start, end), (start, end)
-
         if d is None:  # search for it.
             d, p = shortest_path_bidirectional(self.graph, start, end, reverse_graph=self.reverse_graph)
             self._update_cache(p)
