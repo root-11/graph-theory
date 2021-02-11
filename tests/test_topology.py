@@ -265,7 +265,7 @@ def test_phaselines_for_larger_graph():
     assert end - start < 1  # second.
 
     # third objective: efficiency.
-    max_calls = 10000
+    max_calls = 13000
 
     profiled_phaseline_func = profileit(phase_lines)
 

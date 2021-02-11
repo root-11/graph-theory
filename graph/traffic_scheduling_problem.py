@@ -147,7 +147,6 @@ def bi_directional_progressive_bfs(graph, loads, timeout=None):
         loads = {1: [1, 2, 3], 2: [3, 2, 1]}
 
     :param timeout: None, float or int timeout in milliseconds.
-
     """
     initial_state = tuple(((load_id, route[0]) for load_id, route in loads.items()))
     final_state = tuple(((load_id, route[-1]) for load_id, route in loads.items()))
@@ -299,11 +298,99 @@ def bi_directional_bfs(graph, loads, timeout=None):
     return moves
 
 
+def pure_hill_climbing_algorithm(graph, loads, timeout=None):
+    """ A purist hill-climbing algorithm
+    :param graph: graph network available for routing.
+    :param loads: dictionary with load id and preferred route. Example:
+
+        loads = {1: [1, 2, 3], 2: [3, 2, 1]}
+
+    :param timeout: None, float or int timeout in milliseconds.
+    :return: list of moves.
+    """
+    initial_state = tuple(((load_id, route[0]) for load_id, route in loads.items()))
+    final_state = tuple(((load_id, route[-1]) for load_id, route in loads.items()))
+    movements = Graph()
+
+    states = [(0, initial_state)]
+
+    timer = Timer(timeout=timeout)
+    solved = False
+
+    while not solved:
+        timer.timeout_check()
+
+        score, state = states.pop(0)
+        occupied = {i[1] for i in state}
+        for load_id, location in state:
+            if solved: break
+
+            options = (e for s, e, d in graph.edges(from_node=location) if e not in occupied)
+            for option in options:
+                new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state)
+
+                if new_state in movements:  # abandon branch
+                    continue
+                else:
+                    movements.add_edge(state, new_state, 1)
+
+                    new_score = sum(1 if a == b else 0 for a, b in zip(new_state, final_state))
+                    if new_score < score:
+                        continue
+                    else:
+                        states.append((new_score, new_state))
+                        states = [(score, s) for score, s in states if score >= new_score]
+
+                if final_state == new_state:
+                    solved = True
+                    break
+        if not states:
+            return None  # hill climbing doesn't lead to a solution.
+
+    steps, best_path = movements.shortest_path(initial_state, final_state)
+    moves = path_to_moves(best_path)
+    return moves
+
+
+def moves_to_synchronous_moves(moves, loads):
+    """ translates the list of moves returned from the traffic jam solver to a list
+    of moves that can be made concurrently.
+
+    :param moves: list of loads and moves, e.g. [{1: (2,3)}, {2:(1,2)}, ... ]
+    :param loads: dict with loads and paths, e.g. {1: [2,3,4], 2: [1,2,3], ... }
+    :return: list of synchronous loads and moves, e.g. [{1:(2,3), {2:(1,2}}, {1:(3,4), 2:(2,3)}, ...]
+    """
+    moves = [(k,) + v for move in moves for k, v in move.items()]  # create independent copy
+    assert isinstance(loads, dict)
+    assert all(isinstance(t, (list, tuple)) for t in loads.values())
+
+    occupied_locations = {L[0] for L in loads.values()}  # loads are required in case that a load doesn't move.
+    synchronuous_moves = []
+
+    while moves:
+        current_moves = {}
+        for move in moves[:]:
+            load, n1, n2 = move
+            if load in current_moves:
+                break
+            if n2 in occupied_locations:
+                continue
+            current_moves[load] = (n1,n2)
+            occupied_locations.remove(n1)
+            occupied_locations.add(n2)
+            moves.remove(move)
+        synchronuous_moves.append(current_moves)
+    return synchronuous_moves
+
+
 # collection of solution methods for the routing problem.
 # insert, delete, append or substitute with your own methods as required.
 methods = [
+    pure_hill_climbing_algorithm,  # cheap check.
     bi_directional_progressive_bfs,  # <-- the fastest, but not always the best method.
     bi_directional_bfs,  # <-- best method so far.
     bfs_resolve,  # very slow, but will eventually find the best solution.
 ]
+
+
 

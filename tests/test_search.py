@@ -4,6 +4,7 @@ from itertools import combinations, permutations
 
 from graph import Graph
 from tests.test_graph import graph01, graph3x3, graph03, graph04, graph05, graph4x4
+from tests.test_graph import london_underground, munich_firebrigade_centre
 
 
 def test_shortest_path01():
@@ -172,13 +173,14 @@ def test_bfs():
     path = g.breadth_first_search(1, 900)  # 900 doesn't exit.
     assert path == []
 
+
 def test_bfw():
     g = graph03()
     bfw = g.breadth_first_walk(1)
     walk = [n for n in bfw]
     assert walk == [1, 2, 3, 4, 5, 6, 8, 7], walk
 
-    bfw = g.breadth_first_walk(1,5)
+    bfw = g.breadth_first_walk(1, 5)
     walk = [n for n in bfw]
     assert walk == [1, 2, 3, 4, 5]
 
@@ -216,7 +218,7 @@ def test_all_paths_no_path():
     """
     [1] --> [2]    [3] --> [4]
     """
-    g = Graph(from_list=[(1,2,1), (3,4,1)])
+    g = Graph(from_list=[(1, 2, 1), (3, 4, 1)])
     paths = g.all_paths(1, 4)
     assert paths == []
 
@@ -278,11 +280,14 @@ def test_all_paths05():
     """
     links = [(1, 2), (2, 3), (3, 4), (4, 5), (4, 6), (6, 2), (6, 7), (7, 8), (8, 9), (9, 10), (10, 2)]
     g = Graph(from_list=[(a, b, 1) for a, b in links])
+    paths = g.all_simple_paths(start=1, end=5)
+    assert paths == [[1, 2, 3, 4, 5]]
+
     paths = g.all_paths(start=1, end=5)
     expected = [[1, 2, 3, 4, 5],
                 [1, 2, 3, 4, 6, 2, 3, 4, 5],
                 [1, 2, 3, 4, 6, 7, 8, 9, 10, 2, 3, 4, 5]]
-    assert all(i in expected for i in paths) and all(i in paths for i in expected)
+    assert all(i in expected for i in paths) and all(i in paths for i in expected), paths
 
 
 def test_all_paths06():
@@ -290,8 +295,25 @@ def test_all_paths06():
     g = Graph(from_list=[(a, b, 1) for a, b in links])
     for comb in permutations(list(range(1, 11)), 2):
         start, end = comb
-        _ = g.all_paths(start, end)
+        paths = g.all_paths(start, end)
+        for path in paths:
+            assert (path[0], path[-1]) == (start, end), path
     assert True, "All permutations of start and end passed."
+
+
+def test_all_simple_paths():
+    """
+    [1] -- [2] -- [3]
+            |   /  |
+           [4] -- [5]
+    """
+    g = Graph()
+    edges = (1, 2), (2, 3), (2, 4), (3, 4), (3, 5), (4, 5)
+    for s, e in edges:
+        g.add_edge(s, e, 1, bidirectional=True)
+    paths = g.all_simple_paths(start=5, end=1)
+    expected = [[5, 3, 2, 1], [5, 4, 2, 1], [5, 3, 4, 2, 1], [5, 4, 3, 2, 1]]
+    assert all(i in expected for i in paths) and all(i in paths for i in expected)
 
 
 def test_dfs():
@@ -304,13 +326,13 @@ def test_dfs():
     ]
     g = Graph(from_list=links)
     try:
-        g.depth_first_search(0,2)
+        g.depth_first_search(0, 2)
         assert False, "node 0 is not in g"
     except ValueError:
         pass
 
     try:
-        g.depth_first_search(1,99)
+        g.depth_first_search(1, 99)
         assert False, "node 99 is not in g"
     except ValueError:
         pass
@@ -468,3 +490,85 @@ def test_incomparable_path_searching():
 
     p = g.shortest_path(("A", "6"), "B")
     assert p == (2, [("A", "6"), ("B", "7"), "B"])
+
+
+def test_cached_graph():
+    g = Graph(from_list=[(s, e, d + (s / 100)) for s, e, d in graph4x4().edges()])
+    g2 = g.copy()
+    a, b = 1, 16
+    d2, p2 = g2.shortest_path(a, b, memoize=True)
+    d1, p1 = g.shortest_path(a, b)
+    assert d1 == d2, (d1, d2)
+    assert p1 == p2, (p1, p2)
+
+
+def test_cached_graph2():
+    g = london_underground()
+    seds = list(g.edges())
+    for s, e, d in seds:
+        g.add_edge(s, e, d + s / len(seds) ** 2)  # adding minor variances so that no paths are the same length.
+
+    r1 = g.shortest_path(74, 89, memoize=True)
+    r2 = g.shortest_path(74, 89, memoize=True)
+    assert r1 == r2, "cache call should be the same as the previous"
+    r3 = g.shortest_path(99, 89, memoize=True)  # this is a cache call as p(99,89) is in p(74,89)
+    assert r3 == (14.003052109588591, [74, 99, 236, 229, 273, 107, 192, 277, 89])
+
+    a1, b1 = 10, 89
+    for a, b in combinations(g.nodes(), 2):
+        if a == a1 and b == b1:
+            d1, p1 = g.shortest_path(a, b)
+            d2, p2 = g.shortest_path(a, b, memoize=True)
+            d3, p3 = g.shortest_path_bidirectional(a, b)
+            assert d1 == d2 == d3
+            assert p1 == p2 == p3, (p1, p2, p3)
+
+            break
+        else:
+            g.shortest_path(a, b, memoize=True)
+
+
+def test_cached_graph3():
+    g = Graph()
+    g.add_edge(1, 2, 3, False)
+    g.add_edge(2, 3, 4, False)
+    g.add_edge(1, 3, 10, False)
+    p1 = g.shortest_path(1, 3)
+    assert p1 == (7, [1, 2, 3])
+    p2 = g.shortest_path(1, 3, memoize=True)
+    assert p1 == p2
+
+
+def test_incremental_search():
+    g = munich_firebrigade_centre()
+
+    seds = list(g.edges())
+    for s, e, d in seds:
+        g.add_edge(s, e, d + s / len(seds) ** 2)  # adding minor variances so that no paths are the same length.
+
+    t_repeated, t_memoized, cnt = 0.0, 0.0, 0
+
+    for a, b in combinations(g.nodes(), 2):
+        start = time.process_time()
+        d1, p1 = g.shortest_path(a, b)
+        end = time.process_time()
+        t_repeated += end - start
+
+        start = time.process_time()
+        d2, p2 = g.shortest_path(a, b, memoize=True)
+        end = time.process_time()
+        t_memoized += end - start
+        assert d1 == d2, (d1, d2)
+        assert p1 == p2, (p1, p2)
+
+        cnt += 1
+
+        if cnt > 200:
+            break
+
+    pct = round(100 * t_memoized / t_repeated)
+    print("repeated searches", t_repeated, "secs.",
+          "\nmemoized searches:", t_memoized, "secs.",
+          "\ntime using memoising: ", pct, "% of repeated searches",
+          flush=True)
+    assert t_repeated > t_memoized

@@ -1,8 +1,8 @@
-from collections import defaultdict, deque
-from functools import lru_cache
+from collections import defaultdict, deque, Iterable
 from heapq import heappop, heappush
-from itertools import combinations
+from itertools import combinations, count
 from bisect import insort
+from math import isclose
 
 from graph.visuals import plot_3d
 
@@ -195,7 +195,7 @@ class BasicGraph(object):
         """
         :param path (optional) list of nodes for which the edges are wanted.
         :param from_node (optional) for which outgoing edges are returned.
-        :param to_node (optiona) for which incoming edges are returned.
+        :param to_node (optional) for which incoming edges are returned.
         :return list of edges (n1, n2, value)
         """
         inputs = sum([1 for i in (from_node, to_node, path) if i is not None])
@@ -276,10 +276,10 @@ class BasicGraph(object):
             (11,)      # node with no links.
         ]
         """
-        assert isinstance(links, list)
+        assert isinstance(links, Iterable)
         for item in links:
-            assert isinstance(item, tuple)
-            if len(item) == 3:
+            assert isinstance(item, (list, tuple))
+            if len(item) > 1:
                 self.add_edge(*item)
             else:
                 self.add_node(item[0])
@@ -288,7 +288,6 @@ class BasicGraph(object):
         """ returns list of edges and nodes."""
         return self.edges() + [(i,) for i in self.nodes()]
 
-    @lru_cache(maxsize=128)
     def is_connected(self, n1, n2):
         """ helper determining if two nodes are connected using BFS. """
         if n1 in self._edges:
@@ -311,7 +310,7 @@ class BasicGraph(object):
 # Graph functions
 # -----------------------------
 def shortest_path(graph, start, end):
-    """
+    """ single source shortest path algorithm.
     :param graph: class Graph
     :param start: start node
     :param end: end node
@@ -829,17 +828,15 @@ def tsp_greedy(graph):
 
     def improve_tour(graph, tour):
         assert tour, "no tour to improve?"
+        n = len(tour)
+
+        # Return (i, j) pairs denoting tour[i:j] sub_segments of a tour of length N.
+        sub_segments = [(i, i + length) for length in reversed(range(2, n)) for i in reversed(range(n - length + 1))]
+
         while True:
-            improvements = {reverse_segment_if_improvement(graph, tour, i, j)
-                            for (i, j) in sub_segments(len(tour))}
+            improvements = {reverse_segment_if_improvement(graph, tour, i, j) for (i, j) in sub_segments}
             if improvements == {None} or len(improvements) == 0:
                 return tour
-
-    @lru_cache()
-    def sub_segments(n):
-        """ Return (i, j) pairs denoting tour[i:j] sub_segments of a tour of length N."""
-        return [(i, i + length) for length in reversed(range(2, n))
-                for i in reversed(range(n - length + 1))]
 
     def reverse_segment_if_improvement(graph, tour, i, j):
         """If reversing tour[i:j] would make the tour shorter, then do it."""
@@ -849,7 +846,7 @@ def tsp_greedy(graph):
         A, B, C, D = graph.edge(a, b), graph.edge(c, d), graph.edge(a, c), graph.edge(b, d)
         # if all are not None and improvement is shorter than previous ...
         if all((A, B, C, D)) and A + B > C + D:
-            tour[i:j] = reversed(tour[i:j])
+            tour[i:j] = reversed(tour[i:j])  # ..retain the solution.
             return True
 
     # The core TSP solver
@@ -1045,6 +1042,8 @@ def phase_lines(graph):
         sinks[e].add(s)
         edges[s].add(e)
 
+    cache = {}
+
     level = 0
     while sinks:
         sources = [e for e in sinks if not sinks[e]]  # these nodes have in_degree=0
@@ -1060,7 +1059,13 @@ def phase_lines(graph):
                 sinks[e].discard(s)
                 # but also check if their descendants are loops.
                 for s2 in list(sinks[e]):
-                    if graph.is_connected(e, s2):
+
+                    con = cache.get((e, s2))  # check if the edge has been seen before.
+                    if con is None:
+                        con = graph.is_connected(e, s2)  # if not seen before, search...
+                        cache[(e, s2)] = con
+
+                    if con:
                         sinks[e].discard(s2)
         level += 1
 
@@ -1154,11 +1159,11 @@ def all_pairs_shortest_paths(graph):
              5: {4: 6}}
 
         fw(adj(h)) #
-            {1: {1: 0, 2: 1, 3: -3, 4: 2, 5: -4},
-             2: {1: 3, 2: 0, 3: -4, 4: 1, 5: -1},
-             3: {1: 7, 2: 4, 3: 0, 4: 5, 5: 3},
+            {1: {1: 0, 2:  1, 3: -3, 4: 2, 5: -4},
+             2: {1: 3, 2:  0, 3: -4, 4: 1, 5: -1},
+             3: {1: 7, 2:  4, 3:  0, 4: 5, 5:  3},
              4: {1: 2, 2: -1, 3: -5, 4: 0, 5: -2},
-             5: {1: 8, 2: 5, 3: 1, 4: 6, 5: 0}}
+             5: {1: 8, 2:  5, 3:  1, 4: 6, 5:  0}}
     """
     g = graph.adjacency_matrix()
     assert isinstance(g, dict)
@@ -1238,7 +1243,7 @@ def has_path(graph, path):
     :return: boolean
     """
     assert isinstance(graph, BasicGraph)
-    assert isinstance(path, list)
+    assert isinstance(path, (list, tuple))
     v1 = path[0]
     for v2 in path[1:]:
         if graph.edge(v1, v2) is None:
@@ -1248,13 +1253,42 @@ def has_path(graph, path):
     return True
 
 
-def all_paths(graph, start, end):
+def all_simple_paths(graph, start, end):
     """
+    finds all simple (non-looping) paths from start to end
+    :param start: node
+    :param end: node
+    :return: list of paths
+    """
+    if start == end:
+        raise ValueError("start is end")
+    if not graph.is_connected(start, end):
+        return []
+
+    paths = []
+    q = [(start,)]
+    while q:
+        path = q.pop(0)
+        for s, e, d in graph.edges(from_node=path[0]):
+            if e in path:
+                continue
+            new_path = (e,) + path
+            if e == end:
+                paths.append(new_path)
+            else:
+                q.append(new_path)
+    return [list(reversed(p)) for p in paths]
+
+
+def all_paths(graph, start, end):
+    """ finds all (simple and non-simple) paths from start to end
     :param graph: instance of Graph
     :param start: node
     :param end: node
     :return: list of paths unique from start to end.
     """
+    cache = {}
+
     if start == end:
         raise ValueError("start is end")
     if not graph.is_connected(start, end):
@@ -1273,7 +1307,13 @@ def all_paths(graph, start, end):
             if n2 in skip_list:
                 continue
             n3s = graph.nodes(from_node=n2)
-            if len(n3s) > 1 and graph.is_connected(n2, n1):
+
+            con = cache.get((n2, n1))
+            if con is None:
+                con = graph.is_connected(n2, n1)
+                cache[(n2, n1)] = con
+
+            if len(n3s) > 1 and con:
                 # it's a fork and it's a part of a loop!
                 # is the sequence n2,n3 already in the path?
                 for n3 in n3s:
@@ -1332,6 +1372,204 @@ def avoids(graph, start, end, obstacles):
     return p
 
 
+class ScanThread(object):
+    """ search thread for bidirectional search """
+    def __init__(self, cost, n1, path=()):
+        assert isinstance(path, tuple)
+        self.cost = cost
+        self.n1 = n1
+        self.path = path
+
+    def __lt__(self, other):
+        return self.cost < other.cost
+
+
+class BiDirectionalSearch(object):
+    """ data structure for organizing bidirectional search """
+    def __init__(self, graph, start):
+        """
+        :param graph: class Graph.
+        :param start: first node in the search.
+        """
+        self.q = [ScanThread(cost=0, n1=start)]
+        self.graph = graph
+        self.boundary = set()  # visited.
+        self.mins = {start: 0}
+        self.paths = {start: ()}
+
+
+def shortest_path_bidirectional(graph, start, end, reverse_graph=None):
+    """ Bidirectional search using lower bound.
+    :param graph: Graph
+    :param start: start node
+    :param end: end node
+    :param reverse_graph: an existing reverse graph of graph
+    :return: shortest path
+
+    In Section 3.4.6 of Artificial Intelligence: A Modern Approach, Russel and
+    Norvig write:
+
+    Bidirectional search is implemented by replacing the goal test with a check
+    to see whether the frontiers of the two searches intersect; if they do,
+    a solution has been found. It is important to realize that the first solution
+    found may not be optimal, even if the two searches are both breadth-first;
+    some additional search is required to make sure there isn't a shortcut
+    across the gap.
+
+    To overcome this limit for weighted graphs, I've added a lower bound, so
+    that when the two searches intersect, the lower bound is updated and the
+    lower bound path is stored. In subsequent searches any path shorter than
+    the lower bound, leads to an update of the lower bound and shortest path.
+    The algorithm stops when all nodes on the frontier exceed the lower bound.
+
+    ----------------
+
+    The algorithms works as follows:
+
+    Lower bound = float('infinite')
+    shortest path = None
+
+    Two queues (forward scan and backward scan) are initiated with respectively
+    the start and end node as starting point for each scan.
+
+    while there are nodes in the forward- and backward-scan queues:
+        1. select direction from (forward, backward) in alternations.
+        2. pop the top item from the queue of the direction.
+           (The top item contains the node N that is nearest the starting point for the scan)
+        3. Add the node N to the scan-directions frontier.
+        4. If the node N is in the other directions frontier:
+            the path distance from the directions _start_ to the _end_ via
+            the point of intersection (N), is compared with the lower bound.
+
+            If the path distance is less than the lower bound:
+            *lower bound* is updated with path distance, and,
+            the *shortest path* is recorded.
+
+        5. for each node N2 (to N if backward, from N if forward):
+            the distance D is accumulated
+
+            if D > lower bound, the node N2 is ignored.
+
+            if N2 is within the other directions frontier and D + D.other > lower bound, the node N2 is ignored.
+
+            otherwise:
+                the path P recorded
+                and N2, D and P are added to the directions scan queue
+
+    The algorithm terminates when the scan queues are exhausted.
+    ----------------
+
+    Given that:
+    - `c` is the connectivity of the nodes in the graph,
+    - `R` is the length of the path,
+    the explored solution landscape can be estimated as:
+
+    A = c * (R**2), for single source shortest path
+    A = c * 2 * (1/2 * R) **2, for bidirectional shortest path
+    """
+    assert isinstance(graph, Graph)
+    if reverse_graph is None:
+        reverse_graph = Graph(from_list=((e, s, d) for s, e, d in graph.edges()))
+    else:
+        assert isinstance(reverse_graph, Graph)
+
+    forward = BiDirectionalSearch(graph, start=start)
+    backward = BiDirectionalSearch(reverse_graph, start=end)
+
+    sp = ()
+    sp_length = float('inf')
+
+    while any((forward.q, backward.q)):
+        for direction, other in [(forward, backward), (backward, forward)]:
+            if not direction.q:
+                continue
+            st = direction.q.pop(0)
+            assert isinstance(st, ScanThread)
+            if st.cost > sp_length:
+                continue
+
+            direction.boundary.add(st.n1)
+
+            if st.n1 in other.boundary:  # if there's an intercept between the two searches ...
+                if st.cost + other.mins[st.n1] < sp_length:
+                    sp_length = st.cost + other.mins[st.n1]
+                    if direction == forward:
+                        sp = tuple(reversed(st.path)) + (st.n1,) + other.paths[st.n1]
+                    else:  # direction == backward:
+                        sp = tuple(reversed(other.paths[st.n1])) + (st.n1,) + st.path
+
+                    direction.q = [a for a in direction.q if a.cost < sp_length]
+
+            for dist, n2 in sorted((d, e) for s, e, d in direction.graph.edges(from_node=st.n1)):
+                n2_dist = st.cost + dist
+                if n2_dist > sp_length:  # no point pursuing as the solution is worse.
+                    continue
+                if n2 in other.mins and n2_dist + other.mins[n2] > sp_length:  # already longer than lower bound.
+                    continue
+
+                # at this point we can't dismiss that n2 will lead to a better solution, so we retain it.
+                prev = direction.mins.get(n2, None)
+                if prev is None or n2_dist < prev:
+                    direction.mins[n2] = n2_dist
+                    path = (st.n1, ) + st.path
+                    direction.paths[n2] = path
+                    insort(direction.q, ScanThread(n2_dist, n2, path))
+
+    return sp_length, list(sp)
+
+
+class ShortestPathCache(object):
+    """
+    Datastructure optimised for repeated calls to shortest path.
+    Used by shortest path when using keyword `memoize=True`
+    """
+    def __init__(self, graph):
+        if not isinstance(graph, Graph):
+            raise TypeError(f"expected type Graph, not {type(graph)}")
+        self.graph = graph
+        self.reverse_graph = Graph(from_list=((e, s, d) for s, e, d in graph.edges()))
+        self.cache = {}
+
+    def _update_cache(self, path):
+        """ private method for updating the cache for future lookups.
+        :param path: tuple of nodes
+
+        Given a shortest path, all steps along the shortest path,
+        also constitute the shortest path between each pair of steps.
+        """
+        assert isinstance(path, (list, tuple))
+        b = len(path)
+        if b < 2:
+            return
+        for a, _ in enumerate(path):
+            section = tuple(path[a:b - a])
+            if len(section) < 3:
+                break
+            dist = self.graph.distance_from_path(section)
+            start, end = section[0], section[-1]
+            self.cache[(start, end)] = (dist, section)
+
+        end = path[-1]
+        for ix, start in enumerate(path[1:-1]):
+            section = tuple(path[ix:])
+            dist = self.graph.distance_from_path(section)
+            self.cache[(start, end)] = (dist, section)
+
+    def shortest_path(self, start, end):
+        """ Shortest path method that utilizes caching and bidirectional search """
+        d = 0 if start == end else None
+        p = ()
+
+        if d is None:  # is it cached?
+            d, p = self.cache.get((start, end), (None, None))
+
+        if d is None:  # search for it.
+            d, p = shortest_path_bidirectional(self.graph, start, end, reverse_graph=self.reverse_graph)
+            self._update_cache(p)
+
+        return d, list(p)
+
+
 class Graph(BasicGraph):
     """
     Graph is the base graph that all methods use.
@@ -1343,6 +1581,7 @@ class Graph(BasicGraph):
 
     def __init__(self, from_dict=None, from_list=None):
         super().__init__(from_dict=from_dict, from_list=from_list)
+        self._cache = None
 
     def copy(self):
         g = Graph()
@@ -1352,13 +1591,26 @@ class Graph(BasicGraph):
             g.add_edge(s, e, d)
         return g
 
-    def shortest_path(self, start, end):
+    def shortest_path(self, start, end, memoize=False):
+        """
+        :param start: start node
+        :param end: end node
+        :param memoize: boolean (stores paths in a cache for faster repeated lookup)
+        :return: distance, path as list
+        """
+        if not memoize:
+            return shortest_path(graph=self, start=start, end=end)
+        if self._cache is None:
+            self._cache = ShortestPathCache(graph=self)
+        return self._cache.shortest_path(start, end)
+
+    def shortest_path_bidirectional(self, start, end):
         """
         :param start: start node
         :param end: end node
         :return: distance, path as list
         """
-        return shortest_path(graph=self, start=start, end=end)
+        return shortest_path_bidirectional(self, start, end)
 
     def breadth_first_search(self, start, end):
         """ Determines the path with fewest nodes.
@@ -1390,7 +1642,6 @@ class Graph(BasicGraph):
         traverses the descendants of node `start` using callable `criteria` to determine
         whether to terminate search along each branch in `graph`.
 
-        :param graph: class Graph
         :param start: start node
         :param criteria: function to terminate scan along a branch must return bool
         :return: set of nodes
@@ -1413,10 +1664,9 @@ class Graph(BasicGraph):
         """
         return maximum_flow(self, start, end)
 
-    def maximum_flow_min_cut(self, start,end):
+    def maximum_flow_min_cut(self, start, end):
         """
         Finds the edges in the maximum flow min cut.
-        :param graph: Graph
         :param start: start
         :param end: end
         :return: list of edges
@@ -1493,7 +1743,6 @@ class Graph(BasicGraph):
     def network_size(self, n1, degrees_of_separation=None):
         """ Determines the nodes within the range given by
         a degree of separation
-        :param graph: Graph
         :param n1: start node
         :param degrees_of_separation: integer
         :return: set of nodes within given range
@@ -1563,11 +1812,21 @@ class Graph(BasicGraph):
         """
         return has_path(graph=self, path=path)
 
+    def all_simple_paths(self, start, end):
+        """
+        finds all simple (non-looping) paths from start to end
+        :param start: node
+        :param end: node
+        :return: list of paths
+        """
+        return all_simple_paths(self, start, end)
+
     def all_paths(self, start, end):
         """
         finds all paths from start to end
         :param start: node
         :param end: node
+        :param simple: return simple paths only.
         :return: list of paths
         """
         return all_paths(graph=self, start=start, end=end)
