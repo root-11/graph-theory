@@ -1,4 +1,4 @@
-from graph import Graph
+from graph import Graph, minimum_cost_flow_using_successive_shortest_path
 
 
 def test_maximum_flow():
@@ -135,7 +135,13 @@ def test_maximum_flow06():
 
 def lecture_23_max_flow_problem():
     """ graph and stock from https://youtu.be/UtSrgTsKUfU """
-    edges = [(1, 2, 8), (1, 3, 6), (2, 4, 5), (2, 5, 7), (3, 4, 6), (3, 5, 3), (4, 5, 4)]  # s,e,cost/unit
+    edges = [(1, 2, 8),
+             (1, 3, 6),
+             (2, 4, 5),
+             (2, 5, 7),
+             (3, 4, 6),
+             (3, 5, 3),
+             (4, 5, 4)]  # s,e,cost/unit
     g = Graph(from_list=edges)
     stock = {1: 6, 2: 0, 3: 4, 4: -5, 5: -5}  # supply > 0 > demand, stock == 0
     return g, stock
@@ -144,24 +150,74 @@ def lecture_23_max_flow_problem():
 lec_23_optimum_cost = 81
 
 
-def test_capacitated_min_cost_flow_unlimited():
-    g, stock = lecture_23_max_flow_problem()
-    costs, flow_graph = g.capacitated_min_cost_flow(stock, capacity=None)  # unlimited.
-    err = round(100 * (costs - lec_23_optimum_cost) / lec_23_optimum_cost, 0)
-    assert costs == lec_23_optimum_cost, f"error: {err}% from optimal @ {costs}"
+def test_minimum_cost_flow_successive_shortest_path_unlimited():
+    costs, inventory = lecture_23_max_flow_problem()
+    mcf = minimum_cost_flow_using_successive_shortest_path
+    total_cost, movements = mcf(costs, inventory)
+    assert isinstance(movements, Graph)
+    assert total_cost == lec_23_optimum_cost
+    expected = [
+        (1, 3, 6),
+        (3, 4, 5),
+        (3, 5, 5)
+    ]
+    for edge in movements.edges():
+        expected.remove(edge)  # will raise error if edge is missing.
+    assert expected == []  # will raise error if edge wasn't removed.
 
 
-def test_capacitated_min_cost_flow_limited():
-    g, stock = lecture_23_max_flow_problem()
-    costs, flow_graph = g.capacitated_min_cost_flow(stock, capacity=g)  # limited using cost as capacity (same graph).
-    err = round(100 * (costs - lec_23_optimum_cost) / lec_23_optimum_cost, 0)
-    assert costs == lec_23_optimum_cost, f"error: {err}% from optimal @ {costs}"
+def test_minimum_cost_flow_successive_shortest_path_plenty():
+    costs, inventory = lecture_23_max_flow_problem()
+    capacity = Graph(from_list=[(s, e, lec_23_optimum_cost) for s, e, d in costs.edges()])
+    mcf = minimum_cost_flow_using_successive_shortest_path
+    total_cost, movements = mcf(costs, inventory, capacity)
+    assert isinstance(movements, Graph)
+    assert total_cost == lec_23_optimum_cost
+    expected = [
+        (1, 3, 6),
+        (3, 4, 5),
+        (3, 5, 5)
+    ]
+    for edge in movements.edges():
+        expected.remove(edge)  # will raise error if edge is missing.
+    assert expected == []  # will raise error if edge wasn't removed.
 
 
-def e_complementary_slackness():
-    g = Graph(from_list=[
-        (1, 2, 6), (1, 3, 0), (2, 4, 6), (2, 5, 0), (3, 4, 4), (3, 5, 0), (4, 5, 5)
-    ])
+def test_minimum_cost_flow_successive_shortest_path_35_constrained():
+    costs, inventory = lecture_23_max_flow_problem()
+    capacity = Graph(from_list=[(s, e, lec_23_optimum_cost) for s, e, d in costs.edges()])
+    capacity.add_edge(3, 5, 4)
 
-    # Six hours later: Use Bertsekas alternating iterative auction: It scales better.
-    
+    mcf = minimum_cost_flow_using_successive_shortest_path
+    total_cost, movements = mcf(costs, inventory, capacity)
+    assert isinstance(movements, Graph)
+    assert total_cost == lec_23_optimum_cost - 3 - 6 + 8 + 7
+    expected = [
+        (1, 3, 5),
+        (1, 2, 1),
+        (2, 5, 1),
+        (3, 5, 4),
+        (3, 4, 5)
+    ]
+    for edge in movements.edges():
+        expected.remove(edge)  # will raise error if edge is missing.
+    assert expected == []  # will raise error if edge wasn't removed.
+
+
+def test_minimum_cost_flow_successive_shortest_path_unlimited_excess_supply():
+    costs, inventory = lecture_23_max_flow_problem()
+    inventory[1] = 1000
+    mcf = minimum_cost_flow_using_successive_shortest_path
+    total_cost, movements = mcf(costs, inventory)
+    assert isinstance(movements, Graph)
+    assert total_cost == lec_23_optimum_cost
+    expected = [
+        (1, 3, 6),
+        (3, 4, 5),
+        (3, 5, 5)
+    ]
+    for edge in movements.edges():
+        expected.remove(edge)  # will raise error if edge is missing.
+    assert expected == []  # will raise error if edge wasn't removed.
+
+
