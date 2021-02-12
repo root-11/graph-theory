@@ -88,7 +88,8 @@ All module functions are available from Graph and Graph3D (where applicable).
 | + | + | `g.distance_from_path(path)` | returns the distance for path. |
 | + | + | `g.maximum_flow(source,sink)` | finds the maximum flow between a source and a sink |
 | + | + | `g.maximum_flow_min_cut(source,sink)` | finds the maximum flow minimum cut between a source and a sink |
-| + | + | `g.solve_tsp()` | solves the traveling salesman problem for the graph |
+| + | + | `g.minimum_cost_flow(inventory, capacity)` | finds the total cost and flows of the capacitated minimum cost flow. |
+| + | + | `g.solve_tsp()` | solves the traveling salesman problem for the graph.<br>Available methods: 'greedy' (default) and 'bnb |
 | + | + | `g.subgraph_from_nodes(nodes)` | returns the subgraph of `g` involving `nodes` |
 | + | + | `g.is_subgraph(g2)` | determines if graph `g2` is a subgraph in g |
 | + | + | `g.is_partite(n)` | determines if graph is n-partite |
