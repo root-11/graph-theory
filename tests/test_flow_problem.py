@@ -27,7 +27,6 @@ def test_maximum_flow():
     assert flow == 23, flow
 
 
-
 def test_min_cut():
     """ [2] ----- [5]
        /    +   /  | +

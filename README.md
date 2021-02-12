@@ -11,6 +11,12 @@ A simple graph library...<br>
 *... with code that you can explain to your boss...*<br>
 
 ---------------------------
+
+Latest feature:
+
+    minimum cost flow problem (2021/2/12)
+
+---------------------------
 Install:
 
     pip install graph-theory
