@@ -221,3 +221,17 @@ def test_minimum_cost_flow_successive_shortest_path_unlimited_excess_supply():
     assert expected == []  # will raise error if edge wasn't removed.
 
 
+def test_minimum_cost_flow_successive_shortest_path_unlimited_inadequate_supply():
+    costs, inventory = lecture_23_max_flow_problem()
+    inventory[5] = -10
+    mcf = minimum_cost_flow_using_successive_shortest_path
+    total_cost, movements = mcf(costs, inventory)
+    assert isinstance(movements, Graph)
+    assert total_cost == 6 * 6 + 10 * 3
+    expected = [
+        (1, 3, 6),
+        (3, 5, 10)
+    ]
+    for edge in movements.edges():
+        expected.remove(edge)  # will raise error if edge is missing.
+    assert expected == []  # will raise error if edge wasn't removed.

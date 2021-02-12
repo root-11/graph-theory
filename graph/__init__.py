@@ -673,6 +673,8 @@ def minimum_cost_flow_using_successive_shortest_path(costs, inventory, capacity=
         balance = balance[1:]  # remove selection.
 
         supply_sites = [(distances[En][Dn], E, En) for E, En in balance if E > 0]
+        if not supply_sites:
+            break  # supply exhausted.
         supply_sites.sort()
         dist, E, En = supply_sites[0]  # pick nearest node En with excess E.
         balance.remove((E, En))  # maintain balance by removing the node.
