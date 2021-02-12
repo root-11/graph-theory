@@ -1,8 +1,8 @@
 from collections import defaultdict, deque, Iterable
 from heapq import heappop, heappush
-from itertools import combinations, count
+from itertools import combinations
 from bisect import insort
-from math import isclose
+
 
 from graph.visuals import plot_3d
 
@@ -28,7 +28,7 @@ class BasicGraph(object):
     def __init__(self, from_dict=None, from_list=None):
         """
         :param from_dict: creates graph for dictionary {n1:{n2:d} ...
-        :param links: creates graph from list of edges(n1,n2,d)
+        :param from_list: creates graph from list of edges(n1,n2,d)
         """
         self._nodes = {}
         self._edges = {}
@@ -138,8 +138,8 @@ class BasicGraph(object):
         except KeyError:
             pass
         in_links = [n1 for n1, n2, d in self.edges() if n2 == node_id]
-        for inlink in in_links:
-            del self._edges[inlink][node_id]
+        for in_link in in_links:
+            del self._edges[in_link][node_id]
         return None
 
     def nodes(self,
@@ -321,7 +321,7 @@ def shortest_path(graph, start, end):
     for n1, n2, dist in graph.edges():
         g[n1].append((dist, n2))
 
-    q, visited, mins = [(0, 0, start, ())], set(), {start: 0}
+    q, visited, minimums = [(0, 0, start, ())], set(), {start: 0}
     i = 1
     while q:
         (cost, _, v1, path) = heappop(q)
@@ -340,10 +340,10 @@ def shortest_path(graph, start, end):
             for dist, v2 in g.get(v1, ()):
                 if v2 in visited:
                     continue
-                prev = mins.get(v2, None)
+                prev = minimums.get(v2, None)
                 next_node = cost + dist
                 if prev is None or next_node < prev:
-                    mins[v2] = next_node
+                    minimums[v2] = next_node
                     heappush(q, (next_node, i, v2, path))
                     i += 1
     return float("inf"), []
@@ -624,84 +624,82 @@ def maximum_flow_min_cut(graph, start, end):
     return min_cut
 
 
-def capacitated_min_cost_flow(graph, stock, capacity=None):  # greedy algorithm.
+def minimum_cost_flow_using_successive_shortest_path(costs, inventory, capacity=None):
     """
-    :param graph: Graph with `cost per unit` as edge
-    :param demand: dict {node: stock, ...}
+    Calculates the minimum cost flow solution using successive shortest path.
+    :param costs: Graph with `cost per unit` as edge
+    :param inventory: dict {node: stock, ...}
         stock < 0 is demand
         stock > 0 is supply
     :param capacity: None or Graph with `capacity` as edge.
     :return: total costs, flow graph
-
-    For details see:
-        https://en.wikipedia.org/wiki/Minimum-cost_flow_problem
     """
-    if not all(d >= 0 for s, e, d in graph.edges()):
-        raise ValueError("negative costs?!")
-    if not isinstance(stock, dict):
-        raise TypeError("stock must be dict")
-    if not all(n in graph for n in stock):
-        raise ValueError("node reference in stock is not in graph.")
-    if not all(isinstance(v, (float, int)) for v in stock.values()):
+    assert isinstance(costs, Graph)
+    assert isinstance(inventory, dict)
+    assert isinstance(capacity, Graph)
+
+    if not all(d >= 0 for s, e, d in costs.edges()):
+        raise ValueError("negative costs?")
+    if not isinstance(inventory, dict):
+        raise TypeError("inventory is expected as dict")
+    if not all(isinstance(v, (float, int)) for v in inventory.values()):
         raise ValueError("not all stock is numeric.")
+    if sum(inventory.values()) != 0:
+        if sum(inventory.values()) > 0:
+            raise ValueError("inventory in excess of demand")
+        else:
+            raise ValueError("demand in excess of supply")
 
     if capacity is None:
-        capacity = Graph(from_list=[(s, e, float('inf')) for s, e, d in graph.edges()])
-    if not isinstance(capacity, Graph):
-        raise TypeError("Expected capacity as a Graph")
-    if any(d < 0 for s, e, d in capacity.edges()):
-        nn = [(s, e) for s, e, d in capacity.edges() if d < 0]
-        raise ValueError(f"negative capacity on edges: {nn}")
+        capacity = Graph(from_list=[(s, e, float('inf')) for s, e, d in costs.edges()])
+    else:
+        if not isinstance(capacity, Graph):
+            raise TypeError("Expected capacity as a Graph")
+        if any(d < 0 for s, e, d in capacity.edges()):
+            nn = [(s, e) for s, e, d in capacity.edges() if d < 0]
+            raise ValueError(f"negative capacity on edges: {nn}")
+        if {(s, e) for s, e, d in costs.edges()} != {(s, e) for s, e, d in capacity.edges()}:
+            raise ValueError("cost and capacity have different links")
 
-    inverted = Graph(from_list=[(s, e, 1 / d) for s, e, d in graph.edges()])  # this permits usage
-    # of the shortest path algorithm as guide for lowest costs between any node pair.
-    apsp = inverted.all_pairs_shortest_paths()
+    # successive shortest path algorithm begins ...
 
-    solution = Graph(from_list=[(s, e, 0) for s, e, d in graph.edges()]) # placeholder for the solution.
+    flows = Graph()  # initialise F as copy with zero flow
+    capacities = Graph()  # initialise C as a copy of capacities
+    balance = [(v, k) for k, v in inventory.items() if v != 0]  # list with excess/demand, node id
+    balance.sort()
 
-    supplies = [(s, n) for n, s in stock.items() if s > 0]
-    supplies.sort(reverse=True)
-    demands = [(abs(s), n) for n, s in stock.items() if s < 0]
-    demands.sort(reverse=False)
+    while balance:  # while determine excess / imbalances:
+        E, En = balance[-1]  # pick node E where the excess is greatest
+        D, Dn = balance[0]  # pick node D where the demand is greatest
+        if D > 0 or E < 0:
+            raise Exception("Bad logic: Case not accounted for. Submit a ticket please.")
+        balance = balance[1:-1]  # remove selection.
 
-    while supplies and any(d for d, n2 in demands):
-        stock_in_n, n = supplies.pop(0)  # largest volume moves first as
-        # largest volume * N would be the largest cost if all costs are equal.
-        costs = [(d, n2) for n2, d in apsp[n].items()]
-        costs.sort()  # lowest cost destination comes first.
-        for ix in range(len(demands)):
-            demand, n2 = demands[ix]
-            if demand == 0:
-                continue
-            transfer_cost, path = inverted.shortest_path(n, n2)
-            capacity_limit = path_capacity_limit = float('inf')
+        cost, path = costs.shortest_path(En, Dn, memoize=True)  # compute shortest path P from E to a node in demand D.
 
-            for s, e in zip(path[:-1], path[1:]):
-                transfer_limit = capacity.edge(s, e) - solution.edge(s, e)  # edge capacity - used capacity.
-                capacity_limit = min(path_capacity_limit, transfer_limit)  # bottle neck capacity.
+        # determine the capacity limit C on P:
+        capacity_limit = min(capacities.edge(s, e, default=capacity.edge(s, e)) for s, e in zip(path[:-1], path[1:]))
 
-            transfer = min(capacity_limit, stock_in_n, demand)
-            stock_in_n -= transfer
-            demands[ix] = (demand - transfer, n2)  # update the pending demand.
+        # determine L units to be transferred as min(demand @ D and the limit C)
+        L = min(E, abs(D), capacity_limit)
+        for s, e in zip(path[:-1], path[1:]):
+            flows.add_edge(s, e, L + flows.edge(s, e, default=0))  # update F.
+            new_capacity = capacities.edge(s, e, default=capacity.edge(s, e)) - L
+            capacities.add_edge(s, e, new_capacity)  # update C
 
-            for s, e in zip(path[:-1], path[1:]):
-                flow = transfer + solution.edge(s, e)
-                solution.add_edge(s, e, flow)  # update the used capacity.
-                if capacity.edge(s, e) == flow:  # if there's no capacity left, remove the
-                    inverted.del_edge(s, e)  # edge so that the shortest path is updated.
+        # maintain balance, in case there is excess or demand left.
+        if E-L > 0:
+            insort(balance, (E-L, En))
+        if D+L < 0:
+            insort(balance, (D+L, Dn))
 
-            if stock_in_n == 0:
-                break
-
-    total_cost = sum(flow * graph.edge(s, e) for s, e, flow in solution.edges())
-    return total_cost, solution
-    # 1. compute the initial solution using greedy.
-    # 2. compute the exact solution using complimentary slackness.
+    total_cost = sum(d * costs.edge(s, e) for s, e, d in flows.edges())
+    return total_cost, flows
 
 
 def tsp_branch_and_bound(graph):
     """
-    Solve the traveling salesmans problem for the graph.
+    Solve the traveling salesman's problem for the graph.
     :param graph: instance of class Graph
     :return: tour_length, path
 
@@ -786,7 +784,7 @@ def tsp_branch_and_bound(graph):
 
 def tsp_greedy(graph):
     """
-    Solves the traveling salesmans problem for the graph.
+    Solves the traveling salesman's problem for the graph.
 
     Runtime approximation: seconds = 10**(-5) * (nodes)**2.31
     Solution quality: Range 98.1% - 100% optimal.
@@ -1281,7 +1279,7 @@ def all_simple_paths(graph, start, end):
 
 
 def all_paths(graph, start, end):
-    """ finds all (simple and non-simple) paths from start to end
+    """ finds all paths from start to end by traversing each fork once only.
     :param graph: instance of Graph
     :param start: node
     :param end: node
@@ -1357,8 +1355,8 @@ def loop(graph, start, mid, end=None):
         for n in p[1:-1]:
             g2.del_node(n)
         _, p2 = g2.shortest_path(mid, start)
-    l = p + p2[1:]
-    return l
+    lp = p + p2[1:]
+    return lp
 
 
 def avoids(graph, start, end, obstacles):
@@ -1373,6 +1371,8 @@ def avoids(graph, start, end, obstacles):
 
 
 class ScanThread(object):
+    __slots__ = ['cost', 'n1', 'path']
+
     """ search thread for bidirectional search """
     def __init__(self, cost, n1, path=()):
         assert isinstance(path, tuple)
@@ -1520,7 +1520,7 @@ def shortest_path_bidirectional(graph, start, end, reverse_graph=None):
 
 class ShortestPathCache(object):
     """
-    Datastructure optimised for repeated calls to shortest path.
+    Data structure optimised for repeated calls to shortest path.
     Used by shortest path when using keyword `memoize=True`
     """
     def __init__(self, graph):
@@ -1673,16 +1673,16 @@ class Graph(BasicGraph):
         """
         return maximum_flow_min_cut(self, start, end)
 
-    def capacitated_min_cost_flow(self, stock, capacity=None):
+    def minimum_cost_flow(self, inventory, capacity=None):
         """
-        :param demand: dict {node: stock, ...}
+        :param self: Graph with `cost per unit` as edge
+        :param inventory: dict {node: stock, ...}
             stock < 0 is demand
             stock > 0 is supply
-        :param capacity: Graph where edge is capacity limit.
-            If None, capacity is inf.
-        :return: total costs, flow graph
+        :param capacity: None or Graph with `capacity` as edge.
+        :return: total costs, graph of flows in solution.
         """
-        return capacitated_min_cost_flow(self, stock, capacity=capacity)
+        return minimum_cost_flow_using_successive_shortest_path(self, inventory, capacity)
 
     def solve_tsp(self, method='greedy'):
         """ solves the traveling salesman problem for the graph
@@ -1694,7 +1694,7 @@ class Graph(BasicGraph):
             'greedy' see tsp_greedy
             'bnb' see tsp_branch_and_bound
 
-        :return: tour length (path+retrun to starting point),
+        :return: tour length (path+return to starting point),
                  path travelled.
         """
         methods = {
@@ -1822,11 +1822,9 @@ class Graph(BasicGraph):
         return all_simple_paths(self, start, end)
 
     def all_paths(self, start, end):
-        """
-        finds all paths from start to end
+        """ finds all paths from start to end by traversing each fork once only.
         :param start: node
         :param end: node
-        :param simple: return simple paths only.
         :return: list of paths
         """
         return all_paths(graph=self, start=start, end=end)
@@ -1842,6 +1840,7 @@ class Graph(BasicGraph):
     def loop(self, start, mid, end=None):
         """ finds a looped path via a mid-point
         :param start: node
+        :param mid: node, midpoint for loop.
         :param end: node
         :return: path as list
         """
