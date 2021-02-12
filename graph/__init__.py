@@ -632,11 +632,11 @@ def minimum_cost_flow_using_successive_shortest_path(costs, inventory, capacity=
         stock < 0 is demand
         stock > 0 is supply
     :param capacity: None or Graph with `capacity` as edge.
+        if capacity is None, capacity is assumed to be float('inf')
     :return: total costs, flow graph
     """
     assert isinstance(costs, Graph)
     assert isinstance(inventory, dict)
-    assert isinstance(capacity, Graph)
 
     if not all(d >= 0 for s, e, d in costs.edges()):
         raise ValueError("negative costs?")
@@ -644,11 +644,6 @@ def minimum_cost_flow_using_successive_shortest_path(costs, inventory, capacity=
         raise TypeError("inventory is expected as dict")
     if not all(isinstance(v, (float, int)) for v in inventory.values()):
         raise ValueError("not all stock is numeric.")
-    if sum(inventory.values()) != 0:
-        if sum(inventory.values()) > 0:
-            raise ValueError("inventory in excess of demand")
-        else:
-            raise ValueError("demand in excess of supply")
 
     if capacity is None:
         capacity = Graph(from_list=[(s, e, float('inf')) for s, e, d in costs.edges()])
@@ -662,20 +657,31 @@ def minimum_cost_flow_using_successive_shortest_path(costs, inventory, capacity=
             raise ValueError("cost and capacity have different links")
 
     # successive shortest path algorithm begins ...
-
+    # ------------------------------------------------
+    paths = costs.copy()  # reverse paths.
     flows = Graph()  # initialise F as copy with zero flow
     capacities = Graph()  # initialise C as a copy of capacities
     balance = [(v, k) for k, v in inventory.items() if v != 0]  # list with excess/demand, node id
     balance.sort()
 
-    while balance:  # while determine excess / imbalances:
-        E, En = balance[-1]  # pick node E where the excess is greatest
-        D, Dn = balance[0]  # pick node D where the demand is greatest
-        if D > 0 or E < 0:
-            raise Exception("Bad logic: Case not accounted for. Submit a ticket please.")
-        balance = balance[1:-1]  # remove selection.
+    distances = paths.all_pairs_shortest_paths()
 
-        cost, path = costs.shortest_path(En, Dn, memoize=True)  # compute shortest path P from E to a node in demand D.
+    while balance:  # while determine excess / imbalances:
+        D, Dn = balance[0]  # pick node D where the demand is greatest
+        # E, En = balance[-1]
+        if D > 0:
+            break  # only supplies left.
+        balance = balance[1:]  # remove selection.
+
+        supply_sites = [(distances[En][Dn], E, En) for E, En in balance if E > 0]
+        supply_sites.sort()  # nearest node with excess.
+        dist, E, En = supply_sites[0]
+        balance.remove((E, En))
+
+        if E < 0 or dist == float('inf'):
+            break  # no supplies left.
+
+        cost, path = paths.shortest_path(En, Dn)  # compute shortest path P from E to a node in demand D.
 
         # determine the capacity limit C on P:
         capacity_limit = min(capacities.edge(s, e, default=capacity.edge(s, e)) for s, e in zip(path[:-1], path[1:]))
@@ -687,6 +693,10 @@ def minimum_cost_flow_using_successive_shortest_path(costs, inventory, capacity=
             new_capacity = capacities.edge(s, e, default=capacity.edge(s, e)) - L
             capacities.add_edge(s, e, new_capacity)  # update C
 
+            if new_capacity == 0:  # remove the edge from potential solutions.
+                paths.del_edge(s, e)
+                distances = paths.all_pairs_shortest_paths()
+
         # maintain balance, in case there is excess or demand left.
         if E-L > 0:
             insort(balance, (E-L, En))
@@ -695,6 +705,84 @@ def minimum_cost_flow_using_successive_shortest_path(costs, inventory, capacity=
 
     total_cost = sum(d * costs.edge(s, e) for s, e, d in flows.edges())
     return total_cost, flows
+
+
+
+
+#
+# def minimum_cost_flow_using_successive_shortest_path2(costs, inventory, capacity=None):
+#     """
+#     Calculates the minimum cost flow solution using successive shortest path.
+#     :param costs: Graph with `cost per unit` as edge
+#     :param inventory: dict {node: stock, ...}
+#         stock < 0 is demand
+#         stock > 0 is supply
+#     :param capacity: None or Graph with `capacity` as edge.
+#         if capacity is None, capacity is assumed to be float('inf')
+#     :return: total costs, flow graph
+#     """
+#     assert isinstance(costs, Graph)
+#     assert isinstance(inventory, dict)
+#
+#     if not all(d >= 0 for s, e, d in costs.edges()):
+#         raise ValueError("negative costs?")
+#     if not isinstance(inventory, dict):
+#         raise TypeError("inventory is expected as dict")
+#     if not all(isinstance(v, (float, int)) for v in inventory.values()):
+#         raise ValueError("not all stock is numeric.")
+#
+#     if capacity is None:
+#         capacity = Graph(from_list=[(s, e, float('inf')) for s, e, d in costs.edges()])
+#     else:
+#         if not isinstance(capacity, Graph):
+#             raise TypeError("Expected capacity as a Graph")
+#         if any(d < 0 for s, e, d in capacity.edges()):
+#             nn = [(s, e) for s, e, d in capacity.edges() if d < 0]
+#             raise ValueError(f"negative capacity on edges: {nn}")
+#         if {(s, e) for s, e, d in costs.edges()} != {(s, e) for s, e, d in capacity.edges()}:
+#             raise ValueError("cost and capacity have different links")
+#
+#     # successive shortest path algorithm begins ...
+#     # ------------------------------------------------
+#     paths = costs.copy()
+#     flows = Graph()  # initialise F as copy with zero flow
+#     capacities = Graph()  # initialise C as a copy of capacities
+#     balance = [(v, k) for k, v in inventory.items() if v != 0]  # list with excess/demand, node id
+#     balance.sort()
+#
+#     while balance:  # while determine excess / imbalances:
+#         E, En = balance[-1]  # pick node E where the excess is greatest
+#         D, Dn = balance[0]  # pick node D where the demand is greatest
+#         if D > 0 or E < 0:
+#             raise Exception("Bad logic: Case not accounted for. Submit a ticket please.")
+#         balance = balance[1:-1]  # remove selection.
+#
+#         cost, path = paths.shortest_path(En, Dn)  # compute shortest path P from E to a node in demand D.
+#
+#         # determine the capacity limit C on P:
+#         capacity_limit = min(capacities.edge(s, e, default=capacity.edge(s, e)) for s, e in zip(path[:-1], path[1:]))
+#
+#         # determine L units to be transferred as min(demand @ D and the limit C)
+#         L = min(E, abs(D), capacity_limit)
+#         for s, e in zip(path[:-1], path[1:]):
+#             flows.add_edge(s, e, L + flows.edge(s, e, default=0))  # update F.
+#             new_capacity = capacities.edge(s, e, default=capacity.edge(s, e)) - L
+#             capacities.add_edge(s, e, new_capacity)  # update C
+#
+#             if new_capacity == 0:  # remove the edge from potential solutions.
+#                 paths.del_edge(s, e)
+#
+#         # maintain balance, in case there is excess or demand left.
+#         if E-L > 0:
+#             insort(balance, (E-L, En))
+#         if D+L < 0:
+#             insort(balance, (D+L, Dn))
+#
+#     total_cost = sum(d * costs.edge(s, e) for s, e, d in flows.edges())
+#     return total_cost, flows
+#
+
+
 
 
 def tsp_branch_and_bound(graph):
