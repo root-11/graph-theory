@@ -658,9 +658,11 @@ def minimum_cost_flow_using_successive_shortest_path(costs, inventory, capacity=
 
     # successive shortest path algorithm begins ...
     # ------------------------------------------------
-    paths = costs.copy()  # reverse paths.
+    paths = costs.copy()  # initialise a copy of the cost graph so edges that
+    # have exhausted capacities can be removed.
     flows = Graph()  # initialise F as copy with zero flow
-    capacities = Graph()  # initialise C as a copy of capacities
+    capacities = Graph()  # initialise C as a copy of capacity, so used capacity
+    # can be removed.
     balance = [(v, k) for k, v in inventory.items() if v != 0]  # list with excess/demand, node id
     balance.sort()
 
