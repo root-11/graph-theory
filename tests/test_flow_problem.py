@@ -234,3 +234,28 @@ def test_minimum_cost_flow_successive_shortest_path_unlimited_inadequate_supply(
     for edge in movements.edges():
         expected.remove(edge)  # will raise error if edge is missing.
     assert expected == []  # will raise error if edge wasn't removed.
+
+
+def test_min_flow_cost_problem_r4er():
+    """ example source http://www.iems.northwestern.edu/~4er/ """
+    costs = Graph(from_list=[
+        (1, 2, 12),
+        (1, 4, 12),
+        (2, 4, 10),
+        (2, 5, 9),
+        (3, 2, 13),
+        (3, 5, 7),
+        (4, 5, 4),
+        (4, 6, 8),
+        (4, 7, 6),
+        (5, 4, 3),
+        (5, 7, 9),
+        (5, 8, 13),
+        (6, 7, 7),
+        (8, 7, 3)
+    ])
+    inventory = {1: 100, 2: 80, 3: 130, 6: -200, 7: -60, 8: -40}
+    mcf = minimum_cost_flow_using_successive_shortest_path
+    total_cost, movements = mcf(costs, inventory)
+    assert total_cost == 5820, total_cost
+
