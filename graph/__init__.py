@@ -1,6 +1,6 @@
 from collections import defaultdict, deque, Iterable
 from heapq import heappop, heappush
-from itertools import combinations
+from itertools import combinations, chain
 from bisect import insort
 
 
@@ -31,8 +31,10 @@ class BasicGraph(object):
         :param from_list: creates graph from list of edges(n1,n2,d)
         """
         self._nodes = {}
-        self._edges = {}
-        self._max_edge_value = 0
+        self._edges = defaultdict(dict)
+        self._reverse_edges = defaultdict(dict)
+        self._in_degree = defaultdict(int)
+        self._out_degree = defaultdict(int)
 
         if from_dict is not None:
             self.from_dict(from_dict)
@@ -71,15 +73,13 @@ class BasicGraph(object):
         if node2 not in self._nodes:
             self.add_node(node2)
 
-        if node1 not in self._edges:
-            self._edges[node1] = {}
-        if node2 not in self._edges:
-            self._edges[node2] = {}
         self._edges[node1][node2] = value
-        if value > self._max_edge_value:
-            self._max_edge_value = value
+        self._out_degree[node1] += 1
+        self._in_degree[node2] += 1
+        self._reverse_edges[node2][node1] = value
+
         if bidirectional:
-            self._edges[node2][node1] = value
+            self.add_edge(node2, node1, value, bidirectional=False)
 
     def edge(self, node1, node2, default=None):
         """Retrieves the edge (node1, node2)
@@ -96,6 +96,13 @@ class BasicGraph(object):
         except KeyError:
             return default
 
+    def reverse_edge(self, node2, node1, default=None):
+        """ retrieves the edge from node2 to node1 """
+        try:
+            return self._reverse_edges[node2][node1]
+        except KeyError:
+            return default
+
     def del_edge(self, node1, node2):
         """
         removes edge from node1 to node2
@@ -103,6 +110,9 @@ class BasicGraph(object):
         :param node2: node
         """
         del self._edges[node1][node2]
+        del self._reverse_edges[node2][node1]
+        self._out_degree[node1] -= 1
+        self._in_degree[node2] -= 1
 
     def add_node(self, node_id, obj=None):
         """
@@ -112,7 +122,12 @@ class BasicGraph(object):
         PRO TIP: To retrieve the node obj use g.node(node_id)
 
         """
-        self._nodes[node_id] = obj
+        if node_id in self._nodes:  # it's an object update.
+            self._nodes[node_id] = obj
+        else:
+            self._nodes[node_id] = obj
+            self._out_degree[node_id] = 0
+            self._in_degree[node_id] = 0
 
     def node(self, node_id):
         """
@@ -132,15 +147,17 @@ class BasicGraph(object):
         try:
             del self._nodes[node_id]
         except KeyError:
-            pass
-        try:
-            del self._edges[node_id]
-        except KeyError:
-            pass
-        in_links = [n1 for n1, n2, d in self.edges() if n2 == node_id]
-        for in_link in in_links:
-            del self._edges[in_link][node_id]
-        return None
+            return
+
+        # outgoing
+        for n2, d in self._edges[node_id].copy().items():
+            self.del_edge(node_id, n2)
+        del self._edges[node_id]
+
+        # incoming
+        for n1, d in self._reverse_edges[node_id].copy().items():
+            self.del_edge(n1, node_id)
+        del self._reverse_edges[node_id]  # removes outgoing edges
 
     def nodes(self,
               from_node=None, to_node=None,
@@ -172,24 +189,17 @@ class BasicGraph(object):
             return []
 
         if to_node is not None:
-            return [n1 for n1 in self._edges if to_node in self._edges[n1]]
+            return list(self._reverse_edges[to_node])
 
         if in_degree is not None:
             if not isinstance(in_degree, int) or in_degree < 0:
                 raise ValueError("in_degree must be int >= 0")
-
-            rev = {n: set() for n in self._nodes}
-            for n1, n2, d in self.edges():
-                rev[n2].add(n1)
-            return [n for n, n_set in rev.items() if len(n_set) == in_degree]
+            return [n for n, cnt in self._in_degree.items() if cnt == in_degree]
 
         if out_degree is not None:
             if not isinstance(out_degree, int) or out_degree < 0:
                 raise ValueError("out_degree must be int >= 0")
-            if out_degree == 0:
-                return [n for n in self._nodes if n not in self._edges or len(self._edges[n]) == 0]
-            else:
-                return [n1 for n1, n2s in self._edges.items() if out_degree == len(n2s)]
+            return [n for n, cnt in self._out_degree.items() if cnt == out_degree]
 
     def edges(self, path=None, from_node=None, to_node=None):
         """
@@ -224,9 +234,10 @@ class BasicGraph(object):
                 return []
 
         if to_node:
-            return [(n1, to_node, out[to_node]) 
-                    for n1, out in self._edges.items() 
-                    if to_node in out]
+            if to_node in self._reverse_edges:
+                return [(n1, to_node, value) for n1, value in self._reverse_edges[to_node].items()]
+            else:
+                return []
 
         return [(n1, n2, out[n2]) for n1, out in self._edges.items() for n2 in out]
 
@@ -317,10 +328,6 @@ def shortest_path(graph, start, end):
     :return: distance, path (as list),
              returns float('inf'), [] if no path exists.
     """
-    g = defaultdict(list)
-    for n1, n2, dist in graph.edges():
-        g[n1].append((dist, n2))
-
     q, visited, minimums = [(0, 0, start, ())], set(), {start: 0}
     i = 1
     while q:
@@ -337,7 +344,7 @@ def shortest_path(graph, start, end):
                 L.reverse()
                 return cost, L
 
-            for dist, v2 in g.get(v1, ()):
+            for _, v2, dist in graph.edges(from_node=v1):
                 if v2 in visited:
                     continue
                 prev = minimums.get(v2, None)
@@ -373,11 +380,12 @@ def breadth_first_search(graph, start, end):
     return []
 
 
-def breadth_first_walk(graph, start, end=None):
+def breadth_first_walk(graph, start, end=None, reversed_walk=False):
     """
     :param graph: Graph
     :param start: start node
     :param end: end node.
+    :param reversed_walk: if True, the BFS traverse the graph backwards.
     :return: generator for walk.
 
     To walk all nodes use: `[n for n in g.breadth_first_walk(start)]`
@@ -389,7 +397,8 @@ def breadth_first_walk(graph, start, end=None):
         yield node
         if node == end:
             break
-        for next_node in graph.nodes(from_node=node):
+        L = graph.nodes(from_node=node) if not reversed_walk else graph.nodes(to_node=node)
+        for next_node in L:
             if next_node not in visited:
                 visited[next_node] = node
                 q.append(next_node)
@@ -1086,8 +1095,9 @@ def phase_lines(graph):
 
 
 def sources(graph, n):
-    """ Determines the set of sources of 'node' in a DAG
+    """ Determines the set of sources of node 'n' in a DAG.
     :param graph: Graph
+    :param n: node for which the sources are sought.
     :return: set of nodes
     """
     nodes = {n}
@@ -1103,20 +1113,21 @@ def sources(graph, n):
     return nodes
 
 
-def same(path1, path2):
-    """ Compares two paths to verify whether they're the same.
+def same_path(path1, path2):
+    """ Compares two paths to verify whether they're the same despite being offset.
+    Very useful when comparing results from TSP as solutions may be rotations of
+    the same path.
     :param path1: list of nodes.
     :param path2: list of nodes.
     :return: boolean.
     """
-    start1 = path2.index(path1[0])
-    checks = [
-        path1[:len(path1) - start1] == path2[start1:],
-        path1[len(path1) - start1:] == path2[:start1]
-    ]
-    if all(checks):
+    if path1 is path2:  # use id system to avoid work.
         return True
-    return False
+    if len(path1) != len(path2) or set(path1) != set(path2):
+        return False
+
+    starts = (ix for ix, n2 in enumerate(path2) if path1[0] == n2)
+    return any(all(a == b for a, b in zip(path1, chain(path2[start:], path2[:start]))) for start in starts)
 
 
 def adjacency_matrix(graph):
@@ -1398,19 +1409,92 @@ class ScanThread(object):
     def __lt__(self, other):
         return self.cost < other.cost
 
+    def __str__(self):
+        return f"{self.cost}:{self.path}"
+
+
+class SPLength(object):
+    def __init__(self):
+        self.value = float('inf')
+
 
 class BiDirectionalSearch(object):
     """ data structure for organizing bidirectional search """
-    def __init__(self, graph, start):
+    forward = True
+    backward = False
+
+    def __str__(self):
+        if self.forward == self.direction:
+            return "forward scan"
+        return "backward scan"
+
+    def __init__(self, graph, start, direction=True):
         """
         :param graph: class Graph.
         :param start: first node in the search.
         """
-        self.q = [ScanThread(cost=0, n1=start)]
+        self.q = []
+        self.q.append(ScanThread(cost=0, n1=start))
         self.graph = graph
         self.boundary = set()  # visited.
         self.mins = {start: 0}
         self.paths = {start: ()}
+        self.direction = direction
+        self.sp = ()
+        self.sp_length = float('inf')
+
+    def update(self, sp, sp_length):
+        if sp_length > self.sp_length:
+            raise ValueError("Bad logic!")
+        self.sp = sp
+        self.sp_length = sp_length
+
+    def search(self, other):
+        assert isinstance(other, BiDirectionalSearch)
+        if not self.q:
+            return
+
+        sp, sp_length = self.sp, self.sp_length
+
+        st = self.q.pop(0)
+        assert isinstance(st, ScanThread)
+        if st.cost > self.sp_length:
+            return
+
+        self.boundary.add(st.n1)
+
+        if st.n1 in other.boundary:  # if there's an intercept between the two searches ...
+            if st.cost + other.mins[st.n1] < self.sp_length:
+                sp_length = st.cost + other.mins[st.n1]
+                if self.direction == self.forward:
+                    sp = tuple(reversed(st.path)) + (st.n1,) + other.paths[st.n1]
+                else:  # direction == backward:
+                    sp = tuple(reversed(other.paths[st.n1])) + (st.n1,) + st.path
+
+                self.q = [a for a in self.q if a.cost < sp_length]
+
+        if self.direction == self.forward:
+            edges = sorted((d, e) for s, e, d in self.graph.edges(from_node=st.n1))
+        else:
+            edges = sorted((d, s) for s, e, d in self.graph.edges(to_node=st.n1))
+
+        for dist, n2 in edges:
+            n2_dist = st.cost + dist
+            if n2_dist > self.sp_length:  # no point pursuing as the solution is worse.
+                continue
+            if n2 in other.mins and n2_dist + other.mins[n2] > self.sp_length:  # already longer than lower bound.
+                continue
+
+            # at this point we can't dismiss that n2 will lead to a better solution, so we retain it.
+            prev = self.mins.get(n2, None)
+            if prev is None or n2_dist < prev:
+                self.mins[n2] = n2_dist
+                path = (st.n1,) + st.path
+                self.paths[n2] = path
+                insort(self.q, ScanThread(n2_dist, n2, path))
+
+        self.update(sp, sp_length)
+        other.update(sp, sp_length)
 
 
 def shortest_path_bidirectional(graph, start, end, reverse_graph=None):
@@ -1483,54 +1567,14 @@ def shortest_path_bidirectional(graph, start, end, reverse_graph=None):
     A = c * 2 * (1/2 * R) **2, for bidirectional shortest path
     """
     assert isinstance(graph, Graph)
-    if reverse_graph is None:
-        reverse_graph = Graph(from_list=((e, s, d) for s, e, d in graph.edges()))
-    else:
-        assert isinstance(reverse_graph, Graph)
-
-    forward = BiDirectionalSearch(graph, start=start)
-    backward = BiDirectionalSearch(reverse_graph, start=end)
-
-    sp = ()
-    sp_length = float('inf')
+    forward = BiDirectionalSearch(graph, start=start, direction=BiDirectionalSearch.forward)
+    backward = BiDirectionalSearch(graph, start=end, direction=BiDirectionalSearch.backward)
 
     while any((forward.q, backward.q)):
-        for direction, other in [(forward, backward), (backward, forward)]:
-            if not direction.q:
-                continue
-            st = direction.q.pop(0)
-            assert isinstance(st, ScanThread)
-            if st.cost > sp_length:
-                continue
+        forward.search(other=backward)
+        backward.search(other=forward)
 
-            direction.boundary.add(st.n1)
-
-            if st.n1 in other.boundary:  # if there's an intercept between the two searches ...
-                if st.cost + other.mins[st.n1] < sp_length:
-                    sp_length = st.cost + other.mins[st.n1]
-                    if direction == forward:
-                        sp = tuple(reversed(st.path)) + (st.n1,) + other.paths[st.n1]
-                    else:  # direction == backward:
-                        sp = tuple(reversed(other.paths[st.n1])) + (st.n1,) + st.path
-
-                    direction.q = [a for a in direction.q if a.cost < sp_length]
-
-            for dist, n2 in sorted((d, e) for s, e, d in direction.graph.edges(from_node=st.n1)):
-                n2_dist = st.cost + dist
-                if n2_dist > sp_length:  # no point pursuing as the solution is worse.
-                    continue
-                if n2 in other.mins and n2_dist + other.mins[n2] > sp_length:  # already longer than lower bound.
-                    continue
-
-                # at this point we can't dismiss that n2 will lead to a better solution, so we retain it.
-                prev = direction.mins.get(n2, None)
-                if prev is None or n2_dist < prev:
-                    direction.mins[n2] = n2_dist
-                    path = (st.n1, ) + st.path
-                    direction.paths[n2] = path
-                    insort(direction.q, ScanThread(n2_dist, n2, path))
-
-    return sp_length, list(sp)
+    return forward.sp_length, list(forward.sp)
 
 
 class ShortestPathCache(object):
@@ -1542,7 +1586,6 @@ class ShortestPathCache(object):
         if not isinstance(graph, Graph):
             raise TypeError(f"expected type Graph, not {type(graph)}")
         self.graph = graph
-        self.reverse_graph = Graph(from_list=((e, s, d) for s, e, d in graph.edges()))
         self.cache = {}
 
     def _update_cache(self, path):
@@ -1556,19 +1599,21 @@ class ShortestPathCache(object):
         b = len(path)
         if b < 2:
             return
+        if b == 2:
+            dist = self.graph.distance_from_path(path)
+            self.cache[(path[0], path[-1])] = (dist, tuple(path))
+
         for a, _ in enumerate(path):
             section = tuple(path[a:b - a])
             if len(section) < 3:
                 break
             dist = self.graph.distance_from_path(section)
-            start, end = section[0], section[-1]
-            self.cache[(start, end)] = (dist, section)
+            self.cache[(section[0], section[-1])] = (dist, section)
 
-        end = path[-1]
         for ix, start in enumerate(path[1:-1]):
             section = tuple(path[ix:])
             dist = self.graph.distance_from_path(section)
-            self.cache[(start, end)] = (dist, section)
+            self.cache[(section[0], section[-1])] = (dist, section)
 
     def shortest_path(self, start, end):
         """ Shortest path method that utilizes caching and bidirectional search """
@@ -1579,9 +1624,9 @@ class ShortestPathCache(object):
             d, p = self.cache.get((start, end), (None, None))
 
         if d is None:  # search for it.
-            d, p = shortest_path_bidirectional(self.graph, start, end, reverse_graph=self.reverse_graph)
+            _, p = shortest_path_bidirectional(self.graph, start, end)
             self._update_cache(p)
-
+            d, p = self.cache[(start, end)]
         return d, list(p)
 
 
@@ -1615,6 +1660,7 @@ class Graph(BasicGraph):
         """
         if not memoize:
             return shortest_path(graph=self, start=start, end=end)
+
         if self._cache is None:
             self._cache = ShortestPathCache(graph=self)
         return self._cache.shortest_path(start, end)
@@ -1635,13 +1681,14 @@ class Graph(BasicGraph):
         """
         return breadth_first_search(graph=self, start=start, end=end)
 
-    def breadth_first_walk(self, start, end=None):
+    def breadth_first_walk(self, start, end=None, reversed_walk=False):
         """
         :param start: start node
         :param end: end node
+        :param reversed_walk: if True, the BFS walk is backwards.
         :return: generator for breadth-first walk
         """
-        return breadth_first_walk(graph=self, start=start, end=end)
+        return breadth_first_walk(graph=self, start=start, end=end, reversed_walk=reversed_walk)
 
     def depth_first_search(self, start, end):
         """
@@ -1778,11 +1825,12 @@ class Graph(BasicGraph):
     def same_path(p1, p2):
         """ compares two paths to determine if they're the same, despite
         being in different order.
+
         :param p1: list of nodes
         :param p2: list of nodes
         :return: boolean
         """
-        return same(p1, p2)
+        return same_path(p1, p2)
 
     def adjacency_matrix(self):
         """
