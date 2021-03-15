@@ -14,6 +14,7 @@ A simple graph library...<br>
 
 Latest feature:
 
+    much faster shortest path algorithm (2021/3/15)
     minimum cost flow problem (2021/2/12)
 
 ---------------------------
