@@ -2,9 +2,24 @@ import random
 import time
 from itertools import combinations, permutations
 
-from graph import Graph
+from graph import Graph, same_path
 from tests.test_graph import graph01, graph3x3, graph03, graph04, graph05, graph4x4
-from tests.test_graph import london_underground, munich_firebrigade_centre
+from tests.test_graph import london_underground
+
+
+def test_same():
+    assert same_path([1], [1])
+    assert not same_path([1], [1, 1])  # same content, different length
+    assert not same_path([1], [2])  # different content
+    assert not same_path([1], [1, 2])  # different length and content
+    assert not same_path([1], [2, 1])  # different length and content
+
+    L = list('attacca')
+    assert same_path(L, L)  # uses python id to avoid work.
+
+    assert same_path([1, 2], [1, 2])  # identical
+    assert same_path([1, 2], [2, 1])  # same but backwards
+    assert not same_path([1, 2, 1], [2, 1, 2])  # same length, content, but different frequency.
 
 
 def test_shortest_path01():
@@ -512,7 +527,7 @@ def test_cached_graph2():
     r2 = g.shortest_path(74, 89, memoize=True)
     assert r1 == r2, "cache call should be the same as the previous"
     r3 = g.shortest_path(99, 89, memoize=True)  # this is a cache call as p(99,89) is in p(74,89)
-    assert r3 == (14.003052109588591, [74, 99, 236, 229, 273, 107, 192, 277, 89])
+    assert r3 == (12.00290022249407, [99, 236, 229, 273, 107, 192, 277, 89]), r3
 
     a1, b1 = 10, 89
     for a, b in combinations(g.nodes(), 2):
@@ -539,36 +554,39 @@ def test_cached_graph3():
     assert p1 == p2
 
 
-def test_incremental_search():
-    g = munich_firebrigade_centre()
+def test_incremental_search(tests=2000):
+    g = london_underground()
 
     seds = list(g.edges())
     for s, e, d in seds:
         g.add_edge(s, e, d + s / len(seds) ** 2)  # adding minor variances so that no paths are the same length.
 
+    g2 = g.copy()
+
     t_repeated, t_memoized, cnt = 0.0, 0.0, 0
 
     for a, b in combinations(g.nodes(), 2):
-        start = time.process_time()
-        d1, p1 = g.shortest_path(a, b)
-        end = time.process_time()
-        t_repeated += end - start
+        for repetition in range(5):
+            start = time.process_time()
+            d1, p1 = g.shortest_path(a, b)
+            end = time.process_time()
+            t_repeated += end - start
 
-        start = time.process_time()
-        d2, p2 = g.shortest_path(a, b, memoize=True)
-        end = time.process_time()
-        t_memoized += end - start
-        assert d1 == d2, (d1, d2)
-        assert p1 == p2, (p1, p2)
+            start = time.process_time()
+            d2, p2 = g2.shortest_path(a, b, memoize=True)
+            end = time.process_time()
+            t_memoized += end - start
+            assert d1 == d2, (a, b, d1, d2)
+            assert p1 == p2, (p1, p2)
 
         cnt += 1
 
-        if cnt > 200:
+        if cnt > tests:
             break
 
-    pct = round(100 * t_memoized / t_repeated)
+    pct = f"{round(100 * t_memoized / t_repeated)}" if t_repeated > 0 else "?"
     print("repeated searches", t_repeated, "secs.",
           "\nmemoized searches:", t_memoized, "secs.",
           "\ntime using memoising: ", pct, "% of repeated searches",
           flush=True)
-    assert t_repeated > t_memoized
+    assert t_repeated >= t_memoized
