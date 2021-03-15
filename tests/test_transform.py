@@ -7,7 +7,6 @@ def test_adjacency_matrix():
     am = g.adjacency_matrix()
     g2 = Graph(from_dict=am)
     assert g.is_subgraph(g2)
-    assert g2._max_edge_value == float('inf') != g._max_edge_value
     assert not g2.is_subgraph(g)
 
 
