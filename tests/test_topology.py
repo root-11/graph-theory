@@ -1,7 +1,7 @@
 import time
 from graph import Graph, phase_lines
 from tests import profileit
-from tests.test_graph import graph3x3, graph_cycle_6, graph_cycle_5, fully_connected_4, mountain_river_map
+from tests.test_graph import graph02, graph3x3, graph_cycle_6, graph_cycle_5, fully_connected_4, mountain_river_map
 
 
 def test_subgraph():
@@ -275,22 +275,7 @@ def test_phaselines_for_larger_graph():
 
 
 def test_sources():
-    """
-    [1]+--->[3]+-->[5]+--->[6]         [7] (isolated node)
-                    ^       ^
-       +------------+       |
-       |
-    [2]+--->[4]+----------> +
-    """
-    g = Graph(from_list=[
-        (1, 3, 1),
-        (2, 4, 1),
-        (2, 5, 1),
-        (3, 5, 1),
-        (4, 6, 1),
-        (5, 6, 1),
-    ])
-    g.add_node(7)
+    g = graph02()
     s = g.sources(5)
     e = {1, 2, 3}
     assert s == e
@@ -306,3 +291,12 @@ def test_sources():
     s4 = g.sources(7)
     e4 = set()
     assert s4 == e4
+
+
+def test_topological_sort():
+    g = graph02()
+    outcome = [n for n in g.topological_sort()]
+    assert outcome == [1, 2, 7, 3, 4, 5, 6]
+
+    outcome = [n for n in g.topological_sort(key=lambda x: -x)]
+    assert outcome == [7, 2, 1, 4, 3, 5, 6]

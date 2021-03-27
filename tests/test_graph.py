@@ -17,6 +17,30 @@ def test_graph01():
     assert isinstance(graph01(), Graph)
 
 
+def graph02():
+    """
+        [1]+--->[3]+-->[5]+--->[6]         [7] (isolated node)
+                        ^       ^
+           +------------+       |
+           |
+        [2]+--->[4]+----------> +
+        """
+    g = Graph(from_list=[
+        (1, 3, 1),
+        (2, 4, 1),
+        (2, 5, 1),
+        (3, 5, 1),
+        (4, 6, 1),
+        (5, 6, 1),
+    ])
+    g.add_node(7)
+    return g
+
+
+def test_graph02():
+    assert isinstance(graph02(), Graph)
+
+
 
 def graph3x3():
     """
