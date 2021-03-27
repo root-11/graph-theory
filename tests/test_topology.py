@@ -1,5 +1,5 @@
 import time
-from graph import Graph, phase_lines
+from graph import Graph, phase_lines, critical_path, Task
 from tests import profileit
 from tests.test_graph import graph02, graph3x3, graph_cycle_6, graph_cycle_5, fully_connected_4, mountain_river_map
 
@@ -300,3 +300,50 @@ def test_topological_sort():
 
     outcome = [n for n in g.topological_sort(key=lambda x: -x)]
     assert outcome == [7, 2, 1, 4, 3, 5, 6]
+
+
+def test_critical_path():
+    """  F ----------+-G----+
+        |            |      |
+    A --+---B-----C--+-D----+---E
+        |                   |
+        H-------------------+
+
+    https://en.wikipedia.org/wiki/Critical_path_method#/media/File:Activity-on-node-v3.svg
+    """
+    tasks = {'A': 10, 'B': 20, 'C': 5, 'D': 10, 'E': 20, 'F': 15, 'G': 5, 'H': 15}
+    dependencies = [
+        ('A', 'B'),
+        ('B', 'C'),
+        ('C', 'D'),
+        ('D', 'E'),
+        ('A', 'F'),
+        ('F', 'G'),
+        ('G', 'E'),
+        ('A', 'H'),
+        ('H', 'E'),
+    ]
+
+    g = Graph()
+    for n, d in tasks.items():
+        g.add_node(n, obj=d)
+    for n1, n2 in dependencies:
+        g.add_edge(n1, n2, 0)
+
+    d, s = critical_path(g)
+    assert d == 65
+    expected_schedule = [
+        Task('A', 10, 0, 0, 10, 10, 0),
+        Task('B', 20, 10, 10, 30, 30, 0),
+        Task('C',  5, 30, 30, 35, 35, 0),
+        Task('D', 10, 35, 35, 45, 45, 0),
+        Task('E', 20, 45, 45, 65, 65, 0),
+        Task('F', 15, 11, 26, 25, 40, 15),
+        Task('G',  5, 36, 41, 40, 45, 20),
+        Task('H', 15, 11, 31, 25, 45, 5),
+    ]
+    # Note: By introducing a fake dependency from H to F.
+    # the most efficient schedule is constructed, as all
+    # paths become critical paths, e.g. where slack is
+    # minimised as slack --> 0.
+

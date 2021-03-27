@@ -1881,6 +1881,10 @@ class Graph(BasicGraph):
         """ Returns a generator for the topological order"""
         return topological_sort(self, key=key)
 
+    def critical_path(self):
+        f"""{critical_path.__doc__}"""
+        return critical_path(self)
+
     @staticmethod
     def same_path(p1, p2):
         """ compares two paths to determine if they're the same, despite
@@ -2055,3 +2059,103 @@ class Graph3D(Graph):
         :return: None. Plots figure.
         """
         return plot_3d(self, nodes, edges, rotation, maintain_aspect_ratio)
+
+
+def critical_path(graph):
+    """
+    The critical path method determines the
+    schedule of a set of project activities that results in
+    the shortest overall path.
+
+    :param graph: acyclic graph where:
+        nodes are task_id and node_obj is a value
+        edges determines dependencies
+        (see example below)
+
+    :return: critical path length, schedule.
+        schedule is list of Tasks
+
+    Recipes:
+    (1) Setting up the graph:
+
+        tasks = {'A': 10, 'B': 20, 'C': 5, 'D': 10, 'E': 20, 'F': 15, 'G': 5, 'H': 15}
+        dependencies = [
+            ('A', 'B'),
+            ('B', 'C'),
+            ('C', 'D'),
+            ('D', 'E'),
+            ('A', 'F'),
+            ('F', 'G'),
+            ('G', 'E'),
+            ('A', 'H'),
+            ('H', 'E'),
+        ]
+
+        g = Graph()
+        for task, duration in tasks.items():
+            g.add_node(task, obj=duration)
+        for n1, n2 in dependencies:
+            g.add_edge(n1, n2, 0)
+    """
+    # 1. A topologically sorted list of nodes is prepared (topo.order).
+    order = list(topological_sort(graph))  # this will raise if there are loops.
+
+    d = {}
+    critical_path_length = 0
+
+    for task_id in order:  # 2. forward pass:
+        predecessors = [d[t] for t in graph.edges(to_node=task_id)]
+        t = Task(task_id, duration=graph.node(task_id))
+        # 1. the earliest start and earliest finish is determined in topo.order.
+        t.earliest_start = max(t.earliest_finish for t in predecessors)
+        t.earliest_finish = t.earliest_start + t.duration
+        d[task_id] = t
+        # 2. the path length is recorded.
+        critical_path_length = max(t.earliest_finish, critical_path_length)
+
+    for task_id in reversed(order):  # 3. backward pass:
+        predecessors = [d[t] for t in graph.edges(to_node=task_id)]
+        t = d[task_id]
+        # 1. the latest start and finish is determined in reverse topo.order
+        t.latest_finish = max(t)
+
+    # if not to optimize: return the list of Tasks.
+    #
+    # 4. Slack is determined for each Task.
+    # while there is slack:
+    # 5. Artificial dependencies are inserted to change the Task order.
+    #    The solution with minimum slack is returned.
+    pass
+
+
+class Task(object):
+    __slots__ = ['task_id', 'duration',
+                 'earliest_start', 'earliest_finish',
+                 'latest_start', 'latest_finish',
+                 'slack']
+
+    def __init__(self,
+                 task_id, duration,
+                 earliest_start=0, latest_start=0,
+                 earliest_finish=float('inf'), latest_finish=float('inf'),
+                 slack=float('inf')):
+        self.task_id = task_id
+        self.duration = duration
+        self.earliest_start = earliest_start
+        self.latest_start = latest_start
+        self.earliest_finish = earliest_finish
+        self.latest_finish = latest_finish
+        self.slack = slack
+
+    @property
+    def args(self):
+        return (self.task_id, self.duration,
+                self.earliest_start, self.latest_start,
+                self.earliest_finish, self.latest_finish,
+                self.slack)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}{self.args}"
+
+    def __str__(self):
+        return self.__repr__()
