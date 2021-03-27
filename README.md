@@ -14,8 +14,9 @@ A simple graph library...<br>
 
 Latest feature:
 
-    much faster shortest path algorithm (2021/3/15)
-    minimum cost flow problem (2021/2/12)
+    2021/03/18 topological sort
+    2021/03/15 much faster shortest path algorithm
+    2021/02/12 minimum cost flow problem
 
 ---------------------------
 Install:
@@ -88,6 +89,7 @@ All module functions are available from Graph and Graph3D (where applicable).
 | + | + | `g.breadth_first_walk(start,end)` | returns a generator for a BFS walk |
 | + | + | `g.degree_of_separation(n1,n2)` | returns the distance between two nodes using BFS |
 | + | + | `g.network_size(n1, degree_of_separation)` | returns the nodes within the range given by `degree_of_separation` |
+| + | + | `g.topological_sort(key)` | returns a generator that yields node in order from a non-cyclic graph. |
 | + | + | `g.phase_lines()` | returns a dictionary with the phase_lines for a non-cyclic graph. |
 | + | + | `g.sources(n)` | returns the source_tree of node `n` |
 | + | + | `g.depth_first_search(start,end)` | returns path using DFS and backtracking  |
@@ -134,3 +136,5 @@ All module functions are available from Graph and Graph3D (where applicable).
 - Avi Kelman for type-tolerant search, and a number of micro optimizations.
 - Joshua Crestone for all simple paths test.
 - CodeMartyLikeYou for detecting a bug in `@memoize` 
+- Tom Carroll for detecting the bug in del_edge and inspiration for topological sort.
+

@@ -111,8 +111,15 @@ class BasicGraph(object):
         """
         del self._edges[node1][node2]
         del self._reverse_edges[node2][node1]
-        self._out_degree[node1] -= 1
-        self._in_degree[node2] -= 1
+        if self._out_degree[node1] > 1:
+            self._out_degree[node1] -= 1
+        else:
+            self._out_degree[node1] = 0
+
+        if self._in_degree[node2] > 1:
+            self._in_degree[node2] -= 1
+        else:
+            self._in_degree[node2] = 0
 
     def add_node(self, node_id, obj=None):
         """
@@ -126,8 +133,8 @@ class BasicGraph(object):
             self._nodes[node_id] = obj
         else:
             self._nodes[node_id] = obj
-            self._out_degree[node_id] = 0
             self._in_degree[node_id] = 0
+            self._out_degree[node_id] = 0
 
     def node(self, node_id):
         """
@@ -144,20 +151,22 @@ class BasicGraph(object):
         :param node_id: node_id
         :return: None
         """
-        try:
-            del self._nodes[node_id]
-        except KeyError:
+        if node_id not in self._nodes:
             return
 
         # outgoing
         for n2, d in self._edges[node_id].copy().items():
             self.del_edge(node_id, n2)
-        del self._edges[node_id]
 
         # incoming
         for n1, d in self._reverse_edges[node_id].copy().items():
             self.del_edge(n1, node_id)
+
+        del self._edges[node_id]
         del self._reverse_edges[node_id]  # removes outgoing edges
+        del self._nodes[node_id]
+        del self._in_degree[node_id]
+        del self._out_degree[node_id]
 
     def nodes(self,
               from_node=None, to_node=None,
@@ -1052,10 +1061,57 @@ def network_size(graph, n1, degrees_of_separation=None):
     return network
 
 
+def topological_sort(graph, key=None):
+    """Return a generator of nodes in topologically sorted order.
+
+    :param graph: Graph
+    :param key: optional function for sortation.
+    :return: Generator
+
+    Topological sort (ordering) is a linear ordering of vertices.
+    https://en.wikipedia.org/wiki/Topological_sorting
+
+    Note: The algorithm does not check for loops before initiating
+    the sortation, but raise Exception at the first conflict.
+    This saves O(m+n) runtime.
+
+    """
+    if key is None:
+        def key(x): return x
+
+    g2 = graph.copy()
+
+    zero_in_degree = sorted(g2.nodes(in_degree=0), key=key)
+
+    while zero_in_degree:
+        for task in zero_in_degree:
+            yield task  # <--- do something.
+
+            g2.del_node(task)
+
+        zero_in_degree = sorted(g2.nodes(in_degree=0), key=key)
+
+    if g2.nodes():
+        raise TypeError(f"Graph is not acyclic: Loop found: {g2.nodes()}")
+
+
 def phase_lines(graph):
     """ Determines the phase lines of a directed graph.
     :param graph: Graph
     :return: dictionary with node id : phase in cut.
+
+    Note: To transform the phaselines into a task sequence use
+    the following recipe:
+
+    tasks = defaultdict(set)
+    for node, phase in phaselines(graph):
+        tasks[phase].add(node)
+
+    To obtain a sort stable tasks sequence use:
+
+    for phase in sorted(tasks):
+        print(phase, list(sorted(tasks[phase]))
+
     """
     phases = {n: 0 for n in graph.nodes()}
     sinks = {n: set() for n in phases}  # sinks[e] = {s1,s2}
@@ -1095,7 +1151,7 @@ def phase_lines(graph):
 
 
 def sources(graph, n):
-    """ Determines the set of sources of node 'n' in a DAG.
+    """ Determines the set of all upstream sources of node 'n' in a DAG.
     :param graph: Graph
     :param n: node for which the sources are sought.
     :return: set of nodes
@@ -1497,7 +1553,7 @@ class BiDirectionalSearch(object):
         other.update(sp, sp_length)
 
 
-def shortest_path_bidirectional(graph, start, end, reverse_graph=None):
+def shortest_path_bidirectional(graph, start, end):
     """ Bidirectional search using lower bound.
     :param graph: Graph
     :param start: start node
@@ -1820,6 +1876,10 @@ class Graph(BasicGraph):
     def sources(self, n):
         """ Determines the DAG sources of node n """
         return sources(graph=self, n=n)
+
+    def topological_sort(self, key=None):
+        """ Returns a generator for the topological order"""
+        return topological_sort(self, key=key)
 
     @staticmethod
     def same_path(p1, p2):

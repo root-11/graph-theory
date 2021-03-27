@@ -295,3 +295,22 @@ def test_edge_not_connected():
     g.add_edge(3, 4)
     g.add_edge(5, 4)
     assert g.is_connected(3, 5) == False
+
+
+def test_del_edge():
+    the_sort = []
+    g = Graph()
+    g.add_edge(1, 2)
+    g.add_edge(2, 3)
+    zero_in = g.nodes(in_degree=0)
+    while zero_in:
+        for n in zero_in:
+            the_sort.append(n)
+            g.del_node(n)
+        zero_in = g.nodes(in_degree=0)
+    assert len(g.nodes()) == 0
+    assert len(g._nodes) == 0
+    assert len(g._edges) == 0
+    assert len(g._reverse_edges) == 0
+    assert len(g._in_degree) == 0
+    assert len(g._out_degree) == 0
