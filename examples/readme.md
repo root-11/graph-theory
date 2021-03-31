@@ -3,13 +3,8 @@
 This folder contains jupyter notebooks, with examples from
 graph-theory.
 
-If you're new to the field I would recommend one of two approaches
-to get familiar with the topic:
-
-1. Work on project and learn the hard way.
-2. Study the jupyter notebooks following this order loosely:
-
-(links to be added)
+If you're new to the field I would recommend to study (loosely)
+in the order below:
 
 ***basic_graph_theory.ipynb***: An introduction to the basic 
 terminology of graph-theory. Topics are:
