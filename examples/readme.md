@@ -31,7 +31,7 @@ graphs, such as:
 	merkle-tree
 
 
-***[solving search problems](solving_search_problems.ipynb)***: An introduction to different
+***[solving search problems](solving%20search%20problems.ipynb)***: An introduction to different
 methods for findings paths, including:
 
 	adjacency matrix
@@ -43,7 +43,7 @@ methods for findings paths, including:
 	[critical path method]
 	find loops
 
-***calculating statistics about graphs*** provides an overview
+***[calculating statistics about graphs](statistics%20on%20graphs.ipynb)*** provides an overview
 of common analysis of graphs, such as:
 
 	components
@@ -53,7 +53,7 @@ of common analysis of graphs, such as:
 	degree of separation
 
 
-***solving transport problems*** provides tools for a wide range 
+***[solving transport problems](solving%20search%20problems.ipynb)*** provides tools for a wide range 
 of problems where discrete transport is essential.
 
 	minmax
@@ -65,7 +65,7 @@ of problems where discrete transport is essential.
 	trans shipment problem (needs rewrite)
 
 
-***solving flow problems*** provides tools for solving a 
+***[solving flow problems](solving%20flow%20problems.ipynb)*** provides tools for solving a 
 wide range of problems where continuous flow are central.
 
 	max flow

@@ -91,7 +91,7 @@ All module functions are available from Graph and Graph3D (where applicable).
 | + | + | `g.degree_of_separation(n1,n2)` | returns the distance between two nodes using BFS ||
 | + | + | `g.network_size(n1, degree_of_separation)` | returns the nodes within the range given by `degree_of_separation` ||
 | + | + | `g.topological_sort(key)` | returns a generator that yields node in order from a non-cyclic graph. ||
-| + | + | `g.critical_path()` | returns the distance of the critical path and a list of Tasks. | [Example](examples/solving_search_problems.ipynb) |
+| + | + | `g.critical_path()` | returns the distance of the critical path and a list of Tasks. | [Example](examples/solving%20search%20problems.ipynb) |
 | + | + | `g.phase_lines()` | returns a dictionary with the phase_lines for a non-cyclic graph. ||
 | + | + | `g.sources(n)` | returns the source_tree of node `n` ||
 | + | + | `g.depth_first_search(start,end)` | returns path using DFS and backtracking  ||
