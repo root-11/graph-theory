@@ -21,7 +21,7 @@ keywords = list({
     'assignment problem', 'flow-problem', 'hash', 'graph-hash', 'random graph', 'search', 'cycle', 'path',
     'component', 'components', 'adjacency', 'matrix', 'all pairs shortest path', 'finite state machine', 'fsm',
     'traffic-jam', 'traffic-jam-solver', 'solver', 'hill-climbing', 'simple', 'simple-path', 'critical', 'path',
-    'method', 'critical-path'
+    'method', 'critical-path', 'minimize', 'minimise', 'optimize', 'optimise'
 })
 
 keywords.sort(key=lambda x: x.lower())

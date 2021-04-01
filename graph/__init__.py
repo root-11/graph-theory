@@ -1893,6 +1893,10 @@ class Graph(BasicGraph):
         f"""{critical_path.__doc__}"""
         return critical_path(self)
 
+    def critical_path_minimize_for_slack(self):
+        f"""{critical_path_minimize_for_slack.__doc__}"""
+        return critical_path_minimize_for_slack(self)
+
     @staticmethod
     def same_path(p1, p2):
         """ compares two paths to determine if they're the same, despite

@@ -14,6 +14,8 @@ A simple graph library...<br>
 
 Latest feature:
 
+    2021/04/01 method for minimising slack in DAG without changing critical path.
+    2021/03/30 added jupyter notebooks /examples for extending documentation (#26)
     2021/03/27 critical path method
     2021/03/18 topological sort
     2021/03/15 much faster shortest path algorithm
@@ -92,6 +94,7 @@ All module functions are available from Graph and Graph3D (where applicable).
 | + | + | `g.network_size(n1, degree_of_separation)` | returns the nodes within the range given by `degree_of_separation` ||
 | + | + | `g.topological_sort(key)` | returns a generator that yields node in order from a non-cyclic graph. ||
 | + | + | `g.critical_path()` | returns the distance of the critical path and a list of Tasks. | [Example](examples/solving%20search%20problems.ipynb) |
+| + | + | `g.critical_path_minimize_for_slack()` | returns graph with artificial dependencies that minimises slack. | [Example](examples/solving%20search%20problems.ipynb)|
 | + | + | `g.phase_lines()` | returns a dictionary with the phase_lines for a non-cyclic graph. ||
 | + | + | `g.sources(n)` | returns the source_tree of node `n` ||
 | + | + | `g.depth_first_search(start,end)` | returns path using DFS and backtracking  ||
