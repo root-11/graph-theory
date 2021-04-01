@@ -1,7 +1,11 @@
 import time
-from graph import Graph, phase_lines, critical_path, Task
+from graph import Graph, phase_lines, critical_path, Task, critical_path_minimize_for_slack
 from tests import profileit
-from tests.test_graph import graph02, graph3x3, graph_cycle_6, graph_cycle_5, fully_connected_4, mountain_river_map
+from tests.test_graph import (
+    graph02, graph3x3, graph_cycle_6, graph_cycle_5, fully_connected_4, mountain_river_map,
+    small_project_for_critical_path_method
+)
+
 
 
 def test_subgraph():
@@ -303,47 +307,72 @@ def test_topological_sort():
 
 
 def test_critical_path():
-    """  F ----------+-G----+
-        |            |      |
-    A --+---B-----C--+-D----+---E
-        |                   |
-        H-------------------+
+    g = small_project_for_critical_path_method()
 
-    https://en.wikipedia.org/wiki/Critical_path_method#/media/File:Activity-on-node-v3.svg
-    """
-    tasks = {'A': 10, 'B': 20, 'C': 5, 'D': 10, 'E': 20, 'F': 15, 'G': 5, 'H': 15}
+    critical_path_length, schedule = critical_path(g)
+    assert critical_path_length == 65
+    expected_schedule = [
+        Task('A', 10,  0,  0, 10, 10),
+        Task('B', 20, 10, 10, 30, 30),
+        Task('C',  5, 30, 30, 35, 35),
+        Task('D', 10, 35, 35, 45, 45),
+        Task('E', 20, 45, 45, 65, 65),
+        Task('F', 15, 10, 25, 25, 40),
+        Task('G',  5, 25, 40, 30, 45),
+        Task('H', 15, 10, 30, 25, 45),
+    ]
+
+    for task in expected_schedule[:]:
+        t2 = schedule[task.task_id]
+        if task == t2:
+            expected_schedule.remove(task)
+        else:
+            print(task, t2)
+            raise Exception
+    assert expected_schedule == []
+
+    for tid, slack in {'F': 15, 'G': 15, 'H': 20}.items():
+        task = schedule[tid]
+        assert task.slack == slack
+
+    # Note: By introducing a fake dependency from H to F.
+    # the most efficient schedule is constructed, as all
+    # paths become critical paths, e.g. where slack is
+    # minimised as slack --> 0.
+
+    g2 = critical_path_minimize_for_slack(g)
+    critical_path_length, schedule = critical_path(g2)
+    assert sum(t.slack for t in schedule.values()) == 0
+
+
+def test_critical_path2():
+    tasks = {'A': 1, 'B': 10, 'C': 1, 'D': 5, 'E': 2, 'F': 1, 'G': 1, 'H': 1, 'I':1}
     dependencies = [
         ('A', 'B'),
         ('B', 'C'),
-        ('C', 'D'),
-        ('D', 'E'),
-        ('A', 'F'),
-        ('F', 'G'),
-        ('G', 'E'),
-        ('A', 'H'),
-        ('H', 'E'),
     ]
+    for letter in 'DEFGHI':
+        dependencies.append(('A', letter))
+        dependencies.append((letter, 'C'))
 
     g = Graph()
     for n, d in tasks.items():
         g.add_node(n, obj=d)
     for n1, n2 in dependencies:
-        g.add_edge(n1, n2, 0)
+        g.add_edge(n1, n2)
 
-    d, s = critical_path(g)
-    assert d == 65
-    expected_schedule = [
-        Task('A', 10, 0, 0, 10, 10, 0),
-        Task('B', 20, 10, 10, 30, 30, 0),
-        Task('C',  5, 30, 30, 35, 35, 0),
-        Task('D', 10, 35, 35, 45, 45, 0),
-        Task('E', 20, 45, 45, 65, 65, 0),
-        Task('F', 15, 11, 26, 25, 40, 15),
-        Task('G',  5, 36, 41, 40, 45, 20),
-        Task('H', 15, 11, 31, 25, 45, 5),
-    ]
-    # Note: By introducing a fake dependency from H to F.
-    # the most efficient schedule is constructed, as all
-    # paths become critical paths, e.g. where slack is
-    # minimised as slack --> 0.
+    g2 = critical_path_minimize_for_slack(g)
+    critical_path_length, schedule = critical_path(g2)
+    assert sum(t.slack for t in schedule.values()) == 0, schedule
+
+
+def test_critical_path3():
+    g = small_project_for_critical_path_method()
+    g.add_node('H', obj=5)  # reducing duration from 15 to 5, will produce more options.
+    g2 = critical_path_minimize_for_slack(g)
+    critical_path_length, schedule = critical_path(g2)
+    assert critical_path_length == 65
+    assert sum(t.slack for t in schedule.values()) == 30, schedule
+
+
 

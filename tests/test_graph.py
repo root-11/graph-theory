@@ -244,6 +244,40 @@ def test_fully_connected_4():
     assert isinstance(fully_connected_4(), Graph)
 
 
+def small_project_for_critical_path_method():
+    """  F ----------+-G----+
+            |            |      |
+        A --+---B-----C--+-D----+---E
+            |                   |
+            H-------------------+
+
+        https://en.wikipedia.org/wiki/Critical_path_method#/media/File:Activity-on-node-v3.svg
+        """
+    tasks = {'A': 10, 'B': 20, 'C': 5, 'D': 10, 'E': 20, 'F': 15, 'G': 5, 'H': 15}
+    dependencies = [
+        ('A', 'B'),
+        ('B', 'C'),
+        ('C', 'D'),
+        ('D', 'E'),
+        ('A', 'F'),
+        ('F', 'G'),
+        ('G', 'E'),
+        ('A', 'H'),
+        ('H', 'E'),
+    ]
+
+    g = Graph()
+    for n, d in tasks.items():
+        g.add_node(n, obj=d)
+    for n1, n2 in dependencies:
+        g.add_edge(n1, n2, 0)
+    return g
+
+
+def test_small_critical_path():
+    assert isinstance(small_project_for_critical_path_method(), Graph)
+
+
 def mountain_river_map():
     """ Detailed mountain river map. Contributed by Harry Darby & Hartmut Mause """
     L = [(0,), (0, 164, 1), (1,), (1, 235, 1), (2,), (2, 1, 1), (3,), (3, 196, 1), (4,), (4, 3, 1), (5,), (5, 225, 1),
