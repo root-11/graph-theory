@@ -6,7 +6,7 @@ graph-theory.
 If you're new to the field I would recommend to study (loosely)
 in the order below:
 
-***basic_graph_theory.ipynb***: An introduction to the basic 
+***[basic graph theory](basic%20graph%20theory.ipynb)***: An introduction to the fundamental 
 terminology of graph-theory. Topics are:
 
 	nodes
@@ -18,10 +18,10 @@ terminology of graph-theory. Topics are:
 	is a subgraph
 	examples of existing graphs available for testing.
 
-***generating and visualising graphs.***: An introduction
+***[generating and visualising graphs](generating%20and%20visualising%20graphs.ipynb)***: An introduction
 to making random xy graphs, grids and visualise them.
 
-***comparing graphs***: An overview of methods for comparing 
+***[comparing graphs](comparing%20graphs.ipynb)***: An overview of methods for comparing 
 graphs, such as:
 
     topological sort
@@ -75,14 +75,14 @@ wide range of problems where continuous flow are central.
 	all_paths
 	
 
-***solving assignment problems*** provides tools for solving
+***[solving assignment problems](solving%20assignment%20problems.ipynb)*** provides tools for solving
 any kind of assignment problem.
 
 	assignment problem
 	wtap 
 
 
-***representing systems as graphs*** provides a use case
+***[representing systems as graphs](graphs%20as%20finite%20state%20machines.ipynb)*** provides a use case
 for using `graph as finite state machine`.
 
 
