@@ -10,6 +10,8 @@ A simple graph library...<br>
 *... similar to graph-tool, without the Python 2.7 legacy...*<br>
 *... with code that you can explain to your boss...*<br>
 
+Detailed tutorial evolving in the [examples section](examples/readme.md).
+
 ---------------------------
 
 Latest feature:
