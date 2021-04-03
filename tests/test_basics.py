@@ -194,6 +194,16 @@ def test_subgraph():
     assert not g3.is_subgraph(g2)
 
 
+def test_in_and_out_degree():
+    g = graph3x3()
+
+    in_degree = {1: 0, 2: 1, 3: 1, 4: 1, 5: 2, 6: 2, 7: 1, 8: 2, 9: 2}
+    out_degree = {1: 2, 2: 2, 3: 1, 4: 2, 5: 2, 6: 1, 7: 1, 8: 1, 9: 0}
+    for node in g.nodes():
+        assert g.in_degree(node) == in_degree[node]
+        assert g.out_degree(node) == out_degree[node]
+
+
 def test_copy():
     g = graph05()
     g2 = g.copy()

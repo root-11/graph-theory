@@ -325,6 +325,14 @@ class BasicGraph(object):
                         q.append(c)
         return False  # <-- Exit if not connected.
 
+    def in_degree(self, node):
+        """ returns the number of edges incoming on a node """
+        return self._in_degree[node]
+
+    def out_degree(self, node):
+        """ returns the number of edges departing from a node"""
+        return self._out_degree[node]
+
 
 # Graph functions
 # -----------------------------
