@@ -40,6 +40,9 @@ class BasicGraph(object):
         elif from_list is not None:
             self.from_list(from_list)
 
+    def __str__(self):
+        return f"{self.__class__.__name__}({len(self._nodes)} nodes, {len(self._edges)} edges)
+
     def __getitem__(self, item):
         raise ValueError("Use g.node(n1) or g.edge(n1,n2)")
 
@@ -57,6 +60,14 @@ class BasicGraph(object):
 
     def __len__(self):
         raise ValueError("Use len(g.nodes()) or len(g.edges())")
+
+    def copy(self):
+        g = Graph()
+        for n in self._nodes:
+            g.add_node(n, obj=self._nodes[n])
+        for s, e, d in self.edges():
+            g.add_edge(s, e, d)
+        return g
 
     def add_edge(self, node1, node2, value=1, bidirectional=False):
         """
@@ -1714,14 +1725,6 @@ class Graph(BasicGraph):
     def __init__(self, from_dict=None, from_list=None):
         super().__init__(from_dict=from_dict, from_list=from_list)
         self._cache = None
-
-    def copy(self):
-        g = Graph()
-        for n in self._nodes:
-            g.add_node(n, obj=self._nodes[n])
-        for s, e, d in self.edges():
-            g.add_edge(s, e, d)
-        return g
 
     def shortest_path(self, start, end, memoize=False):
         """
