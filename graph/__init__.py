@@ -41,7 +41,7 @@ class BasicGraph(object):
             self.from_list(from_list)
 
     def __str__(self):
-        return f"{self.__class__.__name__}({len(self._nodes)} nodes, {len(self._edges)} edges)
+        return f"{self.__class__.__name__}({len(self._nodes)} nodes, {len(self._edges)} edges)"
 
     def __getitem__(self, item):
         raise ValueError("Use g.node(n1) or g.edge(n1,n2)")
