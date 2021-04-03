@@ -1,4 +1,5 @@
-from tests.test_graph import london_underground
+from examples.graphs import london_underground
+
 """
 The problem of deciding the exact place in a community where a school or a fire station should be located,
 is classified as the facility location problem.
