@@ -208,6 +208,13 @@ def test_copy():
     g = graph05()
     g2 = g.copy()
     assert set(g.edges()) == set(g2.edges())
+    assert g == g2, "testing == operator failed"
+    g2.add_node(1, "this")
+
+    g3 = Graph(from_list=g.to_list())
+    assert g2 != g3
+    g2.add_node(1)
+    assert g2 == g3
 
 
 def test_errors():

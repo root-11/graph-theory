@@ -43,6 +43,18 @@ class BasicGraph(object):
     def __str__(self):
         return f"{self.__class__.__name__}({len(self._nodes)} nodes, {len(self._edges)} edges)"
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if self._nodes != other._nodes:
+            return False
+        if self._edges != other._edges:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __getitem__(self, item):
         raise ValueError("Use g.node(n1) or g.edge(n1,n2)")
 
