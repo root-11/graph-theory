@@ -1,4 +1,26 @@
 from graph import Graph
+from itertools import product
+
+
+def grid(x,y, bidirectional=False):
+    """
+    :param x: number of columns
+    :param y: number of rows
+    :param bidirectional: boolean
+    :return: Graph with grid.
+    """
+    g = Graph()
+    for i, j in product(range(x), range(y)):
+        if i % x > 0:  # connect west
+            n1 = i - 1, j
+            n2 = i, j
+            g.add_edge(n1, n2, bidirectional=bidirectional)
+
+        if j % y > 0:  # connect north
+            n1 = i, j - 1
+            n2 = i, j
+            g.add_edge(n1, n2, bidirectional=bidirectional)
+    return g
 
 
 def london_underground():
