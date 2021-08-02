@@ -371,3 +371,18 @@ def test_simple_failed_path():
 
     assert sequence is None
 
+def test_incomplete_graph():
+    """ two loads with an incomplete graph making the problem unsolvable """
+    g = Graph()
+    for s, e in [(1, 2), (2, 3)]:
+        g.add_edge(s, e, 1, bidirectional=True)
+
+    loads = {1: [1, 5], 2: [5, 1]}
+    g.add_node(5)
+
+    try:
+        sequence = jam_solver(g, loads)
+        assert False
+    except ValueError as e:
+        assert str(e) == f"No path found between {1} and {5}"
+

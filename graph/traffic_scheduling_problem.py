@@ -70,8 +70,10 @@ def check_user_input(graph, loads):
     for load_id, path in loads.items():
         if len(path) > 1:
             if not graph.has_path(path):
-                _, path = graph.shortest_path(path[0], path[-1])
-                loads[load_id] = path
+                _, new_path = graph.shortest_path(path[0], path[-1])
+                if not new_path:
+                    raise ValueError(f"No path found between {path[0]} and {path[-1]}")
+                loads[load_id] = new_path
 
 
 def path_to_moves(path):
