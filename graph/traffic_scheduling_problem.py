@@ -30,8 +30,10 @@ def jam_solver(graph, loads, timeout=None):
     for method in methods:
         try:
             moves = method(graph, loads, timeout)
-        except TimeoutError:
-            pass
+        except (TimeoutError, Exception) as e:
+            if isinstance(e, Exception):
+                assert str(e) == "No solution found", f"{e} instead of No solution found"
+            continue
         if moves:
             return moves
     return moves
@@ -164,6 +166,8 @@ def bi_directional_progressive_bfs(graph, loads, timeout=None):
         timer.timeout_check()
 
         # forward
+        if not forward_queue:
+            raise Exception("No solution found")
         state = forward_queue.pop(0)
         occupied = {i[1] for i in state}
         for load_id, location in state:
@@ -193,6 +197,8 @@ def bi_directional_progressive_bfs(graph, loads, timeout=None):
                     break
 
         # backwards
+        if not reverse_queue:
+            raise Exception("No solution found")
         state = reverse_queue.pop(0)
         occupied = {i[1] for i in state}
         for load_id, location in state:
@@ -255,6 +261,8 @@ def bi_directional_bfs(graph, loads, timeout=None):
         timer.timeout_check()
 
         # forward
+        if not forward_queue:
+            raise Exception("No solution found")
         state = forward_queue.pop(0)
         occupied = {i[1] for i in state}
         for load_id, location in state:
@@ -274,6 +282,8 @@ def bi_directional_bfs(graph, loads, timeout=None):
                     break
 
         # backwards
+        if not reverse_queue:
+            raise Exception("No solution found")
         state = reverse_queue.pop(0)
         occupied = {i[1] for i in state}
         for load_id, location in state:
@@ -345,7 +355,7 @@ def pure_hill_climbing_algorithm(graph, loads, timeout=None):
                     solved = True
                     break
         if not states:
-            return None  # hill climbing doesn't lead to a solution.
+            raise Exception("No solution found")  # hill climbing doesn't lead to a solution
 
     steps, best_path = movements.shortest_path(initial_state, final_state)
     moves = path_to_moves(best_path)

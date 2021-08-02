@@ -358,3 +358,16 @@ def test_loop_52():
          89: (42, 43), 97: (51, 52), 96: (50, 51), 95: (49, 50)}
     ], "something is wrong. All moves CAN happen at the same time."
 
+
+def test_simple_failed_path():
+    """ two colliding loads with no solution """
+    g = Graph()
+    for s, e in [(1, 2), (2, 3)]:
+        g.add_edge(s, e, 1, bidirectional=True)
+
+    loads = {1: [1, 3], 2: [3, 1]}
+
+    sequence = jam_solver(g, loads)
+
+    assert sequence is None
+
