@@ -333,10 +333,10 @@ class BasicGraph(object):
     def is_connected(self, n1, n2):
         """ helper determining if two nodes are connected using BFS. """
         if n1 in self._edges:
-            q = [n1]
+            q = deque([n1])
             visited = set()
             while q:
-                n = q.pop(0)
+                n = q.popleft()
                 if n not in visited:
                     visited.add(n)
                 for c in self._edges[n]:
@@ -1196,9 +1196,9 @@ def sources(graph, n):
     :return: set of nodes
     """
     nodes = {n}
-    q = [n]
+    q = deque([n])
     while q:
-        new = q.pop(0)
+        new = q.popleft()
         for src in graph.nodes(to_node=new):
             if src not in nodes:
                 nodes.add(src)
@@ -1387,7 +1387,7 @@ def all_simple_paths(graph, start, end):
     paths = []
     q = [(start,)]
     while q:
-        path = q.pop(0)
+        path, q = q[0], q[1:]
         for s, e, d in graph.edges(from_node=path[0]):
             if e in path:
                 continue
@@ -1413,10 +1413,10 @@ def all_paths(graph, start, end):
     if not graph.is_connected(start, end):
         return []
     paths = [(start,)]
-    q = [start]
+    q = deque([start])
     skip_list = set()
     while q:
-        n1 = q.pop(0)
+        n1 = q.popleft()
         if n1 == end:
             continue
 
