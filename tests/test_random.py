@@ -74,3 +74,11 @@ def test_random_graph_3():
     xs, ys = [c[0] for c in start], [c[1] for c in start]
     plt.plot(xs, ys, 'rD', clip_on=False)
     plt.show()
+
+
+def test_random_graph_4():
+    """ check that the string method is correct. """
+    g = random_xy_graph(1000, 1000, 1000, 7000)
+    assert len(g.edges()) == 7000
+    s = str(g)
+    assert s == 'Graph(1000 nodes, 7000 edges)', s

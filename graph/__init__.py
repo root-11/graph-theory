@@ -31,6 +31,7 @@ class BasicGraph(object):
         """
         self._nodes = {}
         self._edges = defaultdict(dict)
+        self._edge_count = 0
         self._reverse_edges = defaultdict(dict)
         self._in_degree = defaultdict(int)
         self._out_degree = defaultdict(int)
@@ -41,7 +42,7 @@ class BasicGraph(object):
             self.from_list(from_list)
 
     def __str__(self):
-        return f"{self.__class__.__name__}({len(self._nodes)} nodes, {len(self._edges)} edges)"
+        return f"{self.__class__.__name__}({len(self._nodes)} nodes, {self._edge_count} edges)"
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -95,10 +96,15 @@ class BasicGraph(object):
         if node2 not in self._nodes:
             self.add_node(node2)
 
-        self._edges[node1][node2] = value
-        self._out_degree[node1] += 1
-        self._in_degree[node2] += 1
-        self._reverse_edges[node2][node1] = value
+        if node1 in self._edges and node2 in self._edges[node1]:  # it's a value update.
+            self._edges[node1][node2] = value
+            self._reverse_edges[node2][node1] = value
+        else:  # it's a new edge.
+            self._edges[node1][node2] = value
+            self._reverse_edges[node2][node1] = value
+            self._out_degree[node1] += 1
+            self._in_degree[node2] += 1
+            self._edge_count += 1
 
         if bidirectional:
             self.add_edge(node2, node1, value, bidirectional=False)
@@ -131,17 +137,21 @@ class BasicGraph(object):
         :param node1: node
         :param node2: node
         """
-        del self._edges[node1][node2]
-        del self._reverse_edges[node2][node1]
-        if self._out_degree[node1] > 1:
-            self._out_degree[node1] -= 1
-        else:
-            self._out_degree[node1] = 0
+        try:
+            del self._edges[node1][node2]
+        except KeyError:
+            return
 
-        if self._in_degree[node2] > 1:
-            self._in_degree[node2] -= 1
-        else:
-            self._in_degree[node2] = 0
+        del self._reverse_edges[node2][node1]
+        self._edge_count -= 1
+
+        if self._out_degree[node1] == 0:
+            assert False
+        self._out_degree[node1] -= 1
+
+        if self._in_degree[node2] == 0:
+            assert False
+        self._in_degree[node2] -= 1
 
     def add_node(self, node_id, obj=None):
         """
@@ -1385,9 +1395,9 @@ def all_simple_paths(graph, start, end):
         return []
 
     paths = []
-    q = [(start,)]
+    q = deque([(start,)])
     while q:
-        path, q = q[0], q[1:]
+        path = q.popleft()
         for s, e, d in graph.edges(from_node=path[0]):
             if e in path:
                 continue

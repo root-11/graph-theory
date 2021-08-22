@@ -257,6 +257,7 @@ def test_delitem():
         assert True
 
     g.del_edge(node1=0, node2=1)
+    g.del_edge(0, 1)  # idempotent.
 
     v = g.edge(0, 1)
     if v is not None:
