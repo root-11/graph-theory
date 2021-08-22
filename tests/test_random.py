@@ -42,7 +42,7 @@ def test_random_graph_2():
     # the xy_space above is so small that the generator must switch from random
     # mode, to search mode.
 
-    links = (sum(range(nodes)) * 2)  # this is a fully connected graph.
+    links = nodes * nodes   # this is a fully connected graph.
     g = random_xy_graph(nodes=nodes, edges=links, x_max=800, y_max=400, seed=42)
 
     # edges=None creates a fully connected graph

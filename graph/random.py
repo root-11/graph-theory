@@ -1,4 +1,5 @@
 import random
+import itertools
 
 from graph import Graph
 
@@ -24,7 +25,7 @@ def random_xy_graph(nodes, x_max, y_max, edges=None, seed=42):
     if x_max * y_max < nodes:
         raise ValueError("frame (x:{},y:{}) is too small for {} nodes".format(x_max,y_max,nodes))
 
-    max_edges = nodes * (nodes-1) * 2  # the `2` is for being bidirectional
+    max_edges = nodes * nodes
     if edges is None:
         edges = max_edges
     if max_edges < edges:
@@ -75,22 +76,17 @@ def random_xy_graph(nodes, x_max, y_max, edges=None, seed=42):
                     break
 
     n1s = g.nodes()
-    n2s = set(n1s)
-    edge_set = set()
-    edge_count = 0
-    while edge_count < edges:
-        n1 = random.choice(n1s)
-        existing_edges = set(g.nodes(from_node=n1))
-        existing_edges.add(n1)
-        candidates = list(n2s - existing_edges)
-        if not candidates:  # the node is already fully connected.
-            n1s.remove(n1)
-            continue
-        n2 = random.choice(candidates)
+    n2s = n1s[:]
+    random.shuffle(n2s)
 
-        edge_set.add((n1, n2))
+    edge_count = 0
+
+    for n1, n2 in itertools.product(*[n1s,n2s]):
+        if edge_count == edges:
+            break
+        edge_count += 1
+
         d = xy_distance(n1, n2)
         g.add_edge(n1, n2, d)
-        edge_count += 1
 
     return g
