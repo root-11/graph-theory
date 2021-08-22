@@ -76,12 +76,12 @@ def random_xy_graph(nodes, x_max, y_max, edges=None, seed=42):
                     break
 
     n1s = g.nodes()
+    random.shuffle(n1s)
     n2s = n1s[:]
     random.shuffle(n2s)
 
     edge_count = 0
-
-    for n1, n2 in itertools.product(*[n1s,n2s]):
+    for n1, n2 in itertools.product(*[n1s, n2s]):
         if edge_count == edges:
             break
         edge_count += 1
