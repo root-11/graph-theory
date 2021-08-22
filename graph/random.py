@@ -24,7 +24,7 @@ def random_xy_graph(nodes, x_max, y_max, edges=None, seed=42):
     if x_max * y_max < nodes:
         raise ValueError("frame (x:{},y:{}) is too small for {} nodes".format(x_max,y_max,nodes))
 
-    max_edges = sum(list(range(nodes))) * 2
+    max_edges = nodes * (nodes-1) * 2  # the `2` is for being bidirectional
     if edges is None:
         edges = max_edges
     if max_edges < edges:
@@ -83,7 +83,7 @@ def random_xy_graph(nodes, x_max, y_max, edges=None, seed=42):
         existing_edges = set(g.nodes(from_node=n1))
         existing_edges.add(n1)
         candidates = list(n2s - existing_edges)
-        if not candidates:
+        if not candidates:  # the node is already fully connected.
             n1s.remove(n1)
             continue
         n2 = random.choice(candidates)
