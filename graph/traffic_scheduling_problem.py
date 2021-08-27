@@ -32,7 +32,8 @@ def jam_solver(graph, loads, timeout=None):
             moves = method(graph, loads, timeout)
         except (TimeoutError, Exception) as e:
             if isinstance(e, Exception):
-                assert str(e) == "No solution found", f"{e} instead of No solution found"
+                assert any((str(e) == "No solution found", str(e) == f"No solution found in {timeout} ms")), \
+                    f"{e} instead of No solution found"
             continue
         if moves:
             return moves
