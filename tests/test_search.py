@@ -177,7 +177,11 @@ def test_distance():
     p = [1, 2, 3, 6, 9]
     assert g.distance_from_path(p) == 4
 
-    assert float('inf') == g.distance_from_path([1, 2, 3, 900])  # 900 doesn't exist.
+    try:
+        g.distance_from_path([1, 2, 3, 900])  # 900 doesn't exist.
+        assert False, "900 isn't in the graph."
+    except ValueError:
+        assert True
 
 
 def test_bfs():
@@ -185,8 +189,11 @@ def test_bfs():
     path = g.breadth_first_search(1, 7)
     assert path == [1, 3, 7], path
 
-    path = g.breadth_first_search(1, 900)  # 900 doesn't exit.
-    assert path == []
+    try:
+        g.breadth_first_search(1, 900)  # 900 doesn't exit.
+        assert False, "900 isn't in the graph"
+    except ValueError:
+        assert True
 
 
 def test_bfw():

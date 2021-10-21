@@ -237,8 +237,9 @@ def find_perfect_circuit(graph, start, jobs):
 
     new_starts = [B for A, B in jobs if A == start]
     for A in new_starts:
-        p = g.breadth_first_search(A, start)  # path back to start.
-        if p:
-            return [start] + p
+        if A in g:
+            p = g.breadth_first_search(A, start)  # path back to start.
+            if p:
+                return [start] + p
     return []
 

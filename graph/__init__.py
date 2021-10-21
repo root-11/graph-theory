@@ -297,7 +297,8 @@ class BasicGraph(object):
 
         :return: None
         """
-        assert isinstance(dictionary, dict)
+        if not isinstance(dictionary, dict):
+            raise TypeError(f"expected dict, not {type(dictionary)}")
         for n1, e in dictionary.items():
             if not e:
                 self.add_node(n1)
@@ -328,7 +329,8 @@ class BasicGraph(object):
             (11,)      # node with no links.
         ]
         """
-        assert isinstance(links, Iterable)
+        if not isinstance(links, Iterable):
+            raise TypeError(f"Expected iterable, not {type(links)}")
         for item in links:
             assert isinstance(item, (list, tuple))
             if len(item) > 1:
@@ -377,6 +379,13 @@ def shortest_path(graph, start, end):
     :return: distance, path (as list),
              returns float('inf'), [] if no path exists.
     """
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+    if start not in graph:
+        raise ValueError(f"{start} not in graph")
+    if end not in graph:
+        raise ValueError(f"{end} not in graph")
+
     q, visited, minimums = [(0, 0, start, ())], set(), {start: 0}
     i = 1
     while q:
@@ -412,6 +421,13 @@ def breadth_first_search(graph, start, end):
     :param end: end node
     :return: path
     """
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+    if start not in graph:
+        raise ValueError(f"{start} not in graph")
+    if end not in graph:
+        raise ValueError(f"{end} not in graph")
+
     visited = {start: None}
     q = deque([start])
     while q:
@@ -439,6 +455,8 @@ def breadth_first_walk(graph, start, end=None, reversed_walk=False):
 
     To walk all nodes use: `[n for n in g.breadth_first_walk(start)]`
     """
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
     if start not in graph:
         raise ValueError(f"{start} not in graph")
     if end is not None and end not in graph:
@@ -470,6 +488,8 @@ def depth_first_search(graph, start, end):
     :param end: end node
     :return: path as list of nodes.
     """
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
     if start not in graph:
         raise ValueError(f"{start} not in graph")
     if end not in graph:
@@ -513,10 +533,12 @@ def depth_scan(graph, start, criteria):
     :param criteria: function to terminate scan along a branch must return bool
     :return: set of nodes
     """
-    if not callable(criteria):
-        raise TypeError(f"Expected {criteria} to be callable")
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
     if start not in graph:
         raise ValueError(f"{start} not in graph")
+    if not callable(criteria):
+        raise TypeError(f"Expected {criteria} to be callable")
     if not criteria(start):
         return set()
 
@@ -557,7 +579,11 @@ def distance(graph, path):
     :param path: list of nodes
     :return: distance
     """
-    assert isinstance(path, (tuple, list))
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+    if not isinstance(path, (tuple, list)):
+        raise TypeError(f"expected tuple or list, not {type(path)}")
+
     cache = defaultdict(dict)
     path_length = 0
     for idx in range(len(path) - 1):
@@ -593,6 +619,13 @@ def maximum_flow(graph, start, end):
     :param end: node
     :return: flow, graph
     """
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+    if start not in graph:
+        raise ValueError(f"{start} not in graph")
+    if end not in graph:
+        raise ValueError(f"{end} not in graph")
+
     inflow = sum(d for s, e, d in graph.edges(from_node=start))
     outflow = sum(d for s, e, d in graph.edges(to_node=end))
     unassigned_flow = min(inflow, outflow)  # search in excess of this 'flow' is a waste of time.
@@ -671,6 +704,13 @@ def maximum_flow_min_cut(graph, start, end):
     :param end: end
     :return: list of edges
     """
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+    if start not in graph:
+        raise ValueError(f"{start} not in graph")
+    if end not in graph:
+        raise ValueError(f"{end} not in graph")
+
     flow, mfg = maximum_flow(graph, start, end)
     if flow == 0:
         return []
@@ -702,15 +742,16 @@ def minimum_cost_flow_using_successive_shortest_path(costs, inventory, capacity=
         if capacity is None, capacity is assumed to be float('inf')
     :return: total costs, flow graph
     """
-    assert isinstance(costs, Graph)
-    assert isinstance(inventory, dict)
+    if not isinstance(costs, Graph):
+        raise TypeError(f"expected costs as Graph, not {type(costs)}")
+    if not isinstance(inventory, dict):
+        raise TypeError(f"expected inventory as dict, not {type(inventory)}")
 
     if not all(d >= 0 for s, e, d in costs.edges()):
-        raise ValueError("negative costs?")
-    if not isinstance(inventory, dict):
-        raise TypeError("inventory is expected as dict")
+        raise ValueError("The costs graph has negative edges. That won't work.")
+
     if not all(isinstance(v, (float, int)) for v in inventory.values()):
-        raise ValueError("not all stock is numeric.")
+        raise TypeError("not all stock is numeric.")
 
     if capacity is None:
         capacity = Graph(from_list=[(s, e, float('inf')) for s, e, d in costs.edges()])
@@ -787,7 +828,8 @@ def tsp_branch_and_bound(graph):
 
     solution quality 100%
     """
-    assert isinstance(graph, Graph)
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
 
     def lower_bound(graph, nodes):
         """ Calculates the lower bound of distances for given nodes. """
@@ -874,6 +916,8 @@ def tsp_greedy(graph):
     :param graph: instance of class Graph
     :return: tour_length, path
     """
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
 
     def shortest_links_first(graph):
         """ returns a list of (distance, node1, node2) with shortest on top."""
@@ -963,7 +1007,11 @@ def subgraph(graph, nodes):
     :param nodes: set or list of nodes
     :return: new instance of Graph.
     """
-    assert isinstance(nodes, (set, list))
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+    if not isinstance(nodes, (set, list)):
+        raise TypeError(f"expected nodes as a set or a list, not {type(nodes)}")
+
     node_set = set(nodes)
     G = object.__new__(graph.__class__)
     assert isinstance(G, BasicGraph)
@@ -984,8 +1032,11 @@ def is_subgraph(graph1, graph2):
     :param graph2: instance of Graph
     :return: boolean
     """
-    assert isinstance(graph1, BasicGraph)
-    assert isinstance(graph2, BasicGraph)
+    if not isinstance(graph1, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph1)}")
+    if not isinstance(graph2, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph2)}")
+
     if not set(graph1.nodes()).issubset(set(graph2.nodes())):
         return False
     if not set(graph1.edges()).issubset(set(graph2.edges())):
@@ -999,8 +1050,11 @@ def is_partite(graph, n):
     :param n: int, number of partitions.
     :return: boolean and partitions as dict[colour] = set(nodes) or None.
     """
-    assert isinstance(graph, BasicGraph)
-    assert isinstance(n, int)
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+
+    if not isinstance(n, int):
+        raise TypeError(f"Expected n as integer > 0, not {type(n)}")
     colours_and_nodes = {i: set() for i in range(n)}
     nodes_and_colours = {}
     n1 = set(graph.nodes()).pop()
@@ -1039,6 +1093,9 @@ def has_cycles(graph):
     :param graph: instance of class Graph.
     :return: bool
     """
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+
     for n1, n2, d in graph.edges():
         if n1 == n2:
             return True
@@ -1052,7 +1109,9 @@ def components(graph):
     :param graph: instance of class Graph
     :return: list of sets of nodes. Each set is a component.
     """
-    assert isinstance(graph, BasicGraph)
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+
     nodes = set(graph.nodes())
     sets_of_components = []
     while nodes:
@@ -1080,10 +1139,14 @@ def network_size(graph, n1, degrees_of_separation=None):
     :param degrees_of_separation: integer
     :return: set of nodes within given range
     """
-    assert isinstance(graph, BasicGraph)
-    assert n1 in graph.nodes()
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+    if n1 not in graph:
+        raise ValueError(f"{n1} not in graph")
+
     if degrees_of_separation is not None:
-        assert isinstance(degrees_of_separation, int)
+        if not isinstance(degrees_of_separation, int):
+            raise TypeError(f"Expected degrees_of_separation to be integer, not {type(degrees_of_separation)}")
 
     network = {n1}
     q = set(graph.nodes(from_node=n1))
@@ -1125,6 +1188,9 @@ def topological_sort(graph, key=None):
     This saves O(m+n) runtime.
 
     """
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+
     if key is None:
         def key(x): return x
 
@@ -1162,6 +1228,9 @@ def phase_lines(graph):
         print(phase, list(sorted(tasks[phase]))
 
     """
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+
     phases = {n: 0 for n in graph.nodes()}
     sinks = {n: set() for n in phases}  # sinks[e] = {s1,s2}
     edges = {n: set() for n in phases}
@@ -1205,6 +1274,11 @@ def sources(graph, n):
     :param n: node for which the sources are sought.
     :return: set of nodes
     """
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+    if n not in graph:
+        raise ValueError(f"{n} not in graph")
+
     nodes = {n}
     q = deque([n])
     while q:
@@ -1226,6 +1300,11 @@ def same_path(path1, path2):
     :param path2: list of nodes.
     :return: boolean.
     """
+    if not isinstance(path1, (list, set, tuple)):
+        raise TypeError(f"Expected path1 as Iterable, not {type(path1)}")
+    if not isinstance(path2, (list, set, tuple)):
+        raise TypeError(f"Expected path2 as Iterable, not {type(path2)}")
+
     if path1 is path2:  # use id system to avoid work.
         return True
     if len(path1) != len(path2) or set(path1) != set(path2):
@@ -1259,7 +1338,9 @@ def adjacency_matrix(graph):
          4: {1: 2, 2: inf, 3: -5, 4: 0, 5: inf},
          5: {1: inf, 2: inf, 3: inf, 4: 6, 5: 0}}
     """
-    assert isinstance(graph, BasicGraph)
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+
     return {v1: {v2: 0 if v1 == v2 else graph.edge(v1, v2, default=float('inf'))
                  for v2 in graph.nodes()}
             for v1 in graph.nodes()}
@@ -1294,8 +1375,11 @@ def all_pairs_shortest_paths(graph):
              4: {1: 2, 2: -1, 3: -5, 4: 0, 5: -2},
              5: {1: 8, 2:  5, 3:  1, 4: 6, 5:  0}}
     """
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+
     g = graph.adjacency_matrix()
-    assert isinstance(g, dict)
+    assert isinstance(g, dict), "previous function should have returned a dict."
     vertices = g.keys()
 
     for v2 in vertices:
@@ -1307,7 +1391,8 @@ def all_pairs_shortest_paths(graph):
 
 def minsum(graph):
     """ finds the mode(s) that have the smallest sum of distance to all other nodes. """
-    assert isinstance(graph, Graph)
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
     adj_mat = graph.all_pairs_shortest_paths()
     for n in adj_mat:
         adj_mat[n] = sum(adj_mat[n].values())
@@ -1317,7 +1402,8 @@ def minsum(graph):
 
 def minmax(graph):
     """ finds the node(s) with shortest distance to all other nodes. """
-    assert isinstance(graph, Graph)
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
     adj_mat = graph.all_pairs_shortest_paths()
     for n in adj_mat:
         adj_mat[n] = max(adj_mat[n].values())
@@ -1333,6 +1419,8 @@ def shortest_tree_all_pairs(graph):
     to a new branch when it has exhausted a branch in the tree.
     :return: path
     """
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
     g = all_pairs_shortest_paths(graph)
     assert isinstance(g, dict)
 
@@ -1371,8 +1459,10 @@ def has_path(graph, path):
     :param path: list of nodes
     :return: boolean
     """
-    assert isinstance(graph, BasicGraph)
-    assert isinstance(path, (list, tuple))
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+    if not isinstance(path, (list, tuple)):
+        raise TypeError(f"Expected list or tuple, not {type(path)}")
     v1 = path[0]
     for v2 in path[1:]:
         if graph.edge(v1, v2) is None:
@@ -1389,8 +1479,15 @@ def all_simple_paths(graph, start, end):
     :param end: node
     :return: list of paths
     """
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+    if start not in graph:
+        raise ValueError("start not in graph.")
+    if end not in graph:
+        raise ValueError("end not in graph.")
     if start == end:
         raise ValueError("start is end")
+
     if not graph.is_connected(start, end):
         return []
 
@@ -1416,10 +1513,16 @@ def all_paths(graph, start, end):
     :param end: node
     :return: list of paths unique from start to end.
     """
-    cache = {}
-
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+    if start not in graph:
+        raise ValueError("start not in graph.")
+    if end not in graph:
+        raise ValueError("end not in graph.")
     if start == end:
         raise ValueError("start is end")
+
+    cache = {}
     if not graph.is_connected(start, end):
         return []
     paths = [(start,)]
@@ -1468,6 +1571,13 @@ def all_paths(graph, start, end):
 
 def degree_of_separation(graph, n1, n2):
     """ Calculates the degree of separation between 2 nodes."""
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+    if n1 not in graph:
+        raise ValueError("n1 not in graph.")
+    if n2 not in graph:
+        raise ValueError("n2 not in graph.")
+
     assert n1 in graph.nodes()
     p = breadth_first_search(graph, n1, n2)
     return len(p)-1
@@ -1476,6 +1586,15 @@ def degree_of_separation(graph, n1, n2):
 def loop(graph, start, mid, end=None):
     """ Returns a loop passing through a defined mid-point and returning via a different set of nodes to the outward
         journey. If end is None we return to the start position. """
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+    if start not in graph:
+        raise ValueError("start not in graph.")
+    if mid not in graph:
+        raise ValueError("mid not in graph.")
+    if end is not None and end not in graph:
+        raise ValueError("end not in graph.")
+
     _, p = graph.shortest_path(start, mid)
     g2 = graph.copy()
     if end is not None:
@@ -1492,11 +1611,19 @@ def loop(graph, start, mid, end=None):
 
 def avoids(graph, start, end, obstacles):
     """ Returns a path through the graph avoiding the obstacles"""
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+    if start not in graph:
+        raise ValueError("start not in graph.")
+    if end is not None and end not in graph:
+        raise ValueError("end not in graph.")
+
     g2 = graph.copy()
-    for each in obstacles:
-        assert isinstance(each, int)
-    for o in obstacles:
-        g2.del_node(o)
+    for obstacle in obstacles:
+        if obstacle not in graph:
+            raise ValueError(f"obstacle not found {obstacle}")
+        g2.del_node(obstacle)
+
     _, p = g2.shortest_path(start, end)
     return p
 
@@ -1506,7 +1633,8 @@ class ScanThread(object):
 
     """ search thread for bidirectional search """
     def __init__(self, cost, n1, path=()):
-        assert isinstance(path, tuple)
+        if not isinstance(path, tuple):
+            raise TypeError(f"Expected a tuple, not {type(path)}")
         self.cost = cost
         self.n1 = n1
         self.path = path
@@ -1537,7 +1665,15 @@ class BiDirectionalSearch(object):
         """
         :param graph: class Graph.
         :param start: first node in the search.
+        :param direction: bool
         """
+        if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+            raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+        if start not in graph:
+            raise ValueError("start not in graph.")
+        if not isinstance(direction, bool):
+            raise TypeError(f"Expected boolean, not {type(direction)}")
+
         self.q = []
         self.q.append(ScanThread(cost=0, n1=start))
         self.graph = graph
@@ -1671,7 +1807,13 @@ def shortest_path_bidirectional(graph, start, end):
     A = c * (R**2), for single source shortest path
     A = c * 2 * (1/2 * R) **2, for bidirectional shortest path
     """
-    assert isinstance(graph, Graph)
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+    if start not in graph:
+        raise ValueError("start not in graph.")
+    if end not in graph:
+        raise ValueError("end not in graph.")
+
     forward = BiDirectionalSearch(graph, start=start, direction=BiDirectionalSearch.forward)
     backward = BiDirectionalSearch(graph, start=end, direction=BiDirectionalSearch.backward)
 
@@ -1689,7 +1831,7 @@ class ShortestPathCache(object):
     """
     def __init__(self, graph):
         if not isinstance(graph, Graph):
-            raise TypeError(f"expected type Graph, not {type(graph)}")
+            raise TypeError(f"Expected type Graph, not {type(graph)}")
         self.graph = graph
         self.cache = {}
 
@@ -1722,6 +1864,11 @@ class ShortestPathCache(object):
 
     def shortest_path(self, start, end):
         """ Shortest path method that utilizes caching and bidirectional search """
+        if start not in self.graph:
+            raise ValueError("start not in graph.")
+        if end not in self.graph:
+            raise ValueError("end not in graph.")
+
         d = 0 if start == end else None
         p = ()
 
@@ -2190,6 +2337,9 @@ def critical_path(graph):
         for n1, n2 in dependencies:
             g.add_edge(n1, n2, 0)
     """
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+
     # 1. A topologically sorted list of nodes is prepared (topo.order).
     order = list(topological_sort(graph))  # this will raise if there are loops.
 
@@ -2225,6 +2375,9 @@ def critical_path_minimize_for_slack(graph):
     the concurrent resource requirements by inserting the minimal
     number of artificial dependencies.
     """
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+
     cpl, schedule = critical_path(graph)
     phases = phase_lines(graph)
 
