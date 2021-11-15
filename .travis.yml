@@ -3,7 +3,7 @@ dist: focal
 
 install: python setup.py install
 script:
-  - nosetests --with-coverage ./tests
+  - travis_wait 30 nosetests --with-coverage ./tests
   - codecov --token=fda2c226-4558-416a-832f-4ca5d7a98333
 
 matrix:
