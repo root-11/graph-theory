@@ -9,6 +9,57 @@ a traffic scheduling problem.
 """
 
 
+class Load(object):
+    _empty = frozenset()
+
+    __slots__ = ["id", "start", "ends", "prohibited"]
+
+    def __init__(self, id, start, ends, prohibited=None):
+        """
+        :param id: unique load reference
+        :param start: start node
+        :param ends: end node(s)
+            - list, set, frozenset, tuples are interpreted as a number of candidate destinations.
+            - all other types are interpreted as 1 destination.
+        :param prohibited: iterable with nodes that cannot be in the solution.
+        """
+        self.id = id
+        self.start = start
+        if isinstance(ends, frozenset):
+            if not ends:
+                raise ValueError(f"end is an empty {type(ends)}?")
+            self.ends = ends
+        elif isinstance(ends, (list, set, tuple)):
+            if not ends:
+                raise ValueError(f"end is an empty {type(ends)}?")
+            self.ends = frozenset(ends)
+        else:
+            self.ends = frozenset([ends])
+        assert isinstance(self.ends, frozenset), "bad logic!"
+
+        if prohibited is not None:
+            if not isinstance(prohibited, (list, frozenset, set, tuple)):
+                raise TypeError(f"Got {type(prohibited)}, expected list, set or tuple")
+            self.prohibited = frozenset(prohibited)
+        else:
+            self.prohibited = Load._empty  # link to an empty frozen set.
+
+    def __str__(self):
+        return f"Load(id={self.id}, start={self.start}, end={self.ends}, prohibited={self.prohibited})"
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __eq__(self, other):
+        if not isinstance(other, Load):
+            raise TypeError
+        return all([
+            self.start == other.start,
+            self.ends == other.ends,
+            self.prohibited == other.prohibited
+        ])
+
+
 # ----------------- #
 # The main solver   #
 # ----------------- #
@@ -16,9 +67,19 @@ def jam_solver(graph, loads, timeout=None):
     """ an ensemble solver for the routing problem.
 
     :param graph network available for routing.
-    :param loads: dictionary with load id and preferred route. Example:
+    :param loads:
 
-        loads = {1: [1, 2, 3], 2: [3, 2, 1]}
+    loads_as_list = [
+        {'id': 1, 'start': 1, 'end': 3},  # keyword prohibited is missing.
+        {'id': 2, 'start': 2, 'end': [3, 4, 5], 'prohibited': [7, 8, 9]},
+        {'id': 3, 'start': 3, 'end': [4, 5], 'prohibited': [2]}  # gateway to off limits.
+    ]
+
+    loads_as_dict = {
+        1: (1, 3),  # start, end, None
+        2: (2, [3, 4, 5], [7, 8, 9]),  # start, end(s), prohibited
+        3: (3, [4, 5], [2])
+    }
 
     :param timeout: None, float or int timeout in milliseconds.
     """
@@ -57,23 +118,63 @@ def check_user_input(graph, loads):
     """ checks the user inputs to be valid.
 
     :param graph network available for routing.
-    :param loads: dictionary with load id and preferred route. Example:
+    :param loads: dictionary or list with load id and preferred route. Examples:
 
-        loads = {1: [1, 2, 3], 2: [3, 2, 1]}
+    loads_as_list = [
+        {'id': 1, 'start': 1, 'end': 3},  # keyword prohibited is missing.
+        {'id': 2, 'start': 2, 'end': [3, 4, 5], 'prohibited': [7, 8, 9]},
+        {'id': 3, 'start': 3, 'end': [4, 5], 'prohibited': [2]}  # gateway to off limits.
+    ]
+
+    loads_as_dict = {
+        1: (1, 3),  # start, end, None
+        2: (2, [3, 4, 5], [7, 8, 9]),  # start, end(s), prohibited
+        3: (3, [4, 5], [2])
+    }
+
+    returns: list of Loads
     """
-    assert isinstance(graph, Graph)
-    assert isinstance(loads, dict)
-    for v in loads.values():
-        assert isinstance(v, list)
-        assert all(i in graph.nodes() for i in v)
+    if not isinstance(graph, Graph):
+        raise TypeError(f"expected graph, not {type(graph)}")
 
-    for load_id, path in loads.items():
-        if len(path) > 1:
-            if not graph.has_path(path):
-                _, new_path = graph.shortest_path(path[0], path[-1])
-                if not new_path:
-                    raise ValueError(f"No path found between {path[0]} and {path[-1]}")
-                loads[load_id] = new_path
+    all_loads = {}
+    all_nodes = set()
+    if isinstance(loads, list):
+        for d in loads:
+            if not isinstance(d, dict):
+                raise TypeError(f"Got {type(d)}, expected dict.")
+            L = Load(**d)
+            all_loads[L.id] = L
+            all_nodes.add(L.start)
+            all_nodes.update(L.ends)
+    elif isinstance(loads, dict):
+        for i, t in loads.items():
+            if not isinstance(t, (tuple, list)):
+                raise TypeError(f"Got {type(t)}, expected tuple")
+            L = Load(i, *t)
+            all_loads[L.id] = L
+            all_nodes.add(L.start)
+            all_nodes.update(L.ends)
+    else:
+        raise TypeError("loads not recognised. Please see docstring.")
+
+    if not all_nodes.issubset(set(graph.nodes())):
+        raise ValueError("Some load nodes are not in the graph.")
+
+    for load in all_loads.values():
+        if load.prohibited:
+            gc = graph.copy()
+            for n in load.prohibited:
+                gc.del_node(n)
+        else:
+            gc = graph
+
+        for node in gc.breadth_first_walk(start=load.start):
+            if node in load.ends:
+                break
+        else:
+            raise ValueError(f"load {load.id} has no path from {load.start} to {load.ends}")
+    return all_loads
 
 
 def path_to_moves(path):
@@ -146,14 +247,11 @@ def bi_directional_progressive_bfs(graph, loads, timeout=None):
     """ Bi-directional search which searches to the end of open options for each load.
 
     :param graph network available for routing.
-    :param loads: dictionary with load id and preferred route. Example:
-
-        loads = {1: [1, 2, 3], 2: [3, 2, 1]}
-
+    :param loads: dictionary with loads
     :param timeout: None, float or int timeout in milliseconds.
     """
-    initial_state = tuple(((load_id, route[0]) for load_id, route in loads.items()))
-    final_state = tuple(((load_id, route[-1]) for load_id, route in loads.items()))
+    initial_state = tuple(((ld.id, ld.start) for ld in loads.values()))
+    final_state = tuple(((ld.id, ld.ends) for ld in loads.values()))
 
     movements = Graph()
     forward_queue = [initial_state]
@@ -313,53 +411,61 @@ def bi_directional_bfs(graph, loads, timeout=None):
 def pure_hill_climbing_algorithm(graph, loads, timeout=None):
     """ A purist hill-climbing algorithm
     :param graph: graph network available for routing.
-    :param loads: dictionary with load id and preferred route. Example:
-
-        loads = {1: [1, 2, 3], 2: [3, 2, 1]}
+    :param loads: dict with Loads
 
     :param timeout: None, float or int timeout in milliseconds.
     :return: list of moves.
     """
-    initial_state = tuple(((load_id, route[0]) for load_id, route in loads.items()))
-    final_state = tuple(((load_id, route[-1]) for load_id, route in loads.items()))
+    if not isinstance(graph, Graph):
+        raise TypeError
+    if not isinstance(loads, dict):
+        raise TypeError
+    if not all(isinstance(i, Load) for i in loads.values()):
+        raise TypeError
+
+    initial_state = tuple(((ld.id, ld.start) for ld in loads.values()))
     movements = Graph()
 
     states = [(0, initial_state)]
 
     timer = Timer(timeout=timeout)
-    solved = False
 
-    while not solved:
+    solution = None
+    while not solution:
         timer.timeout_check()
 
         score, state = states.pop(0)
         occupied = {i[1] for i in state}
         for load_id, location in state:
-            if solved: break
+            load = loads[load_id]
+            if solution: break
 
-            options = (e for s, e, d in graph.edges(from_node=location) if e not in occupied)
+            options = (e for s, e, d in graph.edges(from_node=location) if
+                       e not in occupied and
+                       e not in load.prohibited)
             for option in options:
                 new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state)
 
                 if new_state in movements:  # abandon branch
                     continue
-                else:
-                    movements.add_edge(state, new_state, 1)
 
-                    new_score = sum(1 if a == b else 0 for a, b in zip(new_state, final_state))
-                    if new_score < score:
-                        continue
-                    else:
-                        states.append((new_score, new_state))
-                        states = [(score, s) for score, s in states if score >= new_score]
+                movements.add_edge(state, new_state, 1)
 
-                if final_state == new_state:
-                    solved = True
+                check = [loc in loads[lid].ends for lid, loc in new_state]
+                if all(check):
+                    solution = new_state
                     break
+
+                new_score = sum([1 for c in check if c])
+                if new_score < score:
+                    continue
+                states.append((new_score, new_state))
+                states = [(score, s) for score, s in states if score >= new_score]
+
         if not states:
             raise Exception("No solution found")  # hill climbing doesn't lead to a solution
 
-    steps, best_path = movements.shortest_path(initial_state, final_state)
+    steps, best_path = movements.shortest_path(initial_state, solution)
     moves = path_to_moves(best_path)
     return moves
 

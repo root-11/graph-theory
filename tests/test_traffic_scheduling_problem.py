@@ -5,7 +5,51 @@ from tests.test_graph import graph5x5
 
 from graph.traffic_scheduling_problem import jam_solver, bi_directional_bfs, bi_directional_progressive_bfs, bfs_resolve
 from graph.traffic_scheduling_problem import check_user_input
+from graph.traffic_scheduling_problem import pure_hill_climbing_algorithm
 from graph.traffic_scheduling_problem import moves_to_synchronous_moves
+
+
+def test_data_loading():
+    g = Graph(from_list=[
+        (1, 2, 1.0), (2, 3, 0.2), (3, 4, 0.1), (4, 5, 0.5),
+        (2, 7, 1.0), (2, 8, 0.5), (8, 9, 10)
+    ])
+
+    loads_as_list = [
+        {'id': 1, 'start': 1, 'end': 3},  # keyword prohibited is missing.
+        {'id': 2, 'start': 2, 'end': [3, 4, 5], 'prohibited': [7, 8, 9]},
+        {'id': 3, 'start': 3, 'end': [4, 5], 'prohibited': [2]}  # gateway to off limits.
+    ]
+    list_of_loads1 = list(check_user_input(g, loads_as_list).values())
+
+    loads_as_dict = {
+        1: (1, 3),  # start, end, None
+        2: (2, [3, 4, 5], [7, 8, 9]),  # start, end(s), prohibited
+        3: (3, [4, 5], [2])
+    }
+    list_of_loads2 = list(check_user_input(g, loads_as_dict).values())
+
+    assert list_of_loads1 == list_of_loads2
+
+
+def test_hill_climb():
+    g = Graph()
+    for s, e in [(1, 2), (2, 3)]:
+        g.add_edge(s, e, 1, bidirectional=True)
+    for s, e in [(1, 4), (4, 3)]:
+        g.add_edge(s, e, 1, bidirectional=False)
+
+    loads = check_user_input(g, loads={1: [1, 3], 2: [3, 1]})
+    sequence = pure_hill_climbing_algorithm(g, loads)
+
+    solution1 = [{1: (1, 4)}, {2: (3, 2)}, {2: (2, 1)}, {1: (4, 3)}]
+    solution2 = [{1: (1, 4)}, {2: (3, 2)}, {1: (4, 3)}, {2: (2, 1)}]
+
+    assert sequence in [solution1, solution2]
+
+    concurrent_moves = moves_to_synchronous_moves(sequence, loads)
+    assert concurrent_moves == [{1: (1, 4), 2: (3, 2)},
+                                {2: (2, 1), 1: (4, 3)}]
 
 
 def test_simple_reroute():
