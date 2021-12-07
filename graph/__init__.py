@@ -1618,11 +1618,14 @@ def avoids(graph, start, end, obstacles):
     if end is not None and end not in graph:
         raise ValueError("end not in graph.")
 
-    g2 = graph.copy()
-    for obstacle in obstacles:
-        if obstacle not in graph:
-            raise ValueError(f"obstacle not found {obstacle}")
-        g2.del_node(obstacle)
+    if not obstacles:
+        g2 = graph
+    else:
+        g2 = graph.copy()
+        for obstacle in obstacles:
+            if obstacle not in graph:
+                raise ValueError(f"obstacle not found {obstacle}")
+            g2.del_node(obstacle)
 
     _, p = g2.shortest_path(start, end)
     return p
