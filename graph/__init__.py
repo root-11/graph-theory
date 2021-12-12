@@ -371,13 +371,14 @@ class BasicGraph(object):
 
 # Graph functions
 # -----------------------------
-def shortest_path(graph, start, end):
+def shortest_path(graph, start, end, avoids=None):
     """ single source shortest path algorithm.
     :param graph: class Graph
     :param start: start node
     :param end: end node
-    :return: distance, path (as list),
-             returns float('inf'), [] if no path exists.
+    :param avoids: optional set,frozenset or list of nodes that cannot be a part of the path.
+    :return distance, path (as list),
+            returns float('inf'), [] if no path exists.
     """
     if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
         raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
@@ -385,8 +386,14 @@ def shortest_path(graph, start, end):
         raise ValueError(f"{start} not in graph")
     if end not in graph:
         raise ValueError(f"{end} not in graph")
+    if avoids is None:
+        visited = set()
+    elif not isinstance(avoids, (frozenset, set, list)):
+        raise TypeError(f"Expect obstacles as set or frozenset, not {type(avoids)}")
+    else:
+        visited = set(avoids)
 
-    q, visited, minimums = [(0, 0, start, ())], set(), {start: 0}
+    q, minimums = [(0, 0, start, ())], {start: 0}
     i = 1
     while q:
         (cost, _, v1, path) = heappop(q)
@@ -1609,28 +1616,6 @@ def loop(graph, start, mid, end=None):
     return lp
 
 
-def avoids(graph, start, end, obstacles):
-    """ Returns a path through the graph avoiding the obstacles"""
-    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
-        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
-    if start not in graph:
-        raise ValueError("start not in graph.")
-    if end is not None and end not in graph:
-        raise ValueError("end not in graph.")
-
-    if not obstacles:
-        g2 = graph
-    else:
-        g2 = graph.copy()
-        for obstacle in obstacles:
-            if obstacle not in graph:
-                raise ValueError(f"obstacle not found {obstacle}")
-            g2.del_node(obstacle)
-
-    _, p = g2.shortest_path(start, end)
-    return p
-
-
 class ScanThread(object):
     __slots__ = ['cost', 'n1', 'path']
 
@@ -1664,11 +1649,12 @@ class BiDirectionalSearch(object):
             return "forward scan"
         return "backward scan"
 
-    def __init__(self, graph, start, direction=True):
+    def __init__(self, graph, start, direction=True, avoids=None):
         """
         :param graph: class Graph.
         :param start: first node in the search.
         :param direction: bool
+        :param avoids: nodes that cannot be a part of the solution.
         """
         if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
             raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
@@ -1676,6 +1662,12 @@ class BiDirectionalSearch(object):
             raise ValueError("start not in graph.")
         if not isinstance(direction, bool):
             raise TypeError(f"Expected boolean, not {type(direction)}")
+        if avoids is None:
+            self.avoids = frozenset()
+        elif not isinstance(avoids, (frozenset, set, list)):
+            raise TypeError(f"Expect obstacles as set or frozenset, not {type(avoids)}")
+        else:
+            self.avoids = frozenset(avoids)
 
         self.q = []
         self.q.append(ScanThread(cost=0, n1=start))
@@ -1718,9 +1710,9 @@ class BiDirectionalSearch(object):
                 self.q = [a for a in self.q if a.cost < sp_length]
 
         if self.direction == self.forward:
-            edges = sorted((d, e) for s, e, d in self.graph.edges(from_node=st.n1))
+            edges = sorted((d, e) for s, e, d in self.graph.edges(from_node=st.n1) if e not in self.avoids)
         else:
-            edges = sorted((d, s) for s, e, d in self.graph.edges(to_node=st.n1))
+            edges = sorted((d, s) for s, e, d in self.graph.edges(to_node=st.n1) if s not in self.avoids)
 
         for dist, n2 in edges:
             n2_dist = st.cost + dist
@@ -1741,12 +1733,12 @@ class BiDirectionalSearch(object):
         other.update(sp, sp_length)
 
 
-def shortest_path_bidirectional(graph, start, end):
+def shortest_path_bidirectional(graph, start, end, avoids=None):
     """ Bidirectional search using lower bound.
     :param graph: Graph
     :param start: start node
     :param end: end node
-    :param reverse_graph: an existing reverse graph of graph
+    :param avoids: nodes that cannot be a part of the shortest path.
     :return: shortest path
 
     In Section 3.4.6 of Artificial Intelligence: A Modern Approach, Russel and
@@ -1817,8 +1809,8 @@ def shortest_path_bidirectional(graph, start, end):
     if end not in graph:
         raise ValueError("end not in graph.")
 
-    forward = BiDirectionalSearch(graph, start=start, direction=BiDirectionalSearch.forward)
-    backward = BiDirectionalSearch(graph, start=end, direction=BiDirectionalSearch.backward)
+    forward = BiDirectionalSearch(graph, start=start, direction=BiDirectionalSearch.forward, avoids=avoids)
+    backward = BiDirectionalSearch(graph, start=end, direction=BiDirectionalSearch.backward, avoids=avoids)
 
     while any((forward.q, backward.q)):
         forward.search(other=backward)
@@ -1837,6 +1829,7 @@ class ShortestPathCache(object):
             raise TypeError(f"Expected type Graph, not {type(graph)}")
         self.graph = graph
         self.cache = {}
+        self.repeated_cache = {}
 
     def _update_cache(self, path):
         """ private method for updating the cache for future lookups.
@@ -1845,7 +1838,8 @@ class ShortestPathCache(object):
         Given a shortest path, all steps along the shortest path,
         also constitute the shortest path between each pair of steps.
         """
-        assert isinstance(path, (list, tuple))
+        if not isinstance(path, (list, tuple)):
+            raise TypeError
         b = len(path)
         if b < 2:
             return
@@ -1865,23 +1859,40 @@ class ShortestPathCache(object):
             dist = self.graph.distance_from_path(section)
             self.cache[(section[0], section[-1])] = (dist, section)
 
-    def shortest_path(self, start, end):
+    def shortest_path(self, start, end, avoids=None):
         """ Shortest path method that utilizes caching and bidirectional search """
         if start not in self.graph:
             raise ValueError("start not in graph.")
         if end not in self.graph:
             raise ValueError("end not in graph.")
+        if avoids is None:
+            pass
+        elif not isinstance(avoids, (frozenset, set, list)):
+            raise TypeError(f"Expect obstacles as None, set or frozenset, not {type(avoids)}")
+        else:
+            avoids = frozenset(avoids)
 
         d = 0 if start == end else None
         p = ()
 
-        if d is None:  # is it cached?
-            d, p = self.cache.get((start, end), (None, None))
+        if isinstance(avoids, frozenset):
+            # as avoids can be volatile, it is not possible to benefit from the caching
+            # methodology. This does however not mean that we need to forfeit the benefit
+            # of bidirectional search.
+            hash_key = hash(avoids)
+            d, p = self.repeated_cache.get((start, end, hash_key), (None, None))
+            if d is None:
+                d, p = shortest_path_bidirectional(self.graph, start, end, avoids=avoids)
+                self.repeated_cache[(start, end, hash_key)] = (d, p)
+        else:
+            if d is None:  # is it cached?
+                d, p = self.cache.get((start, end), (None, None))
 
-        if d is None:  # search for it.
-            _, p = shortest_path_bidirectional(self.graph, start, end)
-            self._update_cache(p)
-            d, p = self.cache[(start, end)]
+            if d is None:  # search for it.
+                _, p = shortest_path_bidirectional(self.graph, start, end)
+                self._update_cache(p)
+                d, p = self.cache[(start, end)]
+
         return d, list(p)
 
 
@@ -1898,19 +1909,20 @@ class Graph(BasicGraph):
         super().__init__(from_dict=from_dict, from_list=from_list)
         self._cache = None
 
-    def shortest_path(self, start, end, memoize=False):
+    def shortest_path(self, start, end, memoize=False, avoids=None):
         """
         :param start: start node
         :param end: end node
         :param memoize: boolean (stores paths in a cache for faster repeated lookup)
+        :param avoids: optional. A frozen set of nodes that cannot be on the path.
         :return: distance, path as list
         """
         if not memoize:
-            return shortest_path(graph=self, start=start, end=end)
+            return shortest_path(graph=self, start=start, end=end, avoids=avoids)
 
         if self._cache is None:
             self._cache = ShortestPathCache(graph=self)
-        return self._cache.shortest_path(start, end)
+        return self._cache.shortest_path(start, end, avoids=avoids)
 
     def shortest_path_bidirectional(self, start, end):
         """
@@ -2167,15 +2179,6 @@ class Graph(BasicGraph):
         :return: path as list
         """
         return loop(self, start, mid, end)
-
-    def avoids(self, start, end, obstacles):
-        """ finds the shortest path between start and end avoiding the obstacles
-        :param start: node
-        :param end: node
-        :param obstacles: nodes as iterable
-        :return: path as list
-        """
-        return avoids(self, start, end, obstacles)
 
 
 class Graph3D(Graph):

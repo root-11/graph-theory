@@ -485,7 +485,7 @@ def test_loop():
 
 def test_avoids():
     g = graph4x4()
-    p = Graph.avoids(g, 1, 16, (3, 7, 11, 10))
+    d, p = Graph.shortest_path(g, 1, 16, avoids={3, 7, 11, 10})
     assert p == [1, 5, 9, 13, 14, 15, 16], p
 
 
