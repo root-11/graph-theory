@@ -109,34 +109,32 @@ def jam_solver(graph, loads, timeout=None, synchronous_moves=True, return_on_fir
     else:
         raise TypeError(f"Expect timeout as int or float, not {type(timeout)}")
 
-    distance, path, movements = float('inf'), None, Graph()
+    distance, path, movements = float('inf'), [], Graph()
     distance_cache = DistanceCache(graph, load_set.values())
-    try:
 
-        for method in methods:  # each search algorithm works on the movements-Graph.
-            start = process_time()
-            try:
-                d, p = method(graph, load_set, timer, distance_cache, movements)
-                end = process_time()
-                print(method.__name__, "| ", round(d, 4), "moves | time", round(end - start, 4))
-            except NoSolution:
-                end = process_time()
-                print(method.__name__, "| no solution | time", round(end - start, 4))
-                continue
-            if d < distance:
-                distance, path = d, p
-                if return_on_first:
-                    break
+    for method in methods:  # each search algorithm works on the movements-Graph.
+        if timer.expired():
+            break
 
-    except TimeoutError:
+        start = process_time()
+        try:
+            d, p = method(graph, load_set, timer, distance_cache, movements)
+            end = process_time()
+            print(method.__name__[:10], "| ", round(d, 4), "moves | time", round(end - start, 4))
+        except NoSolution:
+            end = process_time()
+            print(method.__name__[:10], "| no solution | time", round(end - start, 4))
+            continue
+        if d < distance:
+            distance, path = d, p
+            if return_on_first:
+                break
 
-        if path is None:
-            if timeout is None:
-                raise NoSolution(f"no solution found.")
-            else:
-                raise UnSolvable(f"no solution found with timeout = {timeout}")
+    if path is None:
+        if timer.expired():
+            raise UnSolvable(f"no solution found with timeout = {timeout} msecs")
         else:
-            pass  # we return the solution we found so far.
+            raise NoSolution(f"no solution found.")
 
     moves = path_to_moves(path)
     if synchronous_moves:
@@ -155,14 +153,19 @@ class Timer(object):
         self.limit = timeout
         self.start = process_time()
         self._counter = 0
+        self._expired = False
 
-    def timeout_check(self):
+    def expired(self):
+        if self._expired:
+            return True
         if self._counter > 0:
             self._counter -= 1
-        else:
-            self._counter += 1000
-            if process_time() - self.start > (self.limit / 1000):
-                raise TimeoutError(f"No solution found in {self.limit} ms")
+            return False
+
+        self._counter += 100
+        if process_time() - self.start > (self.limit / 1000):
+            self._expired = True
+        return False
 
 
 # helpers
@@ -296,32 +299,24 @@ def bfs_resolve(graph, loads, timer, distance_cache, movements):
 
     :param graph network available for routing.
     :param loads: dictionary with load id and preferred route. Example:
-
-        loads = {1: [1, 2, 3], 2: [3, 2, 1]}
-
     :param timer: Instance of Timer
 
     """
     check_inputs(graph, loads, timer, distance_cache, movements)
-
     initial_state = tuple(((ld.id, ld.start) for ld in loads.values()))
-
-    if not movements.nodes():
-        states = [(0, 0, initial_state)]  # 0,0 is distance_traveled, distance left
-    else:
-        states = [(0, 0, s) for s in movements.nodes(out_degree=0)]
-
+    states = [initial_state] + [s for s in movements.nodes(out_degree=0)]  # 0,0 is distance_traveled, distance left
     solution = None
-    while not solution:
-        timer.timeout_check()
+    done = False
+    while not done:
+        if not states or timer.expired():
+            break
 
         state = states.pop(0)
         occupied = {i[1] for i in state}
         for load_id, location in state:
 
-            if solution:
+            if done:
                 break
-            timer.timeout_check()
 
             load = loads[load_id]
             options = sorted((d, e) for s, e, d in graph.edges(from_node=location)
@@ -339,12 +334,17 @@ def bfs_resolve(graph, loads, timer, distance_cache, movements):
                 check = [loc in loads[lid].ends for lid, loc in new_state]
                 if all(check):
                     solution = new_state
+                    done = True
                     break
 
-        if not states:
-            raise Exception("No solution found")
-
-    return movements.shortest_path(initial_state, solution)
+    if solution:
+        return movements.shortest_path(initial_state, solution)
+    if not states:
+        for end_state in end_state_generator(loads):
+            d, p = movements.shortest_path(initial_state, end_state)
+            if p:
+                return d, p
+    return float('inf'), []
 
 
 def shortest_path_multiple_ends(movements, start, ends):
@@ -364,15 +364,20 @@ def shortest_path_multiple_ends(movements, start, ends):
     return d_min, p_min
 
 
-def possible_end_state_gen(loads):
+def end_state_generator(loads):
     """ helper for bidirectional search.
     generates end state for loads with multiple destinations
     """
-    destinations = [list(ld.ends) for ld in loads.values()]
+    ids, destinations = [],[]
+    for load in loads.values():
+        ids.append(load.id)
+        destinations.append([list(load.ends)])
+
     for combo in product(*destinations):
         if len(combo) != len(destinations):
             continue  # it's a duplicate.
-        yield combo
+        state = tuple((lid, loc[0]) for lid, loc in zip(ids, combo))
+        yield state
 
 
 class LoadPath(object):
@@ -380,7 +385,7 @@ class LoadPath(object):
         self.graph = graph
         self.load = load
         self.current_location = load.start
-        paths = [graph.shortest_path(load.start, end) for end in load.ends]
+        paths = [graph.shortest_path(load.start, end, avoids=load.prohibited) for end in load.ends]
         paths.sort()  # shortest on top.
         d,p = paths[0]
         self.path = p
@@ -426,8 +431,6 @@ class LoadPath(object):
             pass  # wait.
 
 
-
-
 def bi_directional_progressive_bfs(movements, graph, loads, timer=None):
     """ Bi-directional search which searches to the end of open options for each load.
 
@@ -445,8 +448,8 @@ def bi_directional_progressive_bfs(movements, graph, loads, timer=None):
 
     solved = False
     while not solved:
-        if timer is not None:
-            timer.timeout_check()
+        if timer.expired():
+            break
 
         # forward
         if not forward_queue:
@@ -553,8 +556,8 @@ def bi_directional_bfs(movements, graph, loads, timer=None):
     solution = None
 
     while solution is None:
-        if timer is not None:
-            timer.timeout_check()
+        if timer.expired():
+            break
 
         # forward
         if not forward_queue:
@@ -611,23 +614,44 @@ class DistanceCache(object):
         if not isinstance(graph, Graph):
             raise TypeError
         self.graph = graph
-        self.cache = {}
+        self.goal_cache = {}
+        self.start_cache = {}
         self.loads = {load.id: load for load in loads}
 
-    def state(self, state):
-        d_min = self.cache.get(state, None)
+    def state_to_goal(self, state):
+        """ distance from state to goal """
+        d_min = self.goal_cache.get(state, None)
         if d_min is None:
-            d_min = sum(self.load(load_id, loc) for load_id, loc in state)
-            self.cache[state] = d_min
+            d_min = sum(self.load_to_end(load_id, loc) for load_id, loc in state)
+            self.goal_cache[state] = d_min
         return d_min
 
-    def load(self, load_id, loc):
+    def load_to_end(self, load_id, loc):
+        """ distance from loc to nearest end."""
         key = (load_id, loc)
-        d_min = self.cache.get(key, None)
+        d_min = self.goal_cache.get(key, None)
         if d_min is None:
             load = self.loads[load_id]
             d_min = min([d for d, p in (self.graph.shortest_path(loc, e, avoids=load.prohibited) for e in load.ends)])
-            self.cache[key] = d_min
+            self.goal_cache[key] = d_min
+        return d_min
+
+    def state_from_start(self, state):
+        """ distance from start to current state """
+        d_min = self.start_cache.get(state, None)
+        if d_min is None:
+            d_min = sum(self.load_from_start(load_id, loc) for load_id, loc in state)
+            self.start_cache[state] = d_min
+        return d_min
+
+    def load_from_start(self, load_id, loc):
+        """ distance from start to loc"""
+        key = (load_id, loc)
+        d_min = self.start_cache.get(key, None)
+        if d_min is None:
+            load = self.loads[load_id]
+            d_min = min([d for d, p in (self.graph.shortest_path(load.start, loc, avoids=load.prohibited) for e in load.ends)])
+            self.start_cache[key] = d_min
         return d_min
 
 
@@ -659,10 +683,11 @@ def hill_climb(graph, loads, timer, distance_cache, movements):
     initial_state = tuple(((ld.id, ld.start) for ld in loads.values()))
 
     states = [(0, initial_state)]
-    best_score = float('inf')
+    shortest_distance_to_goal = float('inf')
     solution = None
     while not solution:
-        timer.timeout_check()
+        if timer.expired():
+            break
 
         score, state = states.pop(0)
         occupied = {i[1] for i in state}
@@ -676,9 +701,8 @@ def hill_climb(graph, loads, timer, distance_cache, movements):
             options = sorted((d, e) for s, e, d in graph.edges(from_node=location) if e not in occupied and e not in load.prohibited)
 
             for distance, option in options:
-
                 new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state)
-                timer.timeout_check()
+
                 if new_state in movements:  # abandon branch, it has already been checked.
                     continue
                 else:
@@ -689,21 +713,25 @@ def hill_climb(graph, loads, timer, distance_cache, movements):
                     solution = new_state
                     break
 
-                new_score = distance_cache.state(new_state)
-                if new_score > best_score:
+                distance_to_goal = distance_cache.state_to_goal(new_state)
+                if distance_to_goal > shortest_distance_to_goal:
                     continue
-                best_score = new_score
-                insort(states, (new_score, new_state))
-            states = [(score, s) for score, s in states if score <= best_score]
+                shortest_distance_to_goal = distance_to_goal
+                insort(states, (distance_to_goal, new_state))
+            states = [(score, s) for score, s in states if score <= shortest_distance_to_goal]
 
         if not states:
             raise NoSolution("No solution found")  # hill climbing doesn't lead to a solution
+
+    if not solution:
+        return float('inf'), []
 
     return movements.shortest_path(initial_state, solution)
 
 
 def simple_path(graph, loads, timer, distance_cache, movements):
-    """A very greed algorithm.
+    """An algorithm that seeks to progress each load along the
+    most direct route to the nearest goal.
 
     :param graph:
     :param loads:
@@ -713,19 +741,21 @@ def simple_path(graph, loads, timer, distance_cache, movements):
     :return:
     """
     check_inputs(graph, loads, timer, distance_cache, movements)
+    local_movements = Graph()
 
     all_loads = [LoadPath(graph, load) for load in loads.values()]
     occupied = {ld.start for ld in loads.values()}
 
     start = [(load.id, load.current_location) for load in all_loads]
 
-    while True:
+    while not timer.expired():
         # ask each load where they would like to go.
         end = []
         distance = 0
         for load in all_loads:
 
-            timer.timeout_check()
+            if timer.expired():
+                break
 
             if load.at_destination():
                 next_location = load.current_location
@@ -750,7 +780,8 @@ def simple_path(graph, loads, timer, distance_cache, movements):
             end.append((load.id, next_location))
 
         a, b = tuple(start), tuple(end)
-        if movements.edge(a, b) is None:  # then we're progressing.
+        if local_movements.edge(a, b) is None:  # then we're progressing.
+            local_movements.add_edge(a, b, distance)
             movements.add_edge(a, b, distance)
         else:  # we are not progressing!
             break
@@ -760,9 +791,8 @@ def simple_path(graph, loads, timer, distance_cache, movements):
         initial = tuple((load.id, load.start) for load in all_loads)
         final = tuple((load.id, load.current_location) for load in all_loads)
         return movements.shortest_path(initial, final)
-
     else:
-        raise NoSolution("No solution found")  # hill climbing doesn't lead to a solution
+        return float('inf'), []
 
 
 def bidirectional_breadth_first_search(graph, loads, timer, distance_cache, movements):
@@ -776,29 +806,42 @@ def bidirectional_breadth_first_search(graph, loads, timer, distance_cache, move
     """
     check_inputs(graph, loads, timer, distance_cache, movements)
 
-    INF = float('inf')
     forward_max_distance = float('inf')
     reverse_max_distance = float('inf')
 
     initial_state = tuple(((ld.id, ld.start) for ld in loads.values()))
     forward_queue = [(0, initial_state)]
-    forward_edge = {initial_state}
+    assert isinstance(movements, Graph)
+    assert isinstance(distance_cache, DistanceCache)
+    if movements.nodes():
+        d_max = 0
+        for state in movements.nodes(out_degree=0):
+            d = distance_cache.state_from_start(state)
+            forward_queue.append((d, state))
+            d_max = max(d_max, d)
+        forward_queue.sort()
+
+    forward_edge = {b for a, b in forward_queue}
+    forward_queue_set = {b for a,b in forward_queue}
 
     reverse_queue = []
     reverse_edge = set()
+    reverse_queue_set = set()
     final_states = set()
 
-    for combo in possible_end_state_gen(loads):
-        t = tuple((ld, loc) for ld, loc in zip(loads, combo))
-        final_states.add(t)
-        reverse_edge.add(t)
-        reverse_queue.append((0, t))
+    for state in end_state_generator(loads):
+        final_states.add(state)
+        reverse_edge.add(state)
+        reverse_queue.append((0, state))
+        reverse_queue_set.add(state)
 
     while forward_queue or reverse_queue:
-        timer.timeout_check()
+        if timer.expired():
+            break
 
         if forward_queue:  # forward ....
             distance_traveled, state = forward_queue.pop(0)
+            forward_queue_set.remove(state)
 
             occupied = {i[1] for i in state}
             for load_id, location in state:
@@ -811,14 +854,15 @@ def bidirectional_breadth_first_search(graph, loads, timer, distance_cache, move
                     new_distance_traveled = distance_traveled + distance
 
                     new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state)
-                    # if new_state in forward_edge:
-                    #     continue
-                    if distance < movements.edge(state, new_state, INF):
-                        movements.add_edge(state, new_state, distance)
-                        forward_edge.add(new_state)
-                        insort(forward_queue, (new_distance_traveled, new_state))
-                    else:
+                    if new_state in forward_edge:
                         continue
+
+                    movements.add_edge(state, new_state, distance)
+                    forward_edge.add(new_state)
+
+                    if new_state not in forward_queue_set:
+                        forward_queue_set.add(new_state)
+                        insort(forward_queue, (new_distance_traveled, new_state))
 
                     if new_state in reverse_edge:
                         fmd, _ = movements.shortest_path(initial_state, new_state)
@@ -827,10 +871,10 @@ def bidirectional_breadth_first_search(graph, loads, timer, distance_cache, move
                         reverse_max_distance = min(spme, reverse_max_distance)
 
                         forward_queue = [(d, s) for d, s in forward_queue if d <= forward_max_distance]
-                        forward_queue = [(d, s) for d, s in forward_queue if d <= forward_max_distance]
 
         if reverse_queue:  # backward...
             distance_traveled, state = reverse_queue.pop(0)
+            reverse_queue_set.remove(state)
             occupied = {i[1] for i in state}
             for load_id, location in state:
                 load = loads[load_id]
@@ -842,14 +886,14 @@ def bidirectional_breadth_first_search(graph, loads, timer, distance_cache, move
                     new_distance_traveled = distance_traveled + distance
 
                     new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state)
-                    # if new_state in reverse_edge:
-                    #     continue
-                    if distance < movements.edge(new_state, state, INF):
-                        movements.add_edge(new_state, state, distance)
-                        reverse_edge.add(new_state)
-                        insort(reverse_queue, (new_distance_traveled, new_state))
-                    else:
+                    if new_state in reverse_edge:
                         continue
+
+                    movements.add_edge(new_state, state, distance)
+                    reverse_edge.add(new_state)
+                    if new_state not in reverse_queue_set:
+                        reverse_queue_set.add(new_state)
+                        insort(reverse_queue, (new_distance_traveled, new_state))
 
                     if new_state in forward_edge:
                         fmd, _ = movements.shortest_path(initial_state, new_state)
@@ -857,8 +901,8 @@ def bidirectional_breadth_first_search(graph, loads, timer, distance_cache, move
                         spme, _ = shortest_path_multiple_ends(movements, new_state, final_states)
                         reverse_max_distance = min(spme, reverse_max_distance)
 
-                        reverse_queue = [(d, s) for d, s in reverse_queue if d <= reverse_max_distance]
-
+    # even if the timer has expired, there may still be a valid non-optimal solution, that
+    # may be better than anything seen previously.
     min_distance, min_distance_path = shortest_path_multiple_ends(movements, initial_state, final_states)
     return min_distance, min_distance_path
 
@@ -875,31 +919,27 @@ def breadth_first_search(graph, loads, timer, distance_cache, movements):
     check_inputs(graph, loads, timer, distance_cache, movements)
 
     initial_state = tuple(((ld.id, ld.start) for ld in loads.values()))
-
-    if not movements.nodes():
-        states = [(0, 0, initial_state)]  # 0,0 is distance_traveled, distance left
-    else:
-        states = [(0, 0, s) for s in movements.nodes(out_degree=0)]
-
+    states = [(0, 0, initial_state)] + [(0, 0, s) for s in movements.nodes(out_degree=0)]  # 0,0 is distance left, distance_traveled
     min_distance, min_distance_path = float('inf'), None
 
     while states:
-        timer.timeout_check()
+        if timer.expired():
+            states.clear()
+            break
 
         # get the shortest distance traveled up first
-        distance_traveled, distance_left, state = states.pop(0)
+        distance_left, distance_traveled, state = states.pop(0)
 
         occupied = {i[1] for i in state}
         for load_id, location in state:
             load = loads[load_id]
-            # if location in load.ends:
-            #     continue
 
             options = sorted(
                 (d, e) for s, e, d in graph.edges(from_node=location) if e not in occupied and e not in load.prohibited)
 
             for distance, option in options:
-                timer.timeout_check()
+                if timer.expired():
+                    states.clear()
 
                 new_distance_traveled = distance_traveled + distance
 
@@ -907,15 +947,17 @@ def breadth_first_search(graph, loads, timer, distance_cache, movements):
                     continue
 
                 new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state)
-                if movements.edge(state, new_state, float('inf')) < distance:  # the option has already been explored.
+                if new_state in movements:
                     continue
+                # if movements.edge(state, new_state, float('inf')) < distance:  # the option has already been explored.
+                #     continue
                 movements.add_edge(state, new_state, distance)
 
-                new_distance_left = distance_cache.state(new_state)
-                if (new_distance_traveled, new_distance_left, new_state) in states:  # the edge is already known.
-                    continue
+                new_distance_left = distance_cache.state_to_goal(new_state)
+                # if (new_distance_traveled, new_distance_left, new_state) in states:  # the edge is already known.
+                #     continue
 
-                insort(states, (new_distance_traveled, new_distance_left, new_state))
+                insort(states, (new_distance_left, new_distance_traveled, new_state))
 
                 check = [loc in loads[lid].ends for lid, loc in new_state]
                 if all(check):  # then all loads are in a valid final state.
@@ -926,9 +968,9 @@ def breadth_first_search(graph, loads, timer, distance_cache, movements):
                         states = [(a, b, c) for a, b, c in states if a < min_distance]
 
     if not min_distance_path:
-        raise NoSolution
-
-    return min_distance, min_distance_path
+        return float('inf'), []
+    else:
+        return min_distance, min_distance_path
 
 
 # collection of solution methods for the routing problem.
@@ -939,8 +981,8 @@ methods = [
     # bi_directional_progressive_bfs,  # <-- the fastest, but not always the best method.
     # bi_directional_bfs,  # <-- best method so far.
     bidirectional_breadth_first_search,
-    breadth_first_search,
-    # bfs_resolve,  # very slow, but will eventually find the best solution.
+    # breadth_first_search,
+    bfs_resolve,  # very slow, but will eventually find the best solution.
 ]
 
 

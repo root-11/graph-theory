@@ -8,6 +8,8 @@ from graph.traffic_scheduling_problem import check_user_input, path_to_moves
 from graph.traffic_scheduling_problem import hill_climb
 from graph.traffic_scheduling_problem import moves_to_synchronous_moves
 from graph.traffic_scheduling_problem import breadth_first_search
+from graph.traffic_scheduling_problem import bidirectional_breadth_first_search
+from graph.traffic_scheduling_problem import bfs_resolve
 
 
 def test_data_loading():
@@ -29,7 +31,7 @@ def test_data_loading():
         1: (1, 3),  # start, end, None
         2: (2, [3, 4, 5], [7, 8, 9]),  # start, end(s), prohibited
         3: (3, [4, 5], [2]),
-        4: (8, )
+        4: (8,)
     }
     list_of_loads2 = list(check_user_input(g, loads_as_dict).values())
 
@@ -63,7 +65,8 @@ def test_hill_climb():
         g.add_edge(s, e, 1, bidirectional=False)
 
     loads = check_user_input(g, loads={1: [1, 3], 2: [3, 1]})
-    d, p = hill_climb(graph=g, loads=loads, timer=Timer(), distance_cache=DistanceCache(g, loads.values()), movements=Graph())
+    d, p = hill_climb(graph=g, loads=loads, timer=Timer(), distance_cache=DistanceCache(g, loads.values()),
+                      movements=Graph())
     moves = path_to_moves(p)
 
     concurrent_moves = moves_to_synchronous_moves(moves, loads)
@@ -85,11 +88,14 @@ def test_hill_climb_with_edge_weights():
         g.add_edge(*sed, bidirectional=True)
 
     loads = check_user_input(g, loads={1: [1, 3], 2: [3, 1]})
-    d, p = hill_climb(graph=g, loads=loads, timer=Timer(), distance_cache=DistanceCache(g, loads.values()), movements=Graph())
+    d, p = hill_climb(graph=g, loads=loads, timer=Timer(), distance_cache=DistanceCache(g, loads.values()),
+                      movements=Graph())
     moves = path_to_moves(p)
     concurrent_moves = moves_to_synchronous_moves(moves, loads)
-    assert concurrent_moves == [{2: (3, 4), 1: (1, 2)}, {2: (4, 1), 1: (2, 3)}] or concurrent_moves == [{2: (3, 2), 1: (1, 4)}, {1: (4, 3), 2: (2, 1)}]
-    assert moves == [{2: (3, 4)}, {1: (1, 2)}, {2: (4, 1)}, {1: (2, 3)}] or moves == [{2: (3, 2)}, {1: (1, 4)}, {1: (4, 3)}, {2: (2, 1)}]
+    assert concurrent_moves == [{2: (3, 4), 1: (1, 2)}, {2: (4, 1), 1: (2, 3)}] or concurrent_moves == [
+        {2: (3, 2), 1: (1, 4)}, {1: (4, 3), 2: (2, 1)}]
+    assert moves == [{2: (3, 4)}, {1: (1, 2)}, {2: (4, 1)}, {1: (2, 3)}] or moves == [{2: (3, 2)}, {1: (1, 4)},
+                                                                                      {1: (4, 3)}, {2: (2, 1)}]
 
 
 def test_hill_climb_with_edge_different_weights():
@@ -107,7 +113,8 @@ def test_hill_climb_with_edge_different_weights():
         g.add_edge(*sed, bidirectional=True)
 
     loads = check_user_input(g, loads={1: [1, 3], 2: [3, 1]})
-    d, p = hill_climb(graph=g, loads=loads, timer=Timer(), distance_cache=DistanceCache(g, loads.values()), movements=Graph())
+    d, p = hill_climb(graph=g, loads=loads, timer=Timer(), distance_cache=DistanceCache(g, loads.values()),
+                      movements=Graph())
     moves = path_to_moves(p)
     concurrent_moves = moves_to_synchronous_moves(moves, loads)
     assert concurrent_moves == [{2: (3, 4), 1: (1, 2)},
@@ -133,7 +140,8 @@ def test_hill_climb_with_restrictions():
 
     loads = check_user_input(g, loads={1: (1, [3], [2]),  # restriction 1 cannot travel over 2
                                        2: [3, 1]})
-    d, p = hill_climb(graph=g, loads=loads, timer=Timer(), distance_cache=DistanceCache(g, loads.values()), movements=Graph())
+    d, p = hill_climb(graph=g, loads=loads, timer=Timer(), distance_cache=DistanceCache(g, loads.values()),
+                      movements=Graph())
     sequence = path_to_moves(p)
 
     assert sequence == [{2: (3, 2)}, {1: (1, 4)}, {1: (4, 3)}, {2: (2, 1)}]
@@ -158,7 +166,8 @@ def test_hill_climb_with_restrictions_bidirectional():
 
     loads = check_user_input(g, loads={1: (1, [3], [2]),  # restriction 1 cannot travel over 2
                                        2: (3, 1)})
-    d, p = hill_climb(graph=g, loads=loads, timer=Timer(), distance_cache=DistanceCache(g, loads.values()), movements=Graph())
+    d, p = hill_climb(graph=g, loads=loads, timer=Timer(), distance_cache=DistanceCache(g, loads.values()),
+                      movements=Graph())
     sequence = path_to_moves(p)
 
     assert sequence == [{2: (3, 2)}, {1: (1, 4)}, {1: (4, 3)}, {2: (2, 1)}]
@@ -195,7 +204,7 @@ def test_energy_and_restrictions_2_loads():
         {1: (3, 6)},  # distance = 3
         {2: (4, 3)},  # distance = 1, Load2 moves back onto it's starting point.
         {2: (3, 2)},  # distance = 1
-        {2: (2, 1)}   # distance = 1
+        {2: (2, 1)}  # distance = 1
     ]  # total distance = (1+3)+(1+1+1+1) = 8
 
 
@@ -257,7 +266,7 @@ def test_energy_and_restrictions_3_loads_b():
         {1: (2, 6)},  # 8
         {2: (3, 2)},  # 1
         {2: (2, 1)},  # 1
-        {3: (4, 3)}   # 1
+        {3: (4, 3)}  # 1
     ]  # total distance 11
 
     assert all(i in moves for i in atomic_moves)
@@ -289,8 +298,8 @@ def test_energy_and_restrictions_3_loads_c():
 
     assert moves == [
         {2: (3, 5)},  # load 2 moves out of the way at cost 1
-        {1: (2, 3)}, {1: (3, 6)},   # load 1 takes shortest permitted path.
-        {2: (5, 3)}, {2: (3, 2)}, {2: (2, 1)},   # load 2 moves to destination.
+        {1: (2, 3)}, {1: (3, 6)},  # load 1 takes shortest permitted path.
+        {2: (5, 3)}, {2: (3, 2)}, {2: (2, 1)},  # load 2 moves to destination.
         {3: (4, 3)}  # load 3 moves to destination.
     ]  # total distance 9
 
@@ -301,7 +310,7 @@ def test_energy_and_restrictions_2_load_high_detour_costs():
     for sed in [
         (1, 2, 1),
         (1, 3, 70),  # this is the most direct route for load 2, but it is 70 long.
-        (3, 5, 2),   # 5 is a dead end at higher cost than going (3,4)
+        (3, 5, 2),  # 5 is a dead end at higher cost than going (3,4)
         (3, 4, 1), (4, 6, 1),  # this could be shortest path for load 1, but
         # load 1 cannot travel over 4. If it could the path [2,3,4,6] would be 3 long.
         (2, 3, 1), (3, 6, 3),  # this is the shortest unrestricted route for load 1: [2,3,6] and it is 4 long.
@@ -407,12 +416,12 @@ def test_simple_reroute_4():
              3: [3, 1],
              6: [6, 2]}
 
-    sequence = jam_solver(g, loads,synchronous_moves=False)
+    sequence = jam_solver(g, loads, synchronous_moves=False)
     assert sequence == [{1: (1, 2)}, {1: (2, 4)}, {3: (3, 2)}, {3: (2, 1)}, {6: (6, 2)}]
 
     g.del_edge(2, 4)
 
-    sequence = jam_solver(g, loads,synchronous_moves=False)
+    sequence = jam_solver(g, loads, synchronous_moves=False)
     assert sequence == [{1: (1, 2)}, {3: (3, 4)}, {1: (2, 3)}, {3: (4, 2)}, {3: (2, 1)}, {6: (6, 2)}, {1: (3, 4)}]
 
 
@@ -444,30 +453,48 @@ def test_small_gridlock():
 
     loads = check_user_input(g, {'a': [2, 1], 'b': [5, 2], 'c': [4, 3], 'd': [8], 'e': [1, 9]})
 
+    kwargs = {"timer": Timer(), "distance_cache": DistanceCache(g, loads.values()), "movements": Graph()}
+
+    results = []
+
+    # TRIAL - 1
     start = process_time()
+    d, p = bidirectional_breadth_first_search(graph=g, loads=loads, **kwargs)
+    e = process_time() - start
+    moves = path_to_moves(p)
+    concurrent = moves_to_synchronous_moves(moves, loads)
+    results.append((e, d, len(concurrent)))
 
-    distance, path = hill_climb(movements=Graph(), graph=g, loads=loads)
-    end = process_time()
+    assert d == 11
+    moves = path_to_moves(p)
+    assert moves == [{'b': (5, 6)}, {'b': (6, 3)}, {'c': (4, 5)}, {'c': (5, 6)}, {'e': (1, 4)}, {'a': (2, 1)},
+                     {'b': (3, 2)}, {'c': (6, 3)}, {'e': (4, 5)}, {'e': (5, 6)}, {'e': (6, 9)}]
+    concurrent = moves_to_synchronous_moves(moves, loads)
+    assert len(concurrent) == 6
 
-    assert distance == 19
-    moves = path_to_moves(path)
-    assert moves == [
-        {'c': (4, 7)}, {'e': (1, 4)}, {'b': (5, 6)}, {'b': (6, 3)},
-        {'e': (4, 1)}, {'c': (7, 4)}, {'c': (4, 5)}, {'e': (1, 4)},
-        {'e': (4, 7)}, {'c': (5, 4)}, {'a': (2, 1)}, {'b': (3, 2)},
-        {'c': (4, 5)}, {'e': (7, 4)}, {'c': (5, 6)}, {'e': (4, 5)},
-        {'c': (6, 3)}, {'e': (5, 6)}, {'e': (6, 9)}]
+    # TRIAL - 1 REPEATED
+    start = process_time()
+    d, p = bidirectional_breadth_first_search(graph=g, loads=loads, **kwargs)
+    e = process_time() - start
+    moves = path_to_moves(p)
+    concurrent = moves_to_synchronous_moves(moves, loads)
+    results.append((e, d, len(concurrent)))
 
-    concurrent = moves_to_synchronous_moves(moves,loads)
-    assert len(concurrent) == 8
-    print("duration:", round(end - start,4), "| Hill climb | distance", distance, "| concurrent moves", len(concurrent))
+    for e, d, c in results:
+        print("BIDI | duration:", round(e, 4), "| distance", d, "| concurrent moves", c)
+    results.clear()
+
+    # TRIAL 2
+    kwargs = {"timer": Timer(), "distance_cache": DistanceCache(g, loads.values()), "movements": Graph()}
 
     start = process_time()
-    distance, path = breadth_first_search(Graph(), g, loads)
-    end = process_time()
+    d, p = bfs_resolve(graph=g, loads=loads, **kwargs)
+    e = process_time() - start
+    moves = path_to_moves(p)
+    concurrent = moves_to_synchronous_moves(moves, loads)
+    results.append((e, d, len(concurrent)))
 
-    assert distance == 11
-    moves = path_to_moves(path)
+    assert d == 11
     assert moves == [
         {'b': (5, 6)}, {'b': (6, 3)}, {'c': (4, 5)}, {'c': (5, 6)},
         {'e': (1, 4)}, {'a': (2, 1)}, {'b': (3, 2)}, {'c': (6, 3)},
@@ -475,7 +502,17 @@ def test_small_gridlock():
     ]
     concurrent = moves_to_synchronous_moves(moves, loads)
     assert len(concurrent) == 6
-    print("duration:", round(end - start,4), "| BFS | distance", distance, "| concurrent moves", len(concurrent))
+
+    # TRIAL 2 - REPEAT
+    start = process_time()
+    d, p = bfs_resolve(graph=g, loads=loads, **kwargs)
+    e = process_time() - start
+    moves = path_to_moves(p)
+    concurrent = moves_to_synchronous_moves(moves, loads)
+    results.append((e, d, len(concurrent)))
+
+    for e, d, c in results:
+        print("BFS-R| duration:", round(e, 4), "| distance", d, "| concurrent moves", c)
 
 
 def test_snake_gridlock():
@@ -499,21 +536,32 @@ def test_snake_gridlock():
     g.add_edge(5, 9, 1, bidirectional=True)
 
     loads = {'a': [8, 12], 'b': [7, 11], 'c': [6, 10], 'd': [5, 9]}
-    sequence = jam_solver(g, loads, return_on_first=True)
+    sequence = jam_solver(g, loads, synchronous_moves=False, return_on_first=False)
 
-    assert sequence == [
-        {'d': (5, 4), 'a': (8, 5)},  # d goes one step back. a moves forward to it's destination.
-        {'a': (5, 9)},
-        {'a': (9, 10)},
-        {'a': (10, 11)},
-        {'a': (11, 12), 'b': (7, 8)},  # b moves forward to it's destination.
-        {'b': (8, 5)},
-        {'b': (5, 9)},
-        {'b': (9, 10)},
-        {'b': (10, 11), 'c': (6, 5)},  # c moves forward.
-        {'c': (5, 9)}, {'c': (9, 10), 'd': (4, 5)},  # d does a shortcut.
-        {'d': (5, 9)}
-    ]
+    sync_moves = moves_to_synchronous_moves(sequence, check_user_input(g, loads))
+
+    assert sequence == [{'d': (5, 4)},  # d goes one step back.
+                        {'a': (8, 5)},  # a moves forward towards its destination.
+                        {'b': (7, 8)},  # b moves forward to it's destination.
+                        {'a': (5, 9)},
+                        {'b': (8, 5)},
+                        {'a': (9, 10)},
+                        {'b': (5, 9)},
+                        {'c': (6, 5)},  # c moves forward.
+                        {'a': (10, 11)},
+                        {'b': (9, 10)},
+                        {'c': (5, 9)},
+                        {'d': (4, 5)},
+                        {'a': (11, 12)},
+                        {'b': (10, 11)},
+                        {'c': (9, 10)},
+                        {'d': (5, 9)}]  # d does a left turn (shortcut).
+
+    assert sync_moves == [{'d': (5, 4), 'a': (8, 5), 'b': (7, 8)},
+                          {'a': (5, 9), 'b': (8, 5)},
+                          {'a': (9, 10), 'b': (5, 9), 'c': (6, 5)},
+                          {'a': (10, 11), 'b': (9, 10), 'c': (5, 9), 'd': (4, 5)},
+                          {'a': (11, 12), 'b': (10, 11), 'c': (9, 10), 'd': (5, 9)}]
 
 
 def test_5x5_graph():
@@ -687,4 +735,3 @@ def test_incomplete_graph():
         assert False, "There is no path."
     except UnSolvable as e:
         assert str(e) == 'load 1 has no path from 1 to 5'
-
