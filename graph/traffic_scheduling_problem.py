@@ -130,7 +130,7 @@ def jam_solver(graph, loads, timeout=None, synchronous_moves=True, return_on_fir
             if return_on_first:
                 break
 
-    if path is None:
+    if not path:
         if timer.expired():
             raise UnSolvable(f"no solution found with timeout = {timeout} msecs")
         else:
