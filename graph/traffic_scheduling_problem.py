@@ -118,7 +118,7 @@ def jam_solver(graph, loads, timeout=None, synchronous_moves=True, return_on_fir
 
         start = process_time()
         try:
-            d, p = method(graph, load_set, timer, distance_cache, movements)
+            d, p = method(graph, load_set, timer, distance_cache, movements, return_on_first)
             end = process_time()
             print(method.__name__[:10], "| ", round(d, 4), "moves | time", round(end - start, 4))
         except NoSolution:
@@ -290,7 +290,7 @@ def moves_to_synchronous_moves(moves, loads):
 
 # Search methods
 
-def bfs_resolve(graph, loads, timer, distance_cache, movements):
+def bfs_resolve(graph, loads, timer, distance_cache, movements, return_on_first=None):
     """
     calculates the solution to the transshipment problem by
     constructing the solution space as a finite state machine
@@ -422,22 +422,18 @@ class LoadPath(object):
         if p:
             self.path = p
         else:  # there's no path. Perhaps I need to step out of the way?
-            # options = set(e for s, e, d in self.graph.edges(from_node=self.current_location) if e not in obstacles and e not in self.load.prohibited)
-            # if options and options.intersection(set(self.path)):
-            #     choice = options.intersection(set(self.path)).pop()
-            #     ix = self.path.index(self.current_location)
-            #     self.path.insert(ix+1, choice)
-            # else:
             pass  # wait.
 
 
-def bi_directional_progressive_bfs(movements, graph, loads, timer=None):
+def bi_directional_progressive_bfs(graph, loads, timer, distance_cache, movements, return_on_first=None):
     """ Bi-directional search which searches to the end of open options for each load.
 
     :param graph network available for routing.
     :param loads: dictionary with loads
     :param timer: Instance of Timer
     """
+    check_inputs(graph, loads, timer, distance_cache, movements)
+
     initial_state = tuple(((ld.id, ld.start) for ld in loads.values()))
     final_state = tuple(((ld.id, ld.ends) for ld in loads.values()))
 
@@ -670,7 +666,7 @@ def check_inputs(graph, loads,timer,distance_cache, movements):
         raise TypeError
 
 
-def hill_climb(graph, loads, timer, distance_cache, movements):
+def hill_climb(graph, loads, timer, distance_cache, movements, return_on_first=None):
     """ A purist hill-climbing algorithm
     :param graph: graph network available for routing.
     :param loads: dict with Loads
@@ -729,7 +725,7 @@ def hill_climb(graph, loads, timer, distance_cache, movements):
     return movements.shortest_path(initial_state, solution)
 
 
-def simple_path(graph, loads, timer, distance_cache, movements):
+def simple_path(graph, loads, timer, distance_cache, movements, return_on_first=None):
     """An algorithm that seeks to progress each load along the
     most direct route to the nearest goal.
 
@@ -795,7 +791,7 @@ def simple_path(graph, loads, timer, distance_cache, movements):
         return float('inf'), []
 
 
-def bidirectional_breadth_first_search(graph, loads, timer, distance_cache, movements):
+def bidirectional_breadth_first_search(graph, loads, timer, distance_cache, movements, return_on_first=False):
     """
     :param graph:
     :param loads:
@@ -872,6 +868,9 @@ def bidirectional_breadth_first_search(graph, loads, timer, distance_cache, move
 
                         forward_queue = [(d, s) for d, s in forward_queue if d <= forward_max_distance]
 
+                        if return_on_first:
+                            forward_queue.clear()
+
         if reverse_queue:  # backward...
             distance_traveled, state = reverse_queue.pop(0)
             reverse_queue_set.remove(state)
@@ -901,13 +900,16 @@ def bidirectional_breadth_first_search(graph, loads, timer, distance_cache, move
                         spme, _ = shortest_path_multiple_ends(movements, new_state, final_states)
                         reverse_max_distance = min(spme, reverse_max_distance)
 
+                        if return_on_first:
+                            reverse_queue.clear()
+
     # even if the timer has expired, there may still be a valid non-optimal solution, that
     # may be better than anything seen previously.
     min_distance, min_distance_path = shortest_path_multiple_ends(movements, initial_state, final_states)
     return min_distance, min_distance_path
 
 
-def breadth_first_search(graph, loads, timer, distance_cache, movements):
+def breadth_first_search(graph, loads, timer, distance_cache, movements, return_on_first=False):
     """
     :param graph:
     :param loads:
@@ -966,6 +968,9 @@ def breadth_first_search(graph, loads, timer, distance_cache, movements):
                         min_distance, min_distance_path = d, p
                         # finally purge min distance.
                         states = [(a, b, c) for a, b, c in states if a < min_distance]
+
+                        if return_on_first:
+                            states.clear()
 
     if not min_distance_path:
         return float('inf'), []
