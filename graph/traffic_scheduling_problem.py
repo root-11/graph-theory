@@ -109,7 +109,8 @@ def jam_solver(graph, loads, timeout=None, synchronous_moves=True, return_on_fir
     else:
         raise TypeError(f"Expect timeout as int or float, not {type(timeout)}")
 
-    distance, path, movements = float('inf'), [], Graph()
+    distance, path = float('inf'), []
+    movements = Graph()
     distance_cache = DistanceCache(graph, load_set.values())
 
     for method in methods:  # each search algorithm works on the movements-Graph.
@@ -117,19 +118,16 @@ def jam_solver(graph, loads, timeout=None, synchronous_moves=True, return_on_fir
             break
 
         start = process_time()
-        try:
-            d, p = method(graph, load_set, timer, distance_cache, movements, return_on_first)
-            end = process_time()
-            print(method.__name__[:10], "| ", round(d, 4), "moves | time", round(end - start, 4))
-        except NoSolution:
-            end = process_time()
+        d, p = method(graph, load_set, timer, distance_cache, movements, return_on_first)
+        end = process_time()
+        if d == float('inf'):
             print(method.__name__[:10], "| no solution | time", round(end - start, 4))
-            continue
-        if d < distance:
-            distance, path = d, p
-            if return_on_first:
-                break
-
+        else:
+            print(method.__name__[:10], "| ", round(d, 4), "moves | time", round(end - start, 4))
+            if d < distance:
+                distance, path = d, p
+                if return_on_first:
+                    break
     if not path:
         if timer.expired():
             raise UnSolvable(f"no solution found with timeout = {timeout} msecs")
@@ -681,7 +679,7 @@ def hill_climb(graph, loads, timer, distance_cache, movements, return_on_first=N
     states = [(0, initial_state)]
     shortest_distance_to_goal = float('inf')
     solution = None
-    while not solution:
+    while states:
         if timer.expired():
             break
 
@@ -715,9 +713,6 @@ def hill_climb(graph, loads, timer, distance_cache, movements, return_on_first=N
                 shortest_distance_to_goal = distance_to_goal
                 insort(states, (distance_to_goal, new_state))
             states = [(score, s) for score, s in states if score <= shortest_distance_to_goal]
-
-        if not states:
-            raise NoSolution("No solution found")  # hill climbing doesn't lead to a solution
 
     if not solution:
         return float('inf'), []
