@@ -77,9 +77,37 @@ class Load(object):
 # The main solver   #
 # ----------------- #
 def jam_solver(graph, loads, timeout=None, synchronous_moves=True, return_on_first=False):
-    """ an ensemble solver for the routing problem.
+    """ An ensemble solver for the routing problem.
 
-    :param graph network available for routing.
+    The algorithm works in 3 steps to explore the solution landscape.
+    First the solution landscape is stored in the graph "movements", which
+    starts with a node that represents the initial state.
+
+    Each algorithm then performs a search which stores the information in movements,
+    so that duplicate work is avoided.
+
+    The first algorithm is the hill climb, which seeks to quickly identify a local
+    optimum, e.g. a path from initial state to final state without attempting to
+    do any conflict resolution.
+    This algorithm is guided only by fewest steps to reach the final state.
+    The algorithm is fast, and only has the purpose of trailblazing the solution
+    landscape from initial to towards the final state.
+
+    The second algorithm is the simple path: It augments the search space by trying
+    to guide the loads from initial state to final state with as few deviations as
+    possible from the shortest path. It uses the information from the hill-climb,
+    as a benchmark, so that search vectors can be abandoned if they would leads to
+    longer solutions than what the hill-climb found.
+
+    The third algorithm is bidirectional search. It simultaneously searches from the
+    initial state towards the final state (A->B) AND from the final state towards the
+    initial state (Bs--> A). As the previous two algorithms already have explored some
+    state, it is likely that the search A->B will intercept with Bs->A very quickly.
+    By only having to expand the "frontier" of the two searches, all paths that would
+    exceed the distance from |A intercept | + |intercept B| can be discarded.
+    This gives the guarantee that the search space is explored efficiently.
+
+    :param graph: network available for routing.
     :param loads:
 
     loads_as_list = [
@@ -123,7 +151,7 @@ def jam_solver(graph, loads, timeout=None, synchronous_moves=True, return_on_fir
         if d == float('inf'):
             print(method.__name__[:10], "| no solution | time", round(end - start, 4))
         else:
-            print(method.__name__[:10], "| ", round(d, 4), "moves | time", round(end - start, 4))
+            print(method.__name__[:10], "| cost", round(d, 4), "| time", round(end - start, 4))
             if d < distance:
                 distance, path = d, p
                 if return_on_first:
@@ -147,20 +175,27 @@ class Timer(object):
         """
         if timeout is None:
             timeout = float('inf')
-        assert isinstance(timeout, (float, int))
+        if not isinstance(timeout, (float, int)):
+            raise ValueError(f"timeout is {type(timeout)} not int or float > 0")
+        if timeout < 0:
+            raise ValueError(f"timeout must be >0, but was {timeout}")
+
         self.limit = timeout
         self.start = process_time()
         self._counter = 0
         self._expired = False
 
     def expired(self):
+        """ returns bool"""
         if self._expired:
             return True
+
+        # we use a counter as there is no reason to check the time 100_000 times/second.
         if self._counter > 0:
             self._counter -= 1
             return False
-
-        self._counter += 100
+        # The counter was zero, so now we check the time and reset the counter.
+        self._counter = 100
         if process_time() - self.start > (self.limit / 1000):
             self._expired = True
         return False
@@ -223,6 +258,10 @@ def check_user_input(graph, loads):
             if load.prohibited.intersection(diff):
                 raise ValueError(f"Load {load.id}'s prohibited node(s) ({load.prohibited.intersection(diff)}) is/are not in the graph.")
 
+    assignment_options = {load.id: frozenset(load.ends) for load in all_loads.values() }
+    if not is_ap_solvable(assignment_options):
+        raise UnSolvable(f"There are not enough ends for all the loads to be assigned to a destination.")
+
     for load in all_loads.values():
         if load.prohibited:
             gc = graph.copy()
@@ -240,9 +279,39 @@ def check_user_input(graph, loads):
     return all_loads
 
 
+def is_ap_solvable(assignments):
+    """
+    A number of loads need to be assigned to a destination.
+    The loads have preferences, f.x.
+
+        A = {1,2}, B = {2,3}, C = {1,2,3}  # solveable
+        A = {1,2}, B = {1,3}, C = {1}      # solveable
+        A = {1,2}, B = {1,2}, C = {1}      # not solveable.
+
+    This method checks if the assignment is possible
+    """
+    if not isinstance(assignments, dict):
+        raise TypeError
+    if not all(isinstance(i, (frozenset,set)) for i in assignments.values()):
+        raise TypeError
+
+    all_ends = set().union(*assignments.values())
+
+    assignment = {}
+
+    for load_id, ends in sorted(assignments.items(), key=lambda x: len(x[-1])):
+        options = set(ends).intersection(all_ends)
+        if not options:
+            return False
+        selection = options.pop()
+        all_ends.remove(selection)
+        assignment[load_id] = selection
+    return True
+
+
 def path_to_moves(path):
     """
-    translate path into a motion sequence.
+    translate path with states into a motion sequence.
     :param path: list of tuples with [(load id, location), ... ]
     """
     moves = []
@@ -381,6 +450,7 @@ def end_state_generator(loads):
 class LoadPath(object):
     def __init__(self, graph, load):
         self.graph = graph
+        assert isinstance(load, Load)
         self.load = load
         self.current_location = load.start
         paths = [graph.shortest_path(load.start, end, avoids=load.prohibited) for end in load.ends]
@@ -388,12 +458,22 @@ class LoadPath(object):
         d,p = paths[0]
         self.path = p
 
-    def to_load(self):
-        if self.current_location in self.load.ends:
-            ends = {self.current_location}
-        else:
-            ends = self.load.ends
-        return Load(self.id, start=self.current_location, ends=ends, prohibited=self.load.prohibited)
+    def __str__(self):
+        return f"Load({self.load.id}) {self.current_location} | {self.path}"
+
+    def location(self, n=0):
+        return self.path[
+            min(
+                self.path.index(self.current_location) + abs(n),
+                len(self.path)-1
+            )
+        ]
+
+    def rest_of_path(self):
+        ix = self.path.index(self.current_location)
+        if ix < len(self.path)-1:
+            return {i for i in self.path[ix+1:]}
+        return {self.current_location}
 
     @property
     def start(self):
@@ -403,203 +483,187 @@ class LoadPath(object):
     def id(self):
         return self.load.id
 
-    def where_to(self):
-        ix = self.path.index(self.current_location)
-        try:
-            return self.path[ix + 1]
-        except IndexError:
-            return self.current_location
-
     def at_destination(self):
         return self.current_location in self.load.ends
 
-    def find_alternative_route(self, obstacles):
-        paths = [self.graph.shortest_path(self.current_location, end, avoids=obstacles) for end in self.load.ends]
-        paths.sort()  # shortest on top.
-        d, p = paths[0]
-        if p:
-            self.path = p
-        else:  # there's no path. Perhaps I need to step out of the way?
-            pass  # wait.
+
+# def bi_directional_progressive_bfs(graph, loads, timer, distance_cache, movements, return_on_first=None):
+#     """ Bi-directional search which searches to the end of open options for each load.
+#
+#     :param graph network available for routing.
+#     :param loads: dictionary with loads
+#     :param timer: Instance of Timer
+#     """
+#     check_inputs(graph, loads, timer, distance_cache, movements)
+#
+#     initial_state = tuple(((ld.id, ld.start) for ld in loads.values()))
+#     final_state = tuple(((ld.id, ld.ends) for ld in loads.values()))
+#
+#     forward_queue = [initial_state]
+#     forward_states = {initial_state}
+#     reverse_queue = [final_state]
+#     reverse_states = {final_state}
+#
+#     solved = False
+#     while not solved:
+#         if timer.expired():
+#             break
+#
+#         # forward
+#         if not forward_queue:
+#             raise NoSolution
+#         state = forward_queue.pop(0)
+#         occupied = {i[1] for i in state}
+#         for load_id, location in state:
+#             if solved:
+#                 break
+#             options = {e: state for s, e, d in graph.edges(from_node=location) if e not in occupied}
+#             if not options:
+#                 continue
+#
+#             visited = {i for i in occupied}
+#             while options:
+#                 option = list(options.keys())[0]
+#                 old_state = options.pop(option)  # e from s,e,d
+#
+#                 new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in old_state)
+#                 if new_state not in movements:
+#                     forward_queue.append(new_state)
+#
+#                 movements.add_edge(old_state, new_state, 1)
+#                 forward_states.add(new_state)
+#
+#                 visited.add(option)
+#                 options.update({e: new_state for s, e, d in graph.edges(from_node=option) if e not in visited})
+#
+#                 if new_state in reverse_states:
+#                     solved = True
+#                     break
+#
+#         # backwards
+#         if not reverse_queue:
+#             raise NoSolution
+#         state = reverse_queue.pop(0)
+#         occupied = {i[1] for i in state}
+#         for load_id, location in state:
+#             if solved:
+#                 break
+#
+#             options = {s: state for s, e, d in graph.edges(to_node=location) if s not in occupied}
+#             if not options:
+#                 continue
+#
+#             visited = {i for i in occupied}
+#             while options:
+#                 option = list(options.keys())[0]  # s from s,e,d
+#                 old_state = options.pop(option)
+#
+#                 new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in old_state)
+#
+#                 if new_state not in movements:  # add to queue
+#                     reverse_queue.append(new_state)
+#
+#                 movements.add_edge(new_state, old_state, 1)
+#                 reverse_states.add(new_state)
+#
+#                 visited.add(option)
+#                 options.update({s: new_state for s, e, d in graph.edges(to_node=option) if s not in visited})
+#
+#                 if new_state in forward_states:
+#                     solved = True
+#                     break
+#
+#     return movements.shortest_path(initial_state, final_state)
 
 
-def bi_directional_progressive_bfs(graph, loads, timer, distance_cache, movements, return_on_first=None):
-    """ Bi-directional search which searches to the end of open options for each load.
-
-    :param graph network available for routing.
-    :param loads: dictionary with loads
-    :param timer: Instance of Timer
-    """
-    check_inputs(graph, loads, timer, distance_cache, movements)
-
-    initial_state = tuple(((ld.id, ld.start) for ld in loads.values()))
-    final_state = tuple(((ld.id, ld.ends) for ld in loads.values()))
-
-    forward_queue = [initial_state]
-    forward_states = {initial_state}
-    reverse_queue = [final_state]
-    reverse_states = {final_state}
-
-    solved = False
-    while not solved:
-        if timer.expired():
-            break
-
-        # forward
-        if not forward_queue:
-            raise NoSolution
-        state = forward_queue.pop(0)
-        occupied = {i[1] for i in state}
-        for load_id, location in state:
-            if solved:
-                break
-            options = {e: state for s, e, d in graph.edges(from_node=location) if e not in occupied}
-            if not options:
-                continue
-
-            visited = {i for i in occupied}
-            while options:
-                option = list(options.keys())[0]
-                old_state = options.pop(option)  # e from s,e,d
-
-                new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in old_state)
-                if new_state not in movements:
-                    forward_queue.append(new_state)
-
-                movements.add_edge(old_state, new_state, 1)
-                forward_states.add(new_state)
-
-                visited.add(option)
-                options.update({e: new_state for s, e, d in graph.edges(from_node=option) if e not in visited})
-
-                if new_state in reverse_states:
-                    solved = True
-                    break
-
-        # backwards
-        if not reverse_queue:
-            raise NoSolution
-        state = reverse_queue.pop(0)
-        occupied = {i[1] for i in state}
-        for load_id, location in state:
-            if solved:
-                break
-
-            options = {s: state for s, e, d in graph.edges(to_node=location) if s not in occupied}
-            if not options:
-                continue
-
-            visited = {i for i in occupied}
-            while options:
-                option = list(options.keys())[0]  # s from s,e,d
-                old_state = options.pop(option)
-
-                new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in old_state)
-
-                if new_state not in movements:  # add to queue
-                    reverse_queue.append(new_state)
-
-                movements.add_edge(new_state, old_state, 1)
-                reverse_states.add(new_state)
-
-                visited.add(option)
-                options.update({s: new_state for s, e, d in graph.edges(to_node=option) if s not in visited})
-
-                if new_state in forward_states:
-                    solved = True
-                    break
-
-    return movements.shortest_path(initial_state, final_state)
-
-
-def bi_directional_bfs(movements, graph, loads, timer=None):
-    """ calculates the solution to the transshipment problem using BFS
-    from both initial and final state
-
-    :param graph network available for routing.
-    :param loads: dictionary with load id and preferred route. Example:
-    :param timer: Instance of Timer
-    """
-    if not isinstance(movements, Graph):
-        raise TypeError
-    if not isinstance(graph, Graph):
-        raise TypeError
-    if not isinstance(loads, dict):
-        raise TypeError
-    if not all(isinstance(i, Load) for i in loads.values()):
-        raise TypeError
-    if not isinstance(timer, (type(None), Timer)):
-        raise TypeError
-
-    initial_state = tuple(((ld.id, ld.start) for ld in loads.values()))
-
-    final_state = []
-    for load in loads.values():
-        nn = [graph.shortest_path(load.start, end, avoids=load.prohibited) for end in load.ends]
-        nn.sort()
-        d, p = nn[0]
-        final_state.append((load.id, p[-1]))
-    final_state = tuple(final_state)
-
-    movements = Graph()
-    forward_queue = [initial_state]
-    forward_states = {initial_state}
-    reverse_queue = [final_state]
-    reverse_states = {final_state}
-
-    solution = None
-
-    while solution is None:
-        if timer.expired():
-            break
-
-        # forward
-        if not forward_queue:
-            raise NoSolution("No solution found")
-        state = forward_queue.pop(0)
-        occupied = {i[1] for i in state}
-        for load_id, location in state:
-            if solution:
-                break
-            load = loads[load_id]
-            options = sorted((d, e) for s, e, d in graph.edges(from_node=location) if e not in occupied and e not in load.prohibited)
-
-            for distance, option in options:
-                new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state)
-                if new_state not in movements:
-                    forward_queue.append(new_state)
-
-                movements.add_edge(state, new_state, distance)
-                forward_states.add(new_state)
-
-                if new_state in reverse_states:
-                    solution = new_state
-                    break
-
-        # backwards
-        if not reverse_queue:
-            raise NoSolution("No solution found")
-        state = reverse_queue.pop(0)
-        occupied = {i[1] for i in state}
-        for load_id, location in state:
-            load = loads[load_id]
-            if solution:
-                break
-            options = sorted((d, e) for s, e, d in graph.edges(from_node=location) if s not in occupied and e not in load.prohibited)
-            for distance, option in options:
-                new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state)
-
-                if new_state not in movements:  # add to queue
-                    reverse_queue.append(new_state)
-
-                movements.add_edge(new_state, state, distance)
-                reverse_states.add(new_state)
-
-                if new_state in forward_states:
-                    solution = True
-                    break
-
-    return movements.shortest_path(initial_state, final_state)
+# def bi_directional_bfs(movements, graph, loads, timer=None):
+#     """ calculates the solution to the transshipment problem using BFS
+#     from both initial and final state
+#
+#     :param graph network available for routing.
+#     :param loads: dictionary with load id and preferred route. Example:
+#     :param timer: Instance of Timer
+#     """
+#     if not isinstance(movements, Graph):
+#         raise TypeError
+#     if not isinstance(graph, Graph):
+#         raise TypeError
+#     if not isinstance(loads, dict):
+#         raise TypeError
+#     if not all(isinstance(i, Load) for i in loads.values()):
+#         raise TypeError
+#     if not isinstance(timer, (type(None), Timer)):
+#         raise TypeError
+#
+#     initial_state = tuple(((ld.id, ld.start) for ld in loads.values()))
+#
+#     final_state = []
+#     for load in loads.values():
+#         nn = [graph.shortest_path(load.start, end, avoids=load.prohibited) for end in load.ends]
+#         nn.sort()
+#         d, p = nn[0]
+#         final_state.append((load.id, p[-1]))
+#     final_state = tuple(final_state)
+#
+#     movements = Graph()
+#     forward_queue = [initial_state]
+#     forward_states = {initial_state}
+#     reverse_queue = [final_state]
+#     reverse_states = {final_state}
+#
+#     solution = None
+#
+#     while solution is None:
+#         if timer.expired():
+#             break
+#
+#         # forward
+#         if not forward_queue:
+#             raise NoSolution("No solution found")
+#         state = forward_queue.pop(0)
+#         occupied = {i[1] for i in state}
+#         for load_id, location in state:
+#             if solution:
+#                 break
+#             load = loads[load_id]
+#             options = sorted((d, e) for s, e, d in graph.edges(from_node=location) if e not in occupied and e not in load.prohibited)
+#
+#             for distance, option in options:
+#                 new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state)
+#                 if new_state not in movements:
+#                     forward_queue.append(new_state)
+#
+#                 movements.add_edge(state, new_state, distance)
+#                 forward_states.add(new_state)
+#
+#                 if new_state in reverse_states:
+#                     solution = new_state
+#                     break
+#
+#         # backwards
+#         if not reverse_queue:
+#             raise NoSolution("No solution found")
+#         state = reverse_queue.pop(0)
+#         occupied = {i[1] for i in state}
+#         for load_id, location in state:
+#             load = loads[load_id]
+#             if solution:
+#                 break
+#             options = sorted((d, e) for s, e, d in graph.edges(from_node=location) if s not in occupied and e not in load.prohibited)
+#             for distance, option in options:
+#                 new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state)
+#
+#                 if new_state not in movements:  # add to queue
+#                     reverse_queue.append(new_state)
+#
+#                 movements.add_edge(new_state, state, distance)
+#                 reverse_states.add(new_state)
+#
+#                 if new_state in forward_states:
+#                     solution = True
+#                     break
+#
+#     return movements.shortest_path(initial_state, final_state)
 
 
 class DistanceCache(object):
@@ -722,7 +786,9 @@ def hill_climb(graph, loads, timer, distance_cache, movements, return_on_first=N
 
 def simple_path(graph, loads, timer, distance_cache, movements, return_on_first=None):
     """An algorithm that seeks to progress each load along the
-    most direct route to the nearest goal.
+    most direct route to the nearest goal, and minimise the detour.
+
+    Any required detours are handled by bidirectional BFS.
 
     :param graph:
     :param loads:
@@ -732,51 +798,34 @@ def simple_path(graph, loads, timer, distance_cache, movements, return_on_first=
     :return:
     """
     check_inputs(graph, loads, timer, distance_cache, movements)
-    local_movements = Graph()
 
     all_loads = [LoadPath(graph, load) for load in loads.values()]
-    occupied = {ld.start for ld in loads.values()}
+    start = tuple((load.id, load.current_location) for load in all_loads)
+    steps = [start]   # for each sensible step made to reach the end state, we will append to this list.
 
-    start = [(load.id, load.current_location) for load in all_loads]
-
-    while not timer.expired():
-        # ask each load where they would like to go.
-        end = []
-        distance = 0
-        for load in all_loads:
-
-            if timer.expired():
-                break
-
-            if load.at_destination():
-                next_location = load.current_location
-            else:
-                next_location = load.where_to()
-                if next_location in occupied:  # load will have to find another route or wait.
-
-                    old_route = load.path[:]
-
-                    load.find_alternative_route(obstacles={o for o in occupied if o != load.current_location})
-                    if load.path == old_route or load.where_to() in occupied:  # then it'll have to wait.
-                        next_location = load.current_location
-                    else:
-                        next_location = load.where_to()  # then it moves somewhere.
-
-                distance += graph.edge(load.current_location, next_location, 0)
-
-                occupied.remove(load.current_location)
-                occupied.add(next_location)
-                load.current_location = next_location
-
-            end.append((load.id, next_location))
-
-        a, b = tuple(start), tuple(end)
-        if local_movements.edge(a, b) is None:  # then we're progressing.
-            local_movements.add_edge(a, b, distance)
-            movements.add_edge(a, b, distance)
-        else:  # we are not progressing!
+    while not all(load.at_destination() for load in all_loads):
+        if timer.expired():
             break
-        start = end[:]
+        # 1. ask each load where they would like to go for the next two steps:
+        loads2, ap, reservations = {}, {}, set()
+
+        for ld in all_loads:
+            ends = ld.rest_of_path()
+            loads2[ld.id] = Load(ld.id, ld.location(0), ends, ld.load.prohibited)
+            ap[ld.id] = ends
+
+        _, p = breadth_first_search2(graph, loads2, Timer(1), distance_cache, movements, return_on_first=True)
+        if p:
+            for ix, step in enumerate(p):
+                if all(loc in loads[ld_id].ends for ld_id, loc in step):
+                    p = p[:ix + 1]
+
+            steps.extend(p[1:])  # the first step is a duplicate of the previous.
+            for ld, pair in zip(all_loads, steps[-1]):
+                _, loc = pair
+                ld.current_location = loc
+        else:
+            break  # not solveable using this method.
 
     if all(load.at_destination() for load in all_loads):
         initial = tuple((load.id, load.start) for load in all_loads)
@@ -830,7 +879,7 @@ def bidirectional_breadth_first_search(graph, loads, timer, distance_cache, move
         if timer.expired():
             break
 
-        if forward_queue:  # forward ....
+        if forward_queue:  # forward ...
             distance_traveled, state = forward_queue.pop(0)
             forward_queue_set.remove(state)
 
@@ -918,6 +967,7 @@ def breadth_first_search(graph, loads, timer, distance_cache, movements, return_
     initial_state = tuple(((ld.id, ld.start) for ld in loads.values()))
     states = [(0, 0, initial_state)] + [(0, 0, s) for s in movements.nodes(out_degree=0)]  # 0,0 is distance left, distance_traveled
     min_distance, min_distance_path = float('inf'), None
+    visited = set()
 
     while states:
         if timer.expired():
@@ -944,15 +994,13 @@ def breadth_first_search(graph, loads, timer, distance_cache, movements, return_
                     continue
 
                 new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state)
-                if new_state in movements:
+                if new_state in visited:
                     continue
-                # if movements.edge(state, new_state, float('inf')) < distance:  # the option has already been explored.
-                #     continue
-                movements.add_edge(state, new_state, distance)
+                old_distance = movements.edge(state, new_state, float('inf'))
+                if old_distance > distance:  # the option has already been explored, but the path was longer
+                    movements.add_edge(state, new_state, distance)
 
                 new_distance_left = distance_cache.state_to_goal(new_state)
-                # if (new_distance_traveled, new_distance_left, new_state) in states:  # the edge is already known.
-                #     continue
 
                 insort(states, (new_distance_left, new_distance_traveled, new_state))
 
@@ -973,6 +1021,70 @@ def breadth_first_search(graph, loads, timer, distance_cache, movements, return_
         return min_distance, min_distance_path
 
 
+
+def breadth_first_search2(graph, loads, timer, distance_cache, movements, return_on_first=False):
+    """
+    :param graph:
+    :param loads:
+    :param timer:
+    :param distance_cache:
+    :param movements:
+    :return:
+    """
+    check_inputs(graph, loads, timer, distance_cache, movements)
+
+    initial_state = tuple(((ld.id, ld.start) for ld in loads.values()))
+    min_distance, min_distance_path = float('inf'), None
+    forward_queue = [(0, initial_state)]
+    forward_edge = {b for a, b in forward_queue}
+    forward_queue_set = {b for a, b in forward_queue}
+
+    while forward_queue:
+        if timer.expired():
+            forward_queue.clear()
+            break
+
+        distance_traveled, state = forward_queue.pop(0)
+        forward_queue_set.remove(state)
+
+        occupied = {i[1] for i in state}
+        for load_id, location in state:
+            load = loads[load_id]
+
+            options = sorted((d, e) for s, e, d in graph.edges(from_node=location) if
+                             e not in occupied and e not in load.prohibited)
+
+            for distance, option in options:
+                new_distance_traveled = distance_traveled + distance
+
+                new_state = tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state)
+                if new_state in forward_edge:
+                    continue
+
+                movements.add_edge(state, new_state, distance)
+                forward_edge.add(new_state)
+
+                if new_state not in forward_queue_set:
+                    forward_queue_set.add(new_state)
+                    insort(forward_queue, (new_distance_traveled, new_state))
+
+                    check = [loc in loads[lid].ends for lid, loc in new_state]
+                    if all(check):  # then all loads are in a valid final state.
+                        d, p = movements.shortest_path(initial_state, new_state)
+                        if d < min_distance:  # then this solution is better than the previous.
+                            min_distance, min_distance_path = d, p
+                            # finally purge min distance.
+                            states = [(a, b) for a, b in forward_queue if a > min_distance]
+
+                            if return_on_first:
+                                states.clear()
+
+    if not min_distance_path:
+        return float('inf'), []
+    else:
+        return min_distance, min_distance_path
+
+
 # collection of solution methods for the routing problem.
 # insert, delete, append or substitute with your own methods as required.
 methods = [
@@ -982,7 +1094,7 @@ methods = [
     # bi_directional_bfs,  # <-- best method so far.
     bidirectional_breadth_first_search,
     # breadth_first_search,
-    bfs_resolve,  # very slow, but will eventually find the best solution.
+    # bfs_resolve,  # very slow, but will eventually find the best solution.
 ]
 
 
