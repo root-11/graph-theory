@@ -38,7 +38,9 @@ def test_data_loading():
     assert list_of_loads1 == list_of_loads2
 
 
-def path_check(sequence, graph):
+def is_sequence_valid(sequence, graph):
+    """ helper to verify that the suggested path actually exists."""
+
     d = defaultdict(list)
     for item in sequence:
         for k, t in item.items():
@@ -50,6 +52,31 @@ def path_check(sequence, graph):
                 raise ValueError
 
     return all(graph.has_path(p) for k, p in d.items())
+
+
+def is_matching(a, b):
+    """ Helper to check that the moves in A are the same as in B."""
+    g1 = Graph()
+    for d in a:
+        for k,v in d.items():
+            g1.add_edge(*v, bidirectional=True)
+    g2 = Graph()
+    for d in b:
+        for k,v in d.items():
+            g2.add_edge(*v, bidirectional=True)
+    return g1 == g2
+
+
+def test_check_concurrent_moves():
+    A = [{2: (3, 4), 1: (1, 2)}, {2: (4, 1), 1: (2, 3)}]
+    B = [{2: (3, 2), 1: (1, 4)}, {1: (4, 3), 2: (2, 1)}]
+    assert is_matching(A, B)
+
+
+def test_check_moves():
+    A = [{2: (3, 4)}, {1: (1, 2)}, {2: (4, 1)}, {1: (2, 3)}]
+    B = [{2: (3, 2)}, {1: (1, 4)}, {1: (4, 3)}, {2: (2, 1)}]
+    assert is_matching(A, B)
 
 
 def test_compact_bfs_problem():
@@ -68,9 +95,8 @@ def test_compact_bfs_problem():
     loads = check_user_input(g, loads={1: [1, 3], 2: [4, 5]})
     d, p = bidirectional_breadth_first_search(g, loads, timer=Timer(), distance_cache=DistanceCache(g, loads.values()), movements=Graph())
     moves = path_to_moves(p)
-    expected = [{1: (1, 2)}, {1: (2, 3)}, {2: (4, 2)}, {2: (2, 5)}]
+    assert is_matching(moves, [{1: (1, 2)}, {1: (2, 3)}, {2: (4, 2)}, {2: (2, 5)}])
     assert d == 4, d
-    assert all(m in expected for m in moves), moves
 
 
 def test_hill_climb():
@@ -91,8 +117,8 @@ def test_hill_climb():
     moves = path_to_moves(p)
 
     concurrent_moves = moves_to_synchronous_moves(moves, loads)
-    assert concurrent_moves == [{1: (1, 4), 2: (3, 2)},
-                                {2: (2, 1), 1: (4, 3)}]
+    expected = [{1: (1, 4), 2: (3, 2)}, {2: (2, 1), 1: (4, 3)}]
+    assert is_matching(concurrent_moves, expected), concurrent_moves
 
 
 def test_hill_climb_with_edge_weights():
@@ -112,11 +138,13 @@ def test_hill_climb_with_edge_weights():
     d, p = hill_climb(graph=g, loads=loads, timer=Timer(), distance_cache=DistanceCache(g, loads.values()),
                       movements=Graph())
     moves = path_to_moves(p)
+    is_sequence_valid(moves, g)
+    expected = [{2: (3, 4)}, {1: (1, 2)}, {2: (4, 1)}, {1: (2, 3)}]
+    assert is_matching(moves, expected)
+
     concurrent_moves = moves_to_synchronous_moves(moves, loads)
-    assert concurrent_moves == [{2: (3, 4), 1: (1, 2)}, {2: (4, 1), 1: (2, 3)}] or concurrent_moves == [
-        {2: (3, 2), 1: (1, 4)}, {1: (4, 3), 2: (2, 1)}]
-    assert moves == [{2: (3, 4)}, {1: (1, 2)}, {2: (4, 1)}, {1: (2, 3)}] or moves == [{2: (3, 2)}, {1: (1, 4)},
-                                                                                      {1: (4, 3)}, {2: (2, 1)}]
+    expected_conc_moves = [{2: (3, 4), 1: (1, 2)}, {2: (4, 1), 1: (2, 3)}]
+    assert is_matching(concurrent_moves, expected_conc_moves)
 
 
 def test_hill_climb_with_edge_different_weights():
@@ -137,10 +165,12 @@ def test_hill_climb_with_edge_different_weights():
     d, p = hill_climb(graph=g, loads=loads, timer=Timer(), distance_cache=DistanceCache(g, loads.values()),
                       movements=Graph())
     moves = path_to_moves(p)
+    expected_moves = [{2: (3, 4)}, {1: (1, 2)}, {2: (4, 1)}, {1: (2, 3)}]  # reverse of previous test.
+    assert is_matching(moves, expected_moves)
+
     concurrent_moves = moves_to_synchronous_moves(moves, loads)
-    assert concurrent_moves == [{2: (3, 4), 1: (1, 2)},
-                                {2: (4, 1), 1: (2, 3)}]
-    assert moves == [{2: (3, 4)}, {1: (1, 2)}, {2: (4, 1)}, {1: (2, 3)}]  # reverse of previous test.
+    expected = [{2: (3, 4), 1: (1, 2)},{2: (4, 1), 1: (2, 3)}]
+    assert is_matching(concurrent_moves, expected)
 
 
 def test_hill_climb_with_restrictions():
@@ -165,11 +195,12 @@ def test_hill_climb_with_restrictions():
                       movements=Graph())
     sequence = path_to_moves(p)
 
-    assert sequence == [{2: (3, 2)}, {1: (1, 4)}, {1: (4, 3)}, {2: (2, 1)}]
+    expected_seq = [{2: (3, 2)}, {1: (1, 4)}, {1: (4, 3)}, {2: (2, 1)}]
+    assert is_matching(sequence, expected_seq)
 
     concurrent_moves = moves_to_synchronous_moves(sequence, loads)
-    assert concurrent_moves == [{1: (1, 4), 2: (3, 2)},
-                                {1: (4, 3), 2: (2, 1)}]
+    expected_conc_moves = [{1: (1, 4), 2: (3, 2)},{1: (4, 3), 2: (2, 1)}]
+    assert is_matching(concurrent_moves, expected_conc_moves)
 
 
 def test_hill_climb_with_restrictions_bidirectional():
@@ -190,11 +221,11 @@ def test_hill_climb_with_restrictions_bidirectional():
     d, p = hill_climb(graph=g, loads=loads, timer=Timer(), distance_cache=DistanceCache(g, loads.values()),
                       movements=Graph())
     sequence = path_to_moves(p)
+    expected_seq = [{2: (3, 2)}, {1: (1, 4)}, {1: (4, 3)}, {2: (2, 1)}]
+    assert is_matching(sequence, expected_seq)
 
-    assert sequence == [{2: (3, 2)}, {1: (1, 4)}, {1: (4, 3)}, {2: (2, 1)}]
     concurrent_moves = moves_to_synchronous_moves(sequence, loads)
-    assert concurrent_moves == [{1: (1, 4), 2: (3, 2)},
-                                {2: (2, 1), 1: (4, 3)}]
+    assert concurrent_moves == [{1: (1, 4), 2: (3, 2)}, {2: (2, 1), 1: (4, 3)}]
 
 
 def test_energy_and_restrictions_2_loads():
@@ -219,7 +250,7 @@ def test_energy_and_restrictions_2_loads():
 
     moves = jam_solver(g, loads, synchronous_moves=False)
 
-    assert moves == [
+    expected= [
         {2: (3, 4)},  # distance = 1, Load2 moves out of Load1's way.
         {1: (2, 3)},  # distance = 1
         {1: (3, 6)},  # distance = 3
@@ -227,6 +258,7 @@ def test_energy_and_restrictions_2_loads():
         {2: (3, 2)},  # distance = 1
         {2: (2, 1)}  # distance = 1
     ]  # total distance = (1+3)+(1+1+1+1) = 8
+    assert is_matching(moves, expected)
 
 
 def test_energy_and_restrictions_3_loads():
@@ -235,6 +267,7 @@ def test_energy_and_restrictions_3_loads():
     """
     g = Graph()
     for sed in [
+
         (1, 2, 1),
         (3, 5, 2),  # dead end.
         (1, 3, 7),  # this is the most direct route for load 2, but it is 7 long.
@@ -250,7 +283,7 @@ def test_energy_and_restrictions_3_loads():
              3: (5, 3)}
 
     moves = jam_solver(g, loads, synchronous_moves=False)
-    assert path_check(moves, g)
+    assert is_sequence_valid(moves, g)
     assert len(moves) == 7
     expected_moves = [
         {2: (3, 4)},  # distance 1
@@ -261,7 +294,7 @@ def test_energy_and_restrictions_3_loads():
         {2: (2, 1)},  # distance 1
         {3: (5, 3)}  # distance 2
     ]  # total distance = (1+3)+(1+1+1+1)+(2) = 10
-    assert all(m in expected_moves for m in moves )
+    assert is_matching(moves, expected_moves), moves
 
 
 def test_energy_and_restrictions_3_loads_b():
@@ -292,7 +325,7 @@ def test_energy_and_restrictions_3_loads_b():
         {3: (4, 3)}  # 1
     ]  # total distance 11
 
-    assert all(i in moves for i in atomic_moves)
+    assert is_matching(moves, atomic_moves)
     # if load 2 would move to 5, the extra cost is 4, but load 1 could travel via [2,3,6] at cost 4.
     # However the distance LEFT for load 2 would be longer, whereby it is the lesser preferred solution.
 
@@ -325,7 +358,7 @@ def test_energy_and_restrictions_3_loads_c():
         {2: (5, 3)}, {2: (3, 2)}, {2: (2, 1)},  # load 2 moves to destination.
         {3: (4, 3)}  # load 3 moves to destination.
     ]  # total distance 9
-    assert all(i in expected for i in moves)
+    assert is_matching(moves, expected), moves
 
 
 def test_energy_and_restrictions_2_load_high_detour_costs():
@@ -346,7 +379,7 @@ def test_energy_and_restrictions_2_load_high_detour_costs():
              "B": (3, 1)}
 
     moves = jam_solver(g, loads, synchronous_moves=False, return_on_first=False)
-    assert path_check(moves, g)
+    assert is_sequence_valid(moves, g)
     assert len(moves) == 6
     expected = [
         {"B": (3, 4)},  # 2 moves into the dead end.
@@ -356,8 +389,7 @@ def test_energy_and_restrictions_2_load_high_detour_costs():
         {"B": (3, 2)},
         {"B": (2, 1)}
     ]
-    assert all(m in expected for m in moves ),moves
-
+    assert is_matching(moves, expected), moves
 
 
 def test_simple_reroute():
@@ -371,9 +403,8 @@ def test_simple_reroute():
     loads = {1: [1, 3], 2: [3, 1]}
 
     concurrent_moves = jam_solver(g, loads, synchronous_moves=True)
-
-    assert concurrent_moves == [{1: (1, 4), 2: (3, 2)},
-                                {1: (4, 3), 2: (2, 1)}]
+    expected = [{1: (1, 4), 2: (3, 2)}, {1: (4, 3), 2: (2, 1)}]
+    assert is_matching(concurrent_moves, expected), concurrent_moves
 
 
 def test_simple_reroute_2():
@@ -394,8 +425,8 @@ def test_simple_reroute_2():
     sequence = jam_solver(g, loads, synchronous_moves=False)
 
     atomic_sequence = [{1: (1, 5)}, {1: (5, 6)}, {2: (4, 3)}, {1: (6, 4)}, {2: (3, 2)}, {2: (2, 1)}]
-    assert all(i in sequence for i in atomic_sequence)
-    assert path_check(sequence, g)
+    assert is_matching(sequence, atomic_sequence)
+    assert is_sequence_valid(sequence, g)
 
 
 def test_simple_reroute_3():
@@ -413,8 +444,8 @@ def test_simple_reroute_3():
     sequence = jam_solver(g, loads, synchronous_moves=False)
 
     expected = [{1: (1, 6)}, {1: (6, 5)}, {1: (5, 4)}, {2: (3, 2)}, {1: (4, 3)}, {2: (2, 1)}]
-    assert all(i in expected for i in sequence)
-    assert path_check(sequence, g)
+    assert is_matching(sequence, expected)
+    assert is_sequence_valid(sequence, g)
 
     # a = bfs_resolve(g, loads)
     # b = bi_directional_bfs(g, loads)
@@ -450,8 +481,10 @@ def test_simple_reroute_4():
     g.del_edge(2, 4)
 
     sequence = jam_solver(g, loads, synchronous_moves=False)
-    assert sequence == [{1: (1, 2)}, {3: (3, 4)}, {1: (2, 3)}, {3: (4, 2)}, {3: (2, 1)}, {6: (6, 2)}, {1: (3, 4)}], sequence
-    assert sequence == [{3: (3, 4)}, {1: (1, 2)}, {1: (2, 3)}, {3: (4, 2)}, {3: (2, 1)}, {6: (6, 2)}, {1: (3, 4)}]
+
+    expected = [{1: (1, 2)}, {3: (3, 4)}, {1: (2, 3)}, {3: (4, 2)}, {3: (2, 1)}, {6: (6, 2)}, {1: (3, 4)}]
+    assert is_matching(sequence, expected)
+
 
 def test_clockwise_rotation():
     """ A simple loop of 4 locations, where 3 loads need to move
@@ -465,9 +498,10 @@ def test_clockwise_rotation():
 
     sequence = jam_solver(g, loads, synchronous_moves=False)
 
-    assert sequence == [{3: (3, 4)},  # first move.
-                        {2: (2, 3)},  # second move.
-                        {1: (1, 2)}], sequence  # last move.
+    expected = [{3: (3, 4)},  # first move.
+                {2: (2, 3)},  # second move.
+                {1: (1, 2)}], sequence  # last move.
+    assert is_matching(sequence, expected)
 
 
 def test_small_gridlock():
@@ -586,14 +620,14 @@ def test_snake_gridlock():
                 {'b': (10, 11)},
                 {'c': (9, 10)},
                 {'d': (5, 9)}]  # d does a left turn (shortcut).
-    assert all(m in expected for m in sequence)
+    assert is_matching(sequence, expected)
 
     expected = [{'d': (5, 4), 'a': (8, 5), 'b': (7, 8)},
                 {'a': (5, 9), 'b': (8, 5)},
                 {'a': (9, 10), 'b': (5, 9), 'c': (6, 5)},
                 {'a': (10, 11), 'b': (9, 10), 'c': (5, 9), 'd': (4, 5)},
                 {'a': (11, 12), 'b': (10, 11), 'c': (9, 10), 'd': (5, 9)}]
-    assert all(i in expected for i in sync_moves), sync_moves
+    assert is_matching(expected, sync_moves), sync_moves
 
 
 def test_5x5_graph():
@@ -601,7 +635,7 @@ def test_5x5_graph():
     loads = {'a': [6], 'b': [11, 1], 'c': [16, 2], 'd': [17, 4], 'e': [19, 5], 'f': [20, 3]}
 
     sequence = jam_solver(g, loads, return_on_first=True, timeout=20_000)
-    assert path_check(sequence, g)
+    assert is_sequence_valid(sequence, g)
 
 
 def test_2_trains():
@@ -646,17 +680,18 @@ def test_2_trains():
         47: [14, 4],
     }
 
-    sequence = jam_solver(g, loads, return_on_first=True,timeout=3000)
-    assert path_check(sequence, g)
-    # assert sequence == [{43: (3, 4)}, {43: (4, 6)}, {42: (2, 3)}, {42: (3, 4)}, {42: (4, 7)}, {41: (1, 2)},
-    #                     {41: (2, 3)}, {41: (3, 4)}, {41: (4, 5)}, {44: (11, 10)}, {44: (10, 9)}, {44: (9, 8)},
-    #                     {44: (8, 4)}, {44: (4, 3)}, {44: (3, 2)}, {44: (2, 1)}, {45: (12, 11)}, {45: (11, 10)},
-    #                     {45: (10, 9)}, {45: (9, 8)}, {45: (8, 4)}, {45: (4, 3)}, {45: (3, 2)}, {46: (13, 12)},
-    #                     {46: (12, 11)}, {46: (11, 10)}, {46: (10, 9)}, {46: (9, 8)}, {46: (8, 4)}, {46: (4, 3)},
-    #                     {47: (14, 13)}, {47: (13, 12)}, {47: (12, 11)}, {47: (11, 10)}, {47: (10, 9)}, {47: (9, 8)},
-    #                     {47: (8, 4)}, {43: (6, 9)}, {43: (9, 10)}, {43: (10, 11)}, {43: (11, 12)}, {43: (12, 13)},
-    #                     {43: (13, 14)}, {42: (7, 9)}, {42: (9, 10)}, {42: (10, 11)}, {42: (11, 12)}, {42: (12, 13)},
-    #                     {41: (5, 9)}, {41: (9, 10)}, {41: (10, 11)}, {41: (11, 12)}], sequence
+    sequence = jam_solver(g, loads, return_on_first=True, timeout=3000)
+    assert is_sequence_valid(sequence, g)
+    expected = [{43: (3, 4)}, {43: (4, 6)}, {42: (2, 3)}, {42: (3, 4)}, {42: (4, 7)}, {41: (1, 2)},
+                {41: (2, 3)}, {41: (3, 4)}, {41: (4, 5)}, {44: (11, 10)}, {44: (10, 9)}, {44: (9, 8)},
+                {44: (8, 4)}, {44: (4, 3)}, {44: (3, 2)}, {44: (2, 1)}, {45: (12, 11)}, {45: (11, 10)},
+                {45: (10, 9)}, {45: (9, 8)}, {45: (8, 4)}, {45: (4, 3)}, {45: (3, 2)}, {46: (13, 12)},
+                {46: (12, 11)}, {46: (11, 10)}, {46: (10, 9)}, {46: (9, 8)}, {46: (8, 4)}, {46: (4, 3)},
+                {47: (14, 13)}, {47: (13, 12)}, {47: (12, 11)}, {47: (11, 10)}, {47: (10, 9)}, {47: (9, 8)},
+                {47: (8, 4)}, {43: (6, 9)}, {43: (9, 10)}, {43: (10, 11)}, {43: (11, 12)}, {43: (12, 13)},
+                {43: (13, 14)}, {42: (7, 9)}, {42: (9, 10)}, {42: (10, 11)}, {42: (11, 12)}, {42: (12, 13)},
+                {41: (5, 9)}, {41: (9, 10)}, {41: (10, 11)}, {41: (11, 12)}]
+    assert is_matching(expected, sequence), sequence
 
 
 def test_3_trains():
@@ -697,7 +732,7 @@ def test_loop_9():
     loads = {1: [1, 2], 2: [3, 4], 3: [5, 6], 4: [7, 8]}
     solution = jam_solver(g, loads, return_on_first=True)
 
-    assert path_check(solution, g)
+    assert is_sequence_valid(solution, g)
     expected = [{4: (7, 8), 3: (5, 6), 2: (3, 4), 1: (1, 2)}]
     assert solution == expected
 
@@ -728,7 +763,7 @@ def test_loop_52():
     }
 
     solution = jam_solver(g, loads, return_on_first=True)
-    assert path_check(solution, g)
+    assert is_sequence_valid(solution, g)
 
     loads2 = check_user_input(g, loads)
     concurrent_moves = moves_to_synchronous_moves(solution, loads2)
