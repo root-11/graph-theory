@@ -74,6 +74,33 @@ def test_add_edge_attr():
         pass
 
 
+class MyCustomHashableNode():
+    def __init__(self, name):
+        self.name = name
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def __eq__(self, other):
+        """ note that without __eq__ this wont work.
+        https://stackoverflow.com/questions/9010222/why-can-a-python-dict-have-multiple-keys-with-the-same-hash?noredirect=1&lq=1
+        """
+        return hash(self) == hash(other)
+
+
+def test_node_types():
+    for test in [
+        [1, 2, 1, 3],
+        ['A', 'B', 'A', 'C'],
+        [MyCustomHashableNode(i) for i in ['A', 'B', 'A', 'C']],
+    ]:
+        a,b,c,d = test
+        g = Graph()
+        g.add_edge(a,b,10)
+        g.add_edge(c,d,10)
+        assert len(g.nodes()) == 3
+
+
 def test_to_list():
     g1 = graph01()
     g1.add_node(44)
