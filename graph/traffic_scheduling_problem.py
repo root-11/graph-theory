@@ -76,7 +76,7 @@ class Load(object):
 # ----------------- #
 # The main solver   #
 # ----------------- #
-def jam_solver(graph, loads, timeout=None, synchronous_moves=True, return_on_first=False):
+def jam_solver2(graph, loads, timeout=None, synchronous_moves=True, return_on_first=False):
     """ An ensemble solver for the routing problem.
 
     The algorithm works in 3 steps to explore the solution landscape.
@@ -713,7 +713,7 @@ class DistanceCache(object):
         return d_min
 
 
-def check_inputs(graph, loads,timer,distance_cache, movements):
+def check_inputs(graph, loads, timer, distance_cache, movements):
     if not isinstance(graph, Graph):
         raise TypeError
     if not isinstance(loads, dict):
@@ -1098,4 +1098,254 @@ methods = [
 ]
 
 
+class State(object):
+    def __init__(self, loads, distance=0):
+        self.loads = loads
+        self._hash = hash(self.loads)
+        self.distance = distance
+
+    def __str__(self):
+        return f"State({self.loads}, {self.distance})"
+
+    def __repr__(self):
+        return str(self)
+
+    def __lt__(self, other):
+        return self.distance < other.distance
+
+    def __iter__(self):
+        for lid,loc in self.loads:
+            yield lid,loc
+
+    def __hash__(self):
+        return self._hash
+
+    def __eq__(self, other):
+        return self._hash == other._hash
+
+    def occupied(self):
+        return {i[1] for i in self.loads}
+
+
+class StopCondition(Exception):
+    """ exception used to stop the search """
+    pass
+
+
+class JamSolver(object):
+    def __init__(self, graph, loads, timer):
+        if not isinstance(graph, Graph):
+            raise TypeError
+        if not isinstance(loads, dict):
+            raise TypeError
+        if not all(isinstance(i, Load) for i in loads.values()):
+            raise TypeError
+        if not isinstance(timer, Timer):
+            raise TypeError
+
+        self.graph = graph
+        self.movements = Graph()
+        self.loads = loads
+        # self.load_index = {load.id: load for load in loads}
+        self.timer = timer
+        self.start = None
+        self.ends = set()
+
+        initial_state = State(loads=tuple((ld.id, ld.start) for ld in self.loads.values()),
+                              distance=0)
+        self.start = initial_state
+
+        self.movements.add_node(initial_state)
+
+        self.forward_queue = [initial_state]               # this is the working queue with priority.
+        self.forward_edge = {initial_state:initial_state}  # this is a duplicate of items in the work queue
+        self.forward_visited = set()                       # we dont want to spend CPU time on this.
+        self.forward_max_distance = float('inf')
+
+        self.reverse_queue = []
+        self.reverse_edge = {}
+        self.reverse_visited = set()
+        self.reverse_max_distance = float('inf')
+
+        self.final_states = set()
+
+        for state in self._end_state_gen():
+            self.ends.add(state)
+            self.reverse_queue.append(state)
+            self.reverse_edge[state] = state
+            self.final_states.add(state)
+
+        self.done = False
+        self.return_on_first = False
+
+    def solve(self, return_on_first=False):
+        if not isinstance(return_on_first, bool):
+            raise TypeError
+        self.return_on_first = return_on_first
+
+        try:
+            self._search()
+        except StopCondition as e:
+            print(str(e))
+        return self._shortest_path()
+
+    def _end_state_gen(self):
+        ids, destinations = [], []
+        for load in self.loads.values():
+            ids.append(load.id)
+            destinations.append([list(load.ends)])
+
+        for combo in product(*destinations):
+            if len(combo) != len(destinations):
+                continue  # it's a duplicate.
+            state = tuple((lid, loc[0]) for lid, loc in zip(ids, combo))
+            yield State(state)
+
+    def _search(self):
+        while not self.timer.expired():
+
+            self.find_forward_options()  # forward search
+            self.find_reverse_options()  # reverse search
+
+            if not any((self.forward_queue, self.reverse_queue)):
+                raise StopCondition("queue exhausted")
+                # note: This may mean the solution-landscape is exhausted. Not that something is wrong.
+
+    def find_forward_options(self):
+        if not self.forward_queue:
+            return
+        state = self.forward_queue.pop(0)
+        self.forward_edge.pop(state)
+        self.forward_visited.add(state)
+
+        occupied = state.occupied()
+        for load_id, location in state:
+            load = self.loads[load_id]
+
+            options = sorted((d, e) for s, e, d in self.graph.edges(from_node=location)
+                             if e not in occupied and e not in load.prohibited)
+
+            for distance, option in options:
+                new_distance_traveled = state.distance + distance
+
+                new_state = State(loads=tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state),
+                                  distance=new_distance_traveled)
+
+                if self.movements.edge(state, new_state, float('inf')) < distance:
+                    continue
+                else:
+                    self.movements.add_edge(state, new_state, distance)
+
+                if new_state in self.forward_edge:
+                    existing_new_state = self.forward_edge.get(new_state)
+                    if new_state < existing_new_state:  # replace!
+                        self.forward_edge[new_state] = new_state
+                        self.forward_queue.remove(existing_new_state)
+                        insort(self.forward_queue, new_state)
+                    else:
+                        pass
+                    continue  # case is already queued for testing.
+                elif new_state in self.forward_visited:
+                    continue  # seen before
+                else:
+                    self.forward_edge[new_state] = new_state
+                    insort(self.forward_queue, new_state)
+
+                if new_state in self.reverse_visited:
+                    self._match(new_state)
+
+    def _match(self,state):
+        d, p = shortest_path_multiple_ends(self.movements, self.start, self.final_states)
+        self.forward_max_distance = min(d, self.forward_max_distance)
+        self.reverse_max_distance = min(d, self.reverse_max_distance)
+
+        self.forward_visited.update({s for s in self.forward_queue if s.distance > self.forward_max_distance})
+        self.forward_queue = [s for s in self.forward_queue if s.distance <= self.forward_max_distance]
+        self.forward_edge = {s:s for s in self.forward_queue}
+
+        self.reverse_visited.update({s for s in self.reverse_queue if s.distance > self.reverse_max_distance})
+        self.reverse_queue = [s for s in self.reverse_queue if s.distance <= self.reverse_max_distance]
+        self.reverse_edge = {s:s for s in self.reverse_queue}
+
+        if self.return_on_first:
+            raise StopCondition("solution found")
+
+    def _shortest_path(self):
+        d_min, p_min = float('inf'), None
+        for end in self.final_states:
+            d, p = self.movements.shortest_path(self.start, end)
+            if d < d_min:  # then this solution is better than the previous.
+                d_min = d
+                p_min = p
+        return d_min, p_min
+
+    def find_reverse_options(self):
+        if not self.reverse_queue:  # backward...
+            return
+        state = self.reverse_queue.pop(0)
+        self.reverse_edge.pop(state)
+        self.reverse_visited.add(state)
+
+        occupied = state.occupied()
+        for load_id, location in state:
+            load = self.loads[load_id]
+
+            options = sorted((d, s) for s, e, d in self.graph.edges(to_node=location) if
+                             s not in occupied and s not in load.prohibited)
+
+            for distance, option in options:
+                new_distance_traveled = state.distance + distance
+
+                new_state = State(tuple((lid, loc) if lid != load_id else (load_id, option) for lid, loc in state),
+                                  distance=new_distance_traveled)
+
+                if self.movements.edge(new_state, state, float('inf')) < distance:
+                    continue
+                else:
+                    self.movements.add_edge(new_state, state, distance)
+
+                if new_state in self.reverse_edge:
+                    existing_new_state = self.reverse_edge.get(new_state)
+                    if new_state < existing_new_state:  # replace!
+                        self.reverse_edge[new_state] = new_state
+                        self.reverse_queue.remove(existing_new_state)
+                        insort(self.reverse_queue, new_state)
+                    else:
+                        pass
+                    continue  # case is already queued for testing.
+                elif new_state in self.reverse_visited:
+                    continue  # seen before
+                else:
+                    self.reverse_edge[new_state] = new_state
+                    insort(self.reverse_queue, new_state)
+
+                if new_state in self.forward_visited:
+                    self._match(new_state)
+
+
+def jam_solver(graph, loads, timeout=None, synchronous_moves=True, return_on_first=False):
+    """
+
+    :param graph:
+    :param loads:
+    :param timeout:
+    :param synchronous_moves:
+    :param return_on_first:
+    :return:
+    """
+    all_loads = check_user_input(graph, loads)
+    timer = Timer(timeout)
+    c = JamSolver(graph, all_loads, timer)
+    d, p = c.solve(return_on_first)
+
+    if not p:
+        if timer.expired():
+            raise UnSolvable(f"no solution found with timeout = {timeout} msecs")
+        else:
+            raise NoSolution(f"no solution found.")
+
+    moves = path_to_moves(p)
+    if synchronous_moves:
+        return moves_to_synchronous_moves(moves, all_loads)
+    return moves
 
