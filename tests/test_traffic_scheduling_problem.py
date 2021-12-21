@@ -500,8 +500,8 @@ def test_clockwise_rotation():
 
     expected = [{3: (3, 4)},  # first move.
                 {2: (2, 3)},  # second move.
-                {1: (1, 2)}], sequence  # last move.
-    assert is_matching(sequence, expected)
+                {1: (1, 2)}]  # last move.
+    assert is_matching(sequence, expected), sequence
 
 
 def test_small_gridlock():
