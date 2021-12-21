@@ -1101,7 +1101,7 @@ methods = [
 class State(object):
     def __init__(self, loads, distance=0):
         self.loads = loads
-        self._hash = hash(self.loads)
+        self._hash = hash(self.loads)  # by pre-calculating the hash, we save cpu time later.
         self.distance = distance
 
     def __str__(self):
@@ -1114,13 +1114,16 @@ class State(object):
         return self.distance < other.distance
 
     def __iter__(self):
-        for lid,loc in self.loads:
-            yield lid,loc
+        for lid, loc in self.loads:
+            yield lid, loc
 
     def __hash__(self):
         return self._hash
 
     def __eq__(self, other):
+        # this is actually required for dict's to work.
+        # for more see example on:
+        # https://stackoverflow.com/questions/9010222/why-can-a-python-dict-have-multiple-keys-with-the-same-hash?noredirect=1&lq=1
         return self._hash == other._hash
 
     def occupied(self):
@@ -1140,32 +1143,31 @@ class JamSolver(object):
             raise TypeError
         if not all(isinstance(i, Load) for i in loads.values()):
             raise TypeError
+        if not all(lid == load.id for lid, load in loads.items()):
+            raise ValueError
         if not isinstance(timer, Timer):
             raise TypeError
 
         self.graph = graph
         self.movements = Graph()
         self.loads = loads
-        # self.load_index = {load.id: load for load in loads}
         self.timer = timer
-        self.start = None
-        self.ends = set()
 
-        initial_state = State(loads=tuple((ld.id, ld.start) for ld in self.loads.values()),
-                              distance=0)
+        initial_state = State(loads=tuple((ld.id, ld.start) for ld in self.loads.values()), distance=0)
         self.start = initial_state
+        self.ends = set()
 
         self.movements.add_node(initial_state)
 
         self.forward_queue = [initial_state]               # this is the working queue with priority.
         self.forward_edge = {initial_state:initial_state}  # this is a duplicate of items in the work queue
         self.forward_visited = set()                       # we dont want to spend CPU time on this.
-        self.forward_max_distance = float('inf')
 
         self.reverse_queue = []
         self.reverse_edge = {}
         self.reverse_visited = set()
-        self.reverse_max_distance = float('inf')
+
+        self.max_search_distance = float('inf')
 
         self.final_states = set()
 
@@ -1245,26 +1247,25 @@ class JamSolver(object):
                     else:
                         pass
                     continue  # case is already queued for testing.
-                elif new_state in self.forward_visited:
+                elif new_state in self.forward_visited or new_state in self.reverse_visited:
                     continue  # seen before
                 else:
                     self.forward_edge[new_state] = new_state
                     insort(self.forward_queue, new_state)
 
                 if new_state in self.reverse_visited:
-                    self._match(new_state)
+                    self._match()
 
-    def _match(self,state):
+    def _match(self):
         d, p = shortest_path_multiple_ends(self.movements, self.start, self.final_states)
-        self.forward_max_distance = min(d, self.forward_max_distance)
-        self.reverse_max_distance = min(d, self.reverse_max_distance)
+        self.max_search_distance = min(d, self.max_search_distance)
 
-        self.forward_visited.update({s for s in self.forward_queue if s.distance > self.forward_max_distance})
-        self.forward_queue = [s for s in self.forward_queue if s.distance <= self.forward_max_distance]
+        self.forward_visited.update({s for s in self.forward_queue if s.distance > self.max_search_distance})
+        self.forward_queue = [s for s in self.forward_queue if s.distance <= self.max_search_distance]
         self.forward_edge = {s:s for s in self.forward_queue}
 
-        self.reverse_visited.update({s for s in self.reverse_queue if s.distance > self.reverse_max_distance})
-        self.reverse_queue = [s for s in self.reverse_queue if s.distance <= self.reverse_max_distance]
+        self.reverse_visited.update({s for s in self.reverse_queue if s.distance > self.max_search_distance})
+        self.reverse_queue = [s for s in self.reverse_queue if s.distance <= self.max_search_distance]
         self.reverse_edge = {s:s for s in self.reverse_queue}
 
         if self.return_on_first:
@@ -1313,14 +1314,14 @@ class JamSolver(object):
                     else:
                         pass
                     continue  # case is already queued for testing.
-                elif new_state in self.reverse_visited:
+                elif new_state in self.reverse_visited or new_state in self.forward_visited:
                     continue  # seen before
                 else:
                     self.reverse_edge[new_state] = new_state
                     insort(self.reverse_queue, new_state)
 
                 if new_state in self.forward_visited:
-                    self._match(new_state)
+                    self._match()
 
 
 def jam_solver(graph, loads, timeout=None, synchronous_moves=True, return_on_first=False):
