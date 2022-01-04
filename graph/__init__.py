@@ -485,6 +485,42 @@ def breadth_first_walk(graph, start, end=None, reversed_walk=False):
                 q.append(next_node)
 
 
+def distance_map(graph, starts, ends=None):
+    """ Maps the shortest path distance from any start to any end.
+    :param graph: instance of Graph
+    :param starts: node or (set,list,tuple) of nodes
+    :param ends: None (exhaustive map), node or (set,list,tuple) of nodes
+    :return: dictionary with {node: distance from start}
+    """
+    if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
+        raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
+    if not isinstance(starts, Iterable):
+        starts = {starts}
+    if any(start not in graph for start in starts):
+        missing = [start not in graph for start in starts]
+        raise ValueError(f"starts: ({missing}) not in graph")
+    if ends is None:
+        ends = {}
+    if not isinstance(ends, Iterable):
+        ends = {ends}
+    if any(end is not None and end not in graph for end in ends):
+        missing = [end is not None and end not in graph for end in ends]
+        raise ValueError(f"{missing} not in graph. Use `end=None` if you want exhaustive search.")
+
+    visited = {start: 0 for start in starts}
+    q = deque(starts)
+    while q:
+        n1 = q.popleft()
+        if n1 in ends:
+            continue
+        d1 = visited[n1]
+        for _, n2, d in graph.edges(from_node=n1):
+            if n2 not in visited:
+                q.append(n2)
+            visited[n2] = min(d1+d, visited.get(n2, float('inf')))
+    return visited
+
+
 def depth_first_search(graph, start, end):
     """
     Determines path from start to end using
@@ -1948,6 +1984,15 @@ class Graph(BasicGraph):
         :return: generator for breadth-first walk
         """
         return breadth_first_walk(graph=self, start=start, end=end, reversed_walk=reversed_walk)
+
+    def distance_map(self, starts, ends=None):
+        """ Maps the shortest path distance from any start to any end.
+        :param graph: instance of Graph
+        :param starts: node or (set,list,tuple) of nodes
+        :param ends: None (exhaustive map), node or (set,list,tuple) of nodes
+        :return: dictionary with {node: distance from start}
+        """
+        return distance_map(self, starts, ends)
 
     def depth_first_search(self, start, end):
         """
