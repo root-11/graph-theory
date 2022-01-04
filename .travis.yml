@@ -1,9 +1,9 @@
 language: python
-dist: xenial
+dist: focal
 
 install: python setup.py install
 script:
-  - nosetests --with-coverage ./tests
+  - travis_wait 30 nosetests --with-coverage ./tests
   - codecov --token=fda2c226-4558-416a-832f-4ca5d7a98333
 
 matrix:
@@ -52,7 +52,7 @@ matrix:
         - pip install coverage
         - pip install codecov
 
-#     - python: pypy3
-#       before_install:
-#         - pip install coverage
-#         - pip install codecov
+    - python: pypy3
+      before_install:
+        - pip install coverage
+        - pip install codecov
