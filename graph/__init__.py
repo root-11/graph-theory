@@ -2027,6 +2027,7 @@ class Graph(BasicGraph):
         :param graph: instance of Graph
         :param starts: node or (set,list,tuple) of nodes
         :param ends: None (exhaustive map), node or (set,list,tuple) of nodes
+        :param reverse: boolean, if True follows edges backwards.
         :return: dictionary with {node: distance from start}
         """
         return distance_map(self, starts, ends, reverse)
