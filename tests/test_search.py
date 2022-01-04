@@ -207,6 +207,44 @@ def test_bfw():
     assert walk == [1, 2, 3, 4, 5]
 
 
+def test_distance_map():
+    g = graph3x3()
+    d = g.distance_map(starts=1)
+
+    assert all(d[i] == 1 for i in [2, 4])
+    assert all(d[i] == 2 for i in [3, 5, 7])
+    assert all(d[i] == 3 for i in [6, 8])
+    assert all(d[i] == 4 for i in [9])
+
+
+def test_distance_map_fail():
+    g = graph3x3()
+    d = g.distance_map(starts=9)  # All edges end in 9, so the dict should contain nothing.
+    assert d == {9: 0}
+
+
+def test_distance_map_with_ends():
+    g = graph3x3()
+    d = g.distance_map(starts=1, ends=5)
+
+    assert d[5] == 2
+    assert d == {1: 0,
+                 2: 1, 4: 1,
+                 3: 2, 5: 2, 7: 2,
+                 6: 3, 8: 3,
+                 9: 4}
+
+
+def test_distance_map_multiple_starts_and_ends():
+    g = graph3x3()
+    d = g.distance_map(starts=[1, 3], ends=[7, 9])
+
+    assert d == {1: 0, 3: 0,
+                 2: 1, 4: 1, 6: 1,
+                 5: 2, 7: 2, 9: 2,
+                 8: 3}
+
+
 def test_shortest_tree_all_pairs01():
     g = Graph()
     links = [
