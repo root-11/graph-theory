@@ -42,7 +42,6 @@ def test_graph02():
     assert isinstance(graph02(), Graph)
 
 
-
 def graph3x3():
     """
     1 -> 2 -> 3
