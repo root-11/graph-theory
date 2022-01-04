@@ -669,7 +669,7 @@ def test_3_trains():
         'e': [9, 1], 'f': [10, 2], 'g': [11, 3], 'h': [12, 4]  # west bound
     }
 
-    sequence = jam_solver(g, loads, return_on_first=True,timeout=20_000)
+    sequence = jam_solver(g, loads, return_on_first=True,timeout=40_000)
     assert sequence is not None
 
 
