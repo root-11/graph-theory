@@ -345,6 +345,9 @@ class JamSolver(object):
             self.final_states.add(state)
 
         self.distance_maps = {}
+        # The distance maps are used as proxy for simulated annealing.
+        # The closer a load is to any of it's destinations, the lower the temperature.
+        # when all loads have reach a destination, the temperature is zero.
         for load_id, load in self.loads.items():
             self.distance_maps[load_id] = self.graph.distance_map(ends=load.ends, reverse=True)
 
@@ -508,13 +511,39 @@ class JamSolver(object):
 
 def jam_solver(graph, loads, timeout=None, synchronous_moves=True, return_on_first=False):
     """
+    The traffic jam solver
+    - a bidirectional search algorithm that uses simulated annealing
+    to induce bias to accelerate the solvers direction of search.
 
-    :param graph:
-    :param loads:
-    :param timeout:
-    :param synchronous_moves:
-    :param return_on_first:
-    :return:
+    :param graph network available for routing.
+    :param loads: dictionary or list with load id and preferred route. Examples:
+
+    loads_as_list = [
+        {'id': 1, 'start': 1, 'end': 3},  # keyword prohibited is missing.
+        {'id': 2, 'start': 2, 'end': [3, 4, 5], 'prohibited': [7, 8, 9]},
+        {'id': 3, 'start': 3, 'end': [4, 5], 'prohibited': [2]}  # gateway to off limits.
+        {'id': 4, 'start': 8}  # load 4 is where it needs to be.
+    ]
+
+    loads_as_dict = {
+        1: (1, 3),  # start, end, None
+        2: (2, [3, 4, 5], [7, 8, 9]),  # start, end(s), prohibited
+        3: (3, [4, 5], [2]),
+        4: (8, ),
+    }
+
+    :param timeout: None or Number of milliseconds.
+    :param synchronous_moves: boolean, set to True to return concurrent moves
+    :param return_on_first: boolean, tell solver to stop at first valid solution,
+                            disregarding whether the solution is the most energy
+                            efficient.
+    :return: list of dictionaries as sequence of moves. Example:
+
+    solution = [{'b': (5, 6), 'c': (4, 5), 'e': (1, 4)},              # 1st moves.
+                {'b': (6, 3), 'c': (5, 6), 'e': (4, 5), 'a': (2, 1)}, # 2nd moves.
+                {'b': (3, 2), 'c': (6, 3), 'e': (5, 6)},              # 3rd moves.
+                {'e': (6, 9)}]                                        # 4th move.
+
     """
     all_loads = check_user_input(graph, loads)
     timer = Timer(timeout)
