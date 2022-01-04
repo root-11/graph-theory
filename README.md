@@ -15,16 +15,12 @@ Detailed tutorial evolving in the [examples section](https://github.com/root-11/
 
 Latest feature:
 
+    2022/01/04 new feature: Graph.distance_map, which allows the user to compute
+               the distance from a number of starts and ends as simulated annealing map.
+    2022/01/04 new generation of the traffic jam solver.
     2021/12/12 shortest path now accepts keyword `avoids`, which allows the user
                to declare nodes which cannot be a part of the path.
                This feature has no impact on performance.
-    2021/08/17 New module for solving traffic jam type coordination problems.
-    2021/04/01 method for minimising slack in DAG without changing critical path.
-    2021/03/30 added jupyter notebooks /examples for extending documentation (#26)
-    2021/03/27 critical path method
-    2021/03/18 topological sort
-    2021/03/15 much faster shortest path algorithm
-    2021/02/12 minimum cost flow problem
 
 ---------------------------
 Install:
@@ -96,6 +92,7 @@ All module functions are available from Graph and Graph3D (where applicable).
 | + | + | `g.breadth_first_search(start,end)`              | returns the number of edges and path with fewest edges                                                                                                                                                                ||
 | + | + | `g.breadth_first_walk(start,end)`                | returns a generator for a BFS walk                                                                                                                                                                                    ||
 | + | + | `g.degree_of_separation(n1,n2)`                  | returns the distance between two nodes using BFS                                                                                                                                                                      ||
+| + | + | `g.distance_map(starts,ends, reverse)`           | returns a dictionary with the distance from any start to any end (or reverse)                                                                                                                                         ||
 | + | + | `g.network_size(n1, degree_of_separation)`       | returns the nodes within the range given by `degree_of_separation`                                                                                                                                                    ||
 | + | + | `g.topological_sort(key)`                        | returns a generator that yields node in order from a non-cyclic graph.                                                                                                                                                ||
 | + | + | `g.critical_path()`                              | returns the distance of the critical path and a list of Tasks.                                                                                                                                                        | [Example](examples/solving%20search%20problems.ipynb) |
