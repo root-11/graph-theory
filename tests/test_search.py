@@ -223,6 +223,42 @@ def test_distance_map_fail():
     assert d == {9: 0}
 
 
+def test_distance_map_reverse():
+    g = graph3x3()
+    d = g.distance_map(ends=9, reverse=True)
+    assert d == {9: 0, 6: 1, 8: 1, 3: 2, 5: 2, 7: 2, 2: 3, 4: 3, 1: 4}
+
+
+def test_distance_map_reverse_with_start():
+    g = graph3x3()
+    g.add_edge(0, 1, 1)
+    d = g.distance_map(starts=[2, 4], ends=9, reverse=True)
+    assert d == {9: 0,
+                 6: 1, 8: 1,
+                 3: 2, 5: 2, 7: 2,
+                 2: 3, 4: 3,
+                 1: 4}, d
+    assert 0 not in d
+
+
+def test_distance_map_with_starts_and_ends():
+    g = graph3x3()
+    g.add_edge(0, 1, 1)
+    d = g.distance_map(starts=[2, 4], ends=[6, 8])
+    assert d == {2: 0, 4: 0,
+                 3: 1, 5: 1, 7: 1,
+                 6: 2, 8: 2,
+                 9: 3}, d
+    assert 0 not in d
+
+
+def test_distance_map_with_tailing_ends():
+    g = Graph(from_list=[(1, 2, 1), (2, 3, 1), (3, 4, 1), (4, 5, 1), (5, 6, 1), (6, 7, 1)])
+    d = g.distance_map(starts=1, ends=[3,5])
+    assert d == {1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5}, d
+    assert 7 not in d
+
+
 def test_distance_map_with_ends():
     g = graph3x3()
     d = g.distance_map(starts=1, ends=5)
@@ -231,8 +267,7 @@ def test_distance_map_with_ends():
     assert d == {1: 0,
                  2: 1, 4: 1,
                  3: 2, 5: 2, 7: 2,
-                 6: 3, 8: 3,
-                 9: 4}
+                 6: 3, 8: 3}, d
 
 
 def test_distance_map_multiple_starts_and_ends():
@@ -242,7 +277,7 @@ def test_distance_map_multiple_starts_and_ends():
     assert d == {1: 0, 3: 0,
                  2: 1, 4: 1, 6: 1,
                  5: 2, 7: 2, 9: 2,
-                 8: 3}
+                 8: 3}, d
 
 
 def test_shortest_tree_all_pairs01():
