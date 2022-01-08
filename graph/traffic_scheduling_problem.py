@@ -375,12 +375,12 @@ class JamSolver(object):
         ids, destinations = [], []
         for load in self.loads.values():
             ids.append(load.id)
-            destinations.append([list(load.ends)])
+            destinations.append(list(load.ends))
 
         for combo in product(*destinations):
-            if len(combo) != len(destinations):
+            if len(set(combo)) != len(destinations):
                 continue  # it's a duplicate.
-            state = tuple((lid, loc[0]) for lid, loc in zip(ids, combo))
+            state = tuple((lid, loc) for lid, loc in zip(ids, combo))
             yield State(state)
 
     def _search(self):

@@ -437,6 +437,54 @@ def test_simple_reroute_3():
     assert is_sequence_valid(sequence, g)
 
 
+def test_shuffle():
+    g = Graph()
+    edges = [(1, 2), (2, 3), (3, 5), (3, 6), (5, 6), (6, 7), (7, 8)]
+    for s, e in edges:
+        g.add_edge(s, e, 1, bidirectional=True)
+
+    loads = {
+        1: (1, 7),
+        2: (2, [2, 5]),
+        3: (8, [8, 5])
+    }
+    sequence = jam_solver(g, loads, synchronous_moves=False)
+
+    expected = [
+        {2: (2, 3)},
+        {2: (3, 5)},
+        {1: (1, 2)},
+        {1: (2, 3)},
+        {1: (3, 6)},
+        {1: (6, 7)}]
+
+    assert is_matching(sequence, expected), sequence
+
+
+def test_shuffle2():
+    g = Graph()
+    edges = [(1, 2), (2, 3), (3, 5), (3, 6), (5, 6), (6, 7), (7, 8)]
+    for s, e in edges:
+        g.add_edge(s, e, 1, bidirectional=True)
+    loads = {
+        1: (1, 7),
+        2: (2, g.nodes()),
+        3: (8, g.nodes())
+    }
+
+    sequence = jam_solver(g, loads, synchronous_moves=False, return_on_first=True)
+
+    expected = [
+        {2: (2, 3)},
+        {2: (3, 5)},
+        {1: (1, 2)},
+        {1: (2, 3)},
+        {1: (3, 6)},
+        {1: (6, 7)}]
+
+    assert is_matching(sequence, expected), sequence
+
+
 def test_simple_reroute_4():
     """
         1
