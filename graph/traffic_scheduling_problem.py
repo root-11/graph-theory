@@ -354,6 +354,10 @@ class JamSolver(object):
         self.done = False
         self.return_on_first = False
 
+    def __str__(self):
+        s = "timed out" if self.timer.expired() else "running"
+        return f"<{self.__class__.__name__}> {s}"
+
     def _distance(self, load_id, location):
         try:
             return self.distance_maps[load_id][location]
