@@ -1,4 +1,5 @@
-from collections import defaultdict, deque, Iterable
+from collections import defaultdict, deque
+from collections.abc import Iterable
 from heapq import heappop, heappush
 from itertools import combinations, chain
 from bisect import insort
@@ -12,7 +13,6 @@ The graph-theory library is organised in the following way for clarity of struct
 2. All methods for class Graph in same order as on Graph.
 3. Graph (class)
 4. Graph3D (class) 
-
 """
 
 
