@@ -1,5 +1,5 @@
 # graph-theory
-[![Build Status](https://app.travis-ci.com/root-11/graph-theory.svg?branch=master)](https://app.travis-ci.com/root-11/graph-theory)
+![Build status](https://github.com/root-11/graph-theory/actions/workflows/python-package.yml/badge.svg)
 [![Code coverage](https://codecov.io/gh/root-11/graph-theory/branch/master/graph/badge.svg)](https://codecov.io/gh/root-11/graph-theory)
 [![Downloads](https://pepy.tech/badge/graph-theory)](https://pepy.tech/project/graph-theory)
 [![Downloads](https://pepy.tech/badge/graph-theory/month)](https://pepy.tech/project/graph-theory/month)
