@@ -175,11 +175,6 @@ def test_has_cycles():
 
 def test_network_size():
     g = fishbone_graph(levels=3, lengths=3, depths=3)
-    try:
-        plt = g.plot(rotation='yxz')
-        plt.show()
-    except ImportError:
-        pass
     entry_point = (-1, 0, 2)
     assert g.network_size(entry_point)
 

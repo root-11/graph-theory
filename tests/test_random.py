@@ -1,6 +1,5 @@
-from graph import Graph, tsp_greedy
-from graph.random import random_xy_graph, xy_distance
-from graph.visuals import plot_2d, visuals_enabled
+from graph import Graph
+from graph.random import random_xy_graph
 
 
 def graph07():
@@ -49,31 +48,6 @@ def test_random_graph_2():
     g2 = random_xy_graph(nodes=nodes, edges=None, x_max=800, y_max=400, seed=42)
     assert len(g.nodes()) == len(g2.nodes())
     assert len(g.edges()) == len(g2.edges())
-
-
-def test_random_graph_3():
-    g = random_xy_graph(200, x_max=800, y_max=400)  # a fully connected graph.
-    dist, tour = tsp_greedy(g)
-
-    # convert the route to a graph.
-    g = Graph()
-
-    a = tour[0]
-    for b in tour[1:]:
-        g.add_edge(a, b, xy_distance(a, b))
-        a = b
-    # add the link back to start.
-    b = tour[0]
-    g.add_edge(a, b, xy_distance(a, b))
-
-    # add a red diamond for the starting point.
-    if not visuals_enabled:
-        return
-    plt = plot_2d(g)
-    start = tour[0:1]
-    xs, ys = [c[0] for c in start], [c[1] for c in start]
-    plt.plot(xs, ys, 'rD', clip_on=False)
-    plt.show()
 
 
 def test_random_graph_4():

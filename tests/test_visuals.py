@@ -1,7 +1,5 @@
-from graph.random import random_xy_graph, xy_distance
 from graph.visuals import plot_2d
 from graph import Graph
-from tests.test_spatial_graph import spiral_graph, fishbone_graph
 
 
 def test_bad_input():
@@ -47,58 +45,3 @@ def test_bad_input3():
     except (ValueError, ImportError):
         pass
 
-
-def test_random_graph_3():
-    g = random_xy_graph(200, x_max=800, y_max=400)  # a fully connected graph.
-    dist, tour = g.solve_tsp()
-
-    # convert the route to a graph.
-    g = Graph()
-
-    a = tour[0]
-    for b in tour[1:]:
-        g.add_edge(a, b, xy_distance(a, b))
-        a = b
-    # add the link back to start.
-    b = tour[0]
-    g.add_edge(a, b, xy_distance(a, b))
-
-    # add a red diamond for the starting point.
-    try:
-        plt = plot_2d(g)
-        start = tour[0:1]
-        xs, ys = [c[0] for c in start], [c[1] for c in start]
-        plt.plot(xs, ys, 'rD', clip_on=False)
-        plt.show()
-    except (ValueError, ImportError):
-        pass
-
-
-def test_plotting():
-    g = spiral_graph()
-    try:
-        g.plot()
-    except ImportError:
-        pass
-
-    g = fishbone_graph()
-    try:
-        plt = g.plot()
-        plt.show()
-        plt = g.plot(rotation='yxz')
-        plt.show()
-        plt = g.plot(maintain_aspect_ratio=True)
-        plt.show()
-    except ImportError:
-        pass
-
-    try:
-        _ = g.plot(rotation='x')
-        raise AssertionError
-    except (ValueError, ImportError):
-        pass
-    try:
-        _ = g.plot(rotation='abc')
-        raise AssertionError
-    except (ValueError, ImportError):
-        pass

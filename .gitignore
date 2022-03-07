@@ -1,0 +1,17 @@
+# byte compiled files
+__pycache__/**
+*.py[cod]
+
+# Distribution / packaging
+dist/
+*.egg-info
+
+# Testing
+.pytest_cache/
+
+# Tutorial checkpoints
+examples/.ipynb_checkpoints/
+
+
+# Workspace
+graph-theory.code-workspace
