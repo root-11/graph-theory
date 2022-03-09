@@ -446,10 +446,11 @@ class JamSolver(object):
         of the valid end states """
         d_min, p_min = float('inf'), None
         for end in self.final_states:
-            d, p = self.movements.shortest_path(self.start, end)
-            if d < d_min:  # then this solution is better than the previous.
-                d_min = d
-                p_min = p
+            if end in self.movements:
+                d, p = self.movements.shortest_path(self.start, end)
+                if d < d_min:  # then this solution is better than the previous.
+                    d_min = d
+                    p_min = p
         return d_min, p_min
 
     def _match(self):
