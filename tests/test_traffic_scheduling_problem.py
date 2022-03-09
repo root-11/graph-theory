@@ -802,3 +802,46 @@ def test_incomplete_graph():
         assert False, "There is no path."
     except UnSolvable as e:
         assert str(e) == 'load 1 has no path from 1 to 5'
+
+def test_timeout():
+    """ Timeout prevents all end states from being recorded, ensure that a solution is still found """
+    edges = {1: {2: 1, 41: 2, 63: 2},
+             41: {42: 1, 1: 2, 63: 2},
+             65: {1: 2, 41: 2, 63: 2},
+             2: {1: 1, 3: 1},
+             3: {2: 1, 4: 1},
+             4: {3: 1, 5: 1},
+             5: {4: 1},
+             42: {41: 1, 43: 1},
+             43: {42: 1, 44: 1},
+             44: {43: 1, 45: 1},
+             45: {44: 1},
+             63: {'pseudo_L48': 1, 'pseudo_L33': 1, 'pseudo_L35': 1, 'pseudo_L55': 1}}
+
+    subgraph_2 = Graph(from_dict=edges)
+
+    loads_for_jam_solver = {'L23': (41, [3, 4, 41, 44, 1, 2]),
+                            'L48': (42, ['pseudo_L48']),
+                            'L33': (43, ['pseudo_L33']),
+                            'L8': (44, [3, 4, 41, 44, 1, 2]),
+                            'L35': (45, ['pseudo_L35']),
+                            'L5': (3, [3, 4, 41, 44, 1, 2]),
+                            'L15': (4, [3, 4, 41, 44, 1, 2]),
+                            'L55': (5, ['pseudo_L55'])}
+
+    moves = jam_solver(graph=subgraph_2, loads=loads_for_jam_solver, timeout=5000, synchronous_moves=False)
+
+    expected_moves = [{'L23': (41, 1)}, {'L48': (42, 41)}, {'L48': (41, 63)}, {'L48': (63, 'pseudo_L48')},
+                      {'L33': (43, 42)}, {'L33': (42, 41)}, {'L33': (41, 63)}, {'L33': (63, 'pseudo_L33')},
+                      {'L5': (3, 2)}, {'L15': (4, 3)}, {'L55': (5, 4)}, {'L23': (1, 41)}, {'L5': (2, 1)},
+                      {'L15': (3, 2)}, {'L55': (4, 3)}, {'L23': (41, 42)}, {'L23': (42, 43)}, {'L5': (1, 41)},
+                      {'L15': (2, 1)}, {'L55': (3, 2)}, {'L5': (41, 42)}, {'L15': (1, 41)}, {'L55': (2, 1)},
+                      {'L55': (1, 63)}, {'L55': (63, 'pseudo_L55')}, {'L15': (41, 1)}, {'L5': (42, 41)},
+                      {'L23': (43, 42)}, {'L15': (1, 2)}, {'L5': (41, 1)}, {'L23': (42, 41)}, {'L8': (44, 43)},
+                      {'L35': (45, 44)}, {'L8': (43, 42)}, {'L35': (44, 43)}, {'L15': (2, 3)}, {'L5': (1, 2)},
+                      {'L15': (3, 4)}, {'L5': (2, 3)}, {'L23': (41, 1)}, {'L23': (1, 2)}, {'L8': (42, 41)},
+                      {'L35': (43, 42)}, {'L8': (41, 1)}, {'L35': (42, 41)}, {'L35': (41, 63)},
+                      {'L35': (63, 'pseudo_L35')}]
+
+    for index in range(5):
+        assert moves[index] == expected_moves[index]
