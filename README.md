@@ -14,7 +14,7 @@ Detailed tutorial evolving in the [examples section](https://github.com/root-11/
 ---------------------------
 
 Latest feature:
-
+    2022/03/09 bugfixes to TrafficJamSolver only.
     2022/01/04 new feature: Graph.distance_map, which allows the user to compute
                the distance from a number of starts and ends as simulated annealing map.
     2022/01/04 new generation of the traffic jam solver.
