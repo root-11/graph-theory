@@ -13,7 +13,8 @@ A simple graph library...<br>
 Detailed tutorial evolving in the [examples section](https://github.com/root-11/graph-theory/blob/master/examples/readme.md).
 ---------------------------
 
-Latest feature:
+Latest features:
+
     2022/03/09 bugfixes to TrafficJamSolver only.
     2022/01/04 new feature: Graph.distance_map, which allows the user to compute
                the distance from a number of starts and ends as simulated annealing map.
