@@ -9,6 +9,9 @@ from graph.traffic_scheduling_problem import check_user_input, path_to_moves
 from graph.traffic_scheduling_problem import moves_to_synchronous_moves
 
 
+import pytest
+
+
 def test_data_loading():
     """ Checks the two acceptable data formats - happy path. """
     g = Graph(from_list=[
@@ -626,6 +629,7 @@ def test_snake_gridlock():
     assert is_matching(expected, sync_moves), sync_moves
 
 
+@pytest.mark.timesensitive  # to include run: pytest tests --timesensitive . See tests/conftest.py for details.
 def test_5x5_graph():
     g = graph5x5()
     loads = {'a': [6], 'b': [11, 1], 'c': [16, 2], 'd': [17, 4], 'e': [19, 5], 'f': [20, 3]}
@@ -634,6 +638,7 @@ def test_5x5_graph():
     assert is_sequence_valid(sequence, g)
 
 
+@pytest.mark.timesensitive  # to include run: pytest tests --timesensitive . See tests/conftest.py for details.
 def test_2_trains():
     """
     two trains of loads are approaching each other.
@@ -690,6 +695,7 @@ def test_2_trains():
     assert is_matching(expected, sequence), sequence
 
 
+@pytest.mark.timesensitive  # to include run: pytest tests --timesensitive . See tests/conftest.py for details.
 def test_3_trains():
     """
     Two trains (abc & d) are going east. One train is going west (efgh).
