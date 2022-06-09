@@ -32,6 +32,11 @@ Upgrade:
 
     pip install graph-theory --upgrade --no-cache
 
+Testing:
+
+    pytest tests --timesensitive  (for all tests)
+    pytest tests (for logic tests only)
+
 ---------------------------
 Import:
 
