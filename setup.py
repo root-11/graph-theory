@@ -15,12 +15,12 @@ with open(str(readme), encoding='utf-8') as f:
     long_description = f.read()
 
 keywords = list({
-    'complex-networks', 'discrete mathematics', 'graph', 'Graph Theory', 'graph-algorithms', 'graph-analysis',
-    'graph-generation', 'graph-theory', 'graph-visualization', 'graphs', 'math', 'Mathematics', 'maths',
-    'minimum-spanning-trees', 'network', 'Networks', 'optimization', 'python', 'shortest-path', 'tsp', 'tsp-solver',
-    'assignment problem', 'flow-problem', 'hash', 'graph-hash', 'random graph', 'search', 'cycle', 'path',
-    'component', 'components', 'adjacency', 'matrix', 'all pairs shortest path', 'finite state machine', 'fsm',
-    'traffic-jam', 'traffic-jam-solver', 'solver', 'hill-climbing', 'simple', 'simple-path', 'critical', 'path',
+    'complex-networks', 'discrete mathematics', 'graph', 'Graph Theory', 'graph-algorithms', 'graph-analysis', 'analysis', 'algorithms',
+    'graph-generation', 'graph-theory', 'graph-visualization', 'graphs', 'math', 'Mathematics', 'maths', 'generation', 'generate', 'theory',
+    'minimum-spanning-trees', 'network', 'Networks', 'optimization', 'python', 'shortest-path', 'tsp', 'tsp-solver', 'minimum', 'spanning', 'tree',
+    'assignment problem', 'flow-problem', 'hash', 'graph-hash', 'random graph', 'search', 'cycle', 'path', 'flow', 'path', 'shortest',
+    'component', 'components', 'adjacency', 'matrix', 'all pairs shortest path', 'finite state machine', 'fsm', 'adjacent', 'pairs', 'finite', 'state', 'machine',
+    'traffic-jam', 'traffic-jam-solver', 'solver', 'hill-climbing', 'simple', 'simple-path', 'critical', 'path', 'congestions', 'jam', 'traffic', 'optimisation',
     'method', 'critical-path', 'minimize', 'minimise', 'optimize', 'optimise', 'merkle', 'tree', 'merkle-tree',
     'hash-tree'
 })
