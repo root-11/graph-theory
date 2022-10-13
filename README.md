@@ -15,13 +15,13 @@ Detailed tutorial evolving in the [examples section](https://github.com/root-11/
 
 Latest features:
 
-    2022/03/09 bugfixes to TrafficJamSolver only.
-    2022/01/04 new feature: Graph.distance_map, which allows the user to compute
-               the distance from a number of starts and ends as simulated annealing map.
-    2022/01/04 new generation of the traffic jam solver.
-    2021/12/12 shortest path now accepts keyword `avoids`, which allows the user
-               to declare nodes which cannot be a part of the path.
-               This feature has no impact on performance.
+| date | description |
+|---|---|
+| 2022/10/04 | New tutorial: [Learn to solve traffic jams and sudoku's](https://github.com/root-11/graph-theory/blob/master/examples/graphs%20as%20finite%20state%20machines.ipynb) |
+| 2022/03/09 | bugfixes to TrafficJamSolver only. |
+| 2022/01/04 | new feature: Graph.distance_map, which allows the user to compute<br>the distance from a number of starts and ends as simulated annealing map. |
+| 2022/01/04 | new generation of the traffic jam solver.|
+| 2021/12/12 | shortest path now accepts keyword `avoids`, which allows the user<br>to declare nodes which cannot be a part of the path.<br>This feature has no impact on performance.|
 
 ---------------------------
 Install:
