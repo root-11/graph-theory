@@ -8,15 +8,15 @@ from pathlib import Path
 root = Path(__file__).parent
 
 __version__ = None
-version_file = root / "tablite" / "version.py"
+version_file = root / "graph" / "version.py"
 exec(version_file.read_text())
 assert isinstance(__version__, str)  # noqa
 
 with open(root / "README.md", encoding="utf-8") as f:
     long_description = f.read()
 
-with open(root / 'requirements.txt', 'r', encoding='utf-8') as fi:
-    requirements = [v.rstrip('\n') for v in fi.readlines()]
+with open(root / "requirements.txt", "r", encoding="utf-8") as fi:
+    requirements = [v.rstrip("\n") for v in fi.readlines()]
 
 keywords = list(
     {
@@ -110,7 +110,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     keywords=keywords,
-    packages=["graph"],
+    package_dir={"": "graph"},
     python_requires=">-3.7",
     include_package_data=True,
     data_files=[(".", ["LICENSE", "README.md", "requirements.txt"])],
