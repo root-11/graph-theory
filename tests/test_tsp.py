@@ -119,7 +119,7 @@ def test_random_graph_3_bnb():
     from random import seed, randint
 
     for i in range(4, 12):
-        s = randint(1, 1e7)
+        s = randint(1, int(1e7))
         seed(s)
         g = random_xy_graph(i, x_max=800, y_max=400)  # a fully connected graph.
         g = simplify(g)
