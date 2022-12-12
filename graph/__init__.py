@@ -124,7 +124,7 @@ class BasicGraph(object):
             return default
 
     def reverse_edge(self, node2, node1, default=None):
-        """ retrieves the edge from node2 to node1 """
+        """retrieves the edge from node2 to node1"""
         try:
             return self._reverse_edges[node2][node1]
         except KeyError:
@@ -199,9 +199,7 @@ class BasicGraph(object):
         del self._in_degree[node_id]
         del self._out_degree[node_id]
 
-    def nodes(self,
-              from_node=None, to_node=None,
-              in_degree=None, out_degree=None):
+    def nodes(self, from_node=None, to_node=None, in_degree=None, out_degree=None):
         """
         :param from_node (optional) return nodes with edges from 'from_node'
         :param to_node (optional) returns nodes with edges into 'to_node'
@@ -264,8 +262,7 @@ class BasicGraph(object):
             if len(path) < 2:
                 raise ValueError("path of length 1 is not a path.")
 
-            return [(path[ix], path[ix + 1], self._edges[path[ix]][path[ix + 1]])
-                    for ix in range(len(path) - 1)]
+            return [(path[ix], path[ix + 1], self._edges[path[ix]][path[ix + 1]]) for ix in range(len(path) - 1)]
 
         if from_node:
             if from_node in self._edges:
@@ -306,7 +303,7 @@ class BasicGraph(object):
                     self.add_edge(n1, n2, v)
 
     def to_dict(self):
-        """ creates a nested dictionary from the graph.
+        """creates a nested dictionary from the graph.
         :return dict d[n1][n2] = distance
         """
         d = {n: {} for n in self.nodes()}
@@ -338,11 +335,11 @@ class BasicGraph(object):
                 self.add_node(item[0])
 
     def to_list(self):
-        """ returns list of edges and nodes."""
+        """returns list of edges and nodes."""
         return self.edges() + [(i,) for i in self.nodes()]
 
     def is_connected(self, n1, n2):
-        """ helper determining if two nodes are connected using BFS. """
+        """helper determining if two nodes are connected using BFS."""
         if n1 in self._edges:
             q = deque([n1])
             visited = set()
@@ -360,18 +357,18 @@ class BasicGraph(object):
         return False  # <-- Exit if not connected.
 
     def in_degree(self, node):
-        """ returns the number of edges incoming on a node """
+        """returns the number of edges incoming on a node"""
         return self._in_degree[node]
 
     def out_degree(self, node):
-        """ returns the number of edges departing from a node"""
+        """returns the number of edges departing from a node"""
         return self._out_degree[node]
 
 
 # Graph functions
 # -----------------------------
 def shortest_path(graph, start, end, avoids=None):
-    """ single source shortest path algorithm.
+    """single source shortest path algorithm.
     :param graph: class Graph
     :param start: start node
     :param end: end node
@@ -421,7 +418,7 @@ def shortest_path(graph, start, end, avoids=None):
 
 
 def breadth_first_search(graph, start, end):
-    """ Determines the path from start to end with fewest nodes.
+    """Determines the path from start to end with fewest nodes.
     :param graph: class Graph
     :param start: start node
     :param end: end node
@@ -485,7 +482,7 @@ def breadth_first_walk(graph, start, end=None, reversed_walk=False):
 
 
 def distance_map(graph, starts=None, ends=None, reverse=False):
-    """ Maps the shortest path distance from any start to any end.
+    """Maps the shortest path distance from any start to any end.
     :param graph: instance of Graph
     :param starts: None, node or (set,list,tuple) of nodes
     :param ends: None (exhaustive map), node or (set,list,tuple) of nodes
@@ -536,7 +533,7 @@ def distance_map(graph, starts=None, ends=None, reverse=False):
             for _, n2, d in graph.edges(from_node=n1):
                 if n2 not in visited:
                     q.append(n2)
-                visited[n2] = min(d1+d, visited.get(n2, float('inf')))
+                visited[n2] = min(d1 + d, visited.get(n2, float("inf")))
 
     else:
         starts_found = set()
@@ -552,7 +549,7 @@ def distance_map(graph, starts=None, ends=None, reverse=False):
             for n1, _, d in graph.edges(to_node=n2):
                 if n1 not in visited:
                     q.append(n1)
-                visited[n1] = min(d+d2, visited.get(n1, float('inf')))
+                visited[n1] = min(d + d2, visited.get(n1, float("inf")))
 
     return visited
 
@@ -588,7 +585,7 @@ def depth_first_search(graph, start, end):
         for n2 in graph.nodes(from_node=n1):
             if n2 in visited:
                 continue
-            q.appendleft(n2)   # q.append(n2)
+            q.appendleft(n2)  # q.append(n2)
             break
         else:
             path.remove(n1)
@@ -604,7 +601,7 @@ def depth_first_search(graph, start, end):
 
 
 def depth_scan(graph, start, criteria):
-    """ traverses the descendants of node `start` using callable `criteria` to determine
+    """traverses the descendants of node `start` using callable `criteria` to determine
     whether to terminate search along each branch in `graph`.
 
     :param graph: class Graph
@@ -653,7 +650,7 @@ def depth_scan(graph, start, criteria):
 
 
 def distance(graph, path):
-    """ Calculates the distance for the path in graph
+    """Calculates the distance for the path in graph
     :param graph: class Graph
     :param path: list of nodes
     :return: distance
@@ -682,8 +679,8 @@ def distance(graph, path):
 
         # if there no alternative ... (search)
         d, _ = shortest_path(graph, n1, n2)
-        if d == float('inf'):
-            return float('inf')  # <-- Exit if there's no path.
+        if d == float("inf"):
+            return float("inf")  # <-- Exit if there's no path.
         else:
             cache[(n1, n2)] = d
         path_length += d
@@ -739,12 +736,11 @@ def maximum_flow(graph, start, end):
     while unassigned_flow:
         # 1. find the best path
         d, path = shortest_path(inverted_graph, start, end)
-        if d == float('inf'):  # then there is no path, and we must exit.
+        if d == float("inf"):  # then there is no path, and we must exit.
             return total_flow, flow_graph
         # else: use the path and lookup the actual flow from the capacity graph.
 
-        path_flow = min([min(d, capacity_graph.edge(s, e, default=float('inf')))
-                         for s, e, d in graph.edges(path=path)])
+        path_flow = min([min(d, capacity_graph.edge(s, e, default=float("inf"))) for s, e, d in graph.edges(path=path)])
 
         # 2. update the unassigned flow.
         unassigned_flow -= path_flow
@@ -833,7 +829,7 @@ def minimum_cost_flow_using_successive_shortest_path(costs, inventory, capacity=
         raise TypeError("not all stock is numeric.")
 
     if capacity is None:
-        capacity = Graph(from_list=[(s, e, float('inf')) for s, e, d in costs.edges()])
+        capacity = Graph(from_list=[(s, e, float("inf")) for s, e, d in costs.edges()])
     else:
         if not isinstance(capacity, Graph):
             raise TypeError("Expected capacity as a Graph")
@@ -870,7 +866,7 @@ def minimum_cost_flow_using_successive_shortest_path(costs, inventory, capacity=
 
         if E < 0:
             break  # no supplies left.
-        if dist == float('inf'):
+        if dist == float("inf"):
             raise Exception("bad logic: Case not checked for.")
 
         cost, path = paths.shortest_path(En, Dn)  # compute shortest path P from E to a node in demand D.
@@ -911,7 +907,7 @@ def tsp_branch_and_bound(graph):
         raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
 
     def lower_bound(graph, nodes):
-        """ Calculates the lower bound of distances for given nodes. """
+        """Calculates the lower bound of distances for given nodes."""
         L = []
         edges = set()
         for n in nodes:
@@ -941,11 +937,14 @@ def tsp_branch_and_bound(graph):
     for start, end, distance in graph.edges(from_node=start):
         lb = lower_bound(graph, all_nodes - {start})
         dist = sum(d for s, e, d in lb)
-        insort(q,
-               (distance + dist,  # lower bound of distance.
+        insort(
+            q,
+            (
+                distance + dist,  # lower bound of distance.
                 -2,  # number of nodes in tour.
-                (start, end))  # locations visited.
-               )
+                (start, end),
+            ),  # locations visited.
+        )
 
     hit, switch, q2 = 0, True, []
     while q:  # walk the tree.
@@ -966,7 +965,7 @@ def tsp_branch_and_bound(graph):
 
         for n2 in remaining_nodes:
 
-            new_tour = tour + (n2, )
+            new_tour = tour + (n2,)
 
             lb_set = remaining_nodes - {n2}
             if len(lb_set) > 1:
@@ -982,7 +981,7 @@ def tsp_branch_and_bound(graph):
 
             insort(q, (new_lb, -len(new_tour), new_tour))
 
-    return float('inf'), []  # <-- exit path if not solvable.
+    return float("inf"), []  # <-- exit path if not solvable.
 
 
 def tsp_greedy(graph):
@@ -999,14 +998,14 @@ def tsp_greedy(graph):
         raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
 
     def shortest_links_first(graph):
-        """ returns a list of (distance, node1, node2) with shortest on top."""
+        """returns a list of (distance, node1, node2) with shortest on top."""
         c = combinations(graph.nodes(), 2)
         distances = [(graph.edge(a, b), a, b) for a, b in c if graph.edge(a, b)]
         distances.sort()
         return distances
 
     def join_endpoints(endpoints, a, b):
-        """ Join segments [...,a] + [b,...] into one segment. Maintain `endpoints`.
+        """Join segments [...,a] + [b,...] into one segment. Maintain `endpoints`.
         :param endpoints:
         :param a: node
         :param b: node
@@ -1024,7 +1023,7 @@ def tsp_greedy(graph):
         return a_seg
 
     def tsp_tour_length(graph, tour):
-        """ The TSP tour length WITH return to the starting point."""
+        """The TSP tour length WITH return to the starting point."""
         return sum(graph.edge(tour[i - 1], tour[i]) for i in range(len(tour)))
         # note to above: If there's an error it's probably because the graph isn't
         # fully connected.
@@ -1081,7 +1080,7 @@ def tsp_greedy(graph):
 
 
 def subgraph(graph, nodes):
-    """ Creates a subgraph as a copy from the graph
+    """Creates a subgraph as a copy from the graph
     :param graph: class Graph
     :param nodes: set or list of nodes
     :return: new instance of Graph.
@@ -1124,7 +1123,7 @@ def is_subgraph(graph1, graph2):
 
 
 def is_partite(graph, n):
-    """ Checks if graph is n-partite
+    """Checks if graph is n-partite
     :param graph: class Graph
     :param n: int, number of partitions.
     :return: boolean and partitions as dict[colour] = set(nodes) or None.
@@ -1168,7 +1167,7 @@ def is_partite(graph, n):
 
 
 def has_cycles(graph):
-    """ Checks if graph has a cycle
+    """Checks if graph has a cycle
     :param graph: instance of class Graph.
     :return: bool
     """
@@ -1184,7 +1183,7 @@ def has_cycles(graph):
 
 
 def components(graph):
-    """ Determines the components of the graph
+    """Determines the components of the graph
     :param graph: instance of class Graph
     :return: list of sets of nodes. Each set is a component.
     """
@@ -1211,7 +1210,7 @@ def components(graph):
 
 
 def network_size(graph, n1, degrees_of_separation=None):
-    """ Determines the nodes within the range given by
+    """Determines the nodes within the range given by
     a degree of separation
     :param graph: Graph
     :param n1: start node
@@ -1271,7 +1270,9 @@ def topological_sort(graph, key=None):
         raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
 
     if key is None:
-        def key(x): return x
+
+        def key(x):
+            return x
 
     g2 = graph.copy()
 
@@ -1290,7 +1291,7 @@ def topological_sort(graph, key=None):
 
 
 def phase_lines(graph):
-    """ Determines the phase lines of a directed graph.
+    """Determines the phase lines of a directed graph.
     :param graph: Graph
     :return: dictionary with node id : phase in cut.
 
@@ -1348,7 +1349,7 @@ def phase_lines(graph):
 
 
 def sources(graph, n):
-    """ Determines the set of all upstream sources of node 'n' in a DAG.
+    """Determines the set of all upstream sources of node 'n' in a DAG.
     :param graph: Graph
     :param n: node for which the sources are sought.
     :return: set of nodes
@@ -1372,7 +1373,7 @@ def sources(graph, n):
 
 
 def same_path(path1, path2):
-    """ Compares two paths to verify whether they're the same despite being offset.
+    """Compares two paths to verify whether they're the same despite being offset.
     Very useful when comparing results from TSP as solutions may be rotations of
     the same path.
     :param path1: list of nodes.
@@ -1420,9 +1421,10 @@ def adjacency_matrix(graph):
     if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
         raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
 
-    return {v1: {v2: 0 if v1 == v2 else graph.edge(v1, v2, default=float('inf'))
-                 for v2 in graph.nodes()}
-            for v1 in graph.nodes()}
+    return {
+        v1: {v2: 0 if v1 == v2 else graph.edge(v1, v2, default=float("inf")) for v2 in graph.nodes()}
+        for v1 in graph.nodes()
+    }
 
 
 def all_pairs_shortest_paths(graph):
@@ -1462,14 +1464,12 @@ def all_pairs_shortest_paths(graph):
     vertices = g.keys()
 
     for v2 in vertices:
-        g = {v1: {v3: min(g[v1][v3], g[v1][v2] + g[v2][v3])
-                  for v3 in vertices}
-             for v1 in vertices}
+        g = {v1: {v3: min(g[v1][v3], g[v1][v2] + g[v2][v3]) for v3 in vertices} for v1 in vertices}
     return g
 
 
 def minsum(graph):
-    """ finds the mode(s) that have the smallest sum of distance to all other nodes. """
+    """finds the mode(s) that have the smallest sum of distance to all other nodes."""
     if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
         raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
     adj_mat = graph.all_pairs_shortest_paths()
@@ -1480,7 +1480,7 @@ def minsum(graph):
 
 
 def minmax(graph):
-    """ finds the node(s) with shortest distance to all other nodes. """
+    """finds the node(s) with shortest distance to all other nodes."""
     if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
         raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
     adj_mat = graph.all_pairs_shortest_paths()
@@ -1503,7 +1503,7 @@ def shortest_tree_all_pairs(graph):
     g = all_pairs_shortest_paths(graph)
     assert isinstance(g, dict)
 
-    distance = float('inf')
+    distance = float("inf")
     best_starting_point = -1
     # create shortest path gantt diagram.
     for start_node in g.keys():
@@ -1533,7 +1533,7 @@ def shortest_tree_all_pairs(graph):
 
 
 def has_path(graph, path):
-    """ checks if path exists is graph
+    """checks if path exists is graph
     :param graph: instance of Graph
     :param path: list of nodes
     :return: boolean
@@ -1586,7 +1586,7 @@ def all_simple_paths(graph, start, end):
 
 
 def all_paths(graph, start, end):
-    """ finds all paths from start to end by traversing each fork once only.
+    """finds all paths from start to end by traversing each fork once only.
     :param graph: instance of Graph
     :param start: node
     :param end: node
@@ -1630,7 +1630,7 @@ def all_paths(graph, start, end):
                 for n3 in n3s:
                     for path in new_paths:
                         a = [n2, n3]
-                        if any(all(path[i+j] == a[j] for j in range(len(a))) for i in range(len(path))):
+                        if any(all(path[i + j] == a[j] for j in range(len(a))) for i in range(len(path))):
                             skip_list.add(n3)
 
             for path in new_paths:
@@ -1649,7 +1649,7 @@ def all_paths(graph, start, end):
 
 
 def degree_of_separation(graph, n1, n2):
-    """ Calculates the degree of separation between 2 nodes."""
+    """Calculates the degree of separation between 2 nodes."""
     if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
         raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
     if n1 not in graph:
@@ -1659,12 +1659,12 @@ def degree_of_separation(graph, n1, n2):
 
     assert n1 in graph.nodes()
     p = breadth_first_search(graph, n1, n2)
-    return len(p)-1
+    return len(p) - 1
 
 
 def loop(graph, start, mid, end=None):
-    """ Returns a loop passing through a defined mid-point and returning via a different set of nodes to the outward
-        journey. If end is None we return to the start position. """
+    """Returns a loop passing through a defined mid-point and returning via a different set of nodes to the outward
+    journey. If end is None we return to the start position."""
     if not isinstance(graph, (BasicGraph, Graph, Graph3D)):
         raise TypeError(f"Expected BasicGraph, Graph or Graph3D, not {type(graph)}")
     if start not in graph:
@@ -1689,9 +1689,10 @@ def loop(graph, start, mid, end=None):
 
 
 class ScanThread(object):
-    __slots__ = ['cost', 'n1', 'path']
+    __slots__ = ["cost", "n1", "path"]
 
     """ search thread for bidirectional search """
+
     def __init__(self, cost, n1, path=()):
         if not isinstance(path, tuple):
             raise TypeError(f"Expected a tuple, not {type(path)}")
@@ -1708,11 +1709,12 @@ class ScanThread(object):
 
 class SPLength(object):
     def __init__(self):
-        self.value = float('inf')
+        self.value = float("inf")
 
 
 class BiDirectionalSearch(object):
-    """ data structure for organizing bidirectional search """
+    """data structure for organizing bidirectional search"""
+
     forward = True
     backward = False
 
@@ -1749,7 +1751,7 @@ class BiDirectionalSearch(object):
         self.paths = {start: ()}
         self.direction = direction
         self.sp = ()
-        self.sp_length = float('inf')
+        self.sp_length = float("inf")
 
     def update(self, sp, sp_length):
         if sp_length > self.sp_length:
@@ -1806,7 +1808,7 @@ class BiDirectionalSearch(object):
 
 
 def shortest_path_bidirectional(graph, start, end, avoids=None):
-    """ Bidirectional search using lower bound.
+    """Bidirectional search using lower bound.
     :param graph: Graph
     :param start: start node
     :param end: end node
@@ -1896,6 +1898,7 @@ class ShortestPathCache(object):
     Data structure optimised for repeated calls to shortest path.
     Used by shortest path when using keyword `memoize=True`
     """
+
     def __init__(self, graph):
         if not isinstance(graph, Graph):
             raise TypeError(f"Expected type Graph, not {type(graph)}")
@@ -1904,7 +1907,7 @@ class ShortestPathCache(object):
         self.repeated_cache = {}
 
     def _update_cache(self, path):
-        """ private method for updating the cache for future lookups.
+        """private method for updating the cache for future lookups.
         :param path: tuple of nodes
 
         Given a shortest path, all steps along the shortest path,
@@ -1920,7 +1923,7 @@ class ShortestPathCache(object):
             self.cache[(path[0], path[-1])] = (dist, tuple(path))
 
         for a, _ in enumerate(path):
-            section = tuple(path[a:b - a])
+            section = tuple(path[a : b - a])
             if len(section) < 3:
                 break
             dist = self.graph.distance_from_path(section)
@@ -1932,7 +1935,7 @@ class ShortestPathCache(object):
             self.cache[(section[0], section[-1])] = (dist, section)
 
     def shortest_path(self, start, end, avoids=None):
-        """ Shortest path method that utilizes caching and bidirectional search """
+        """Shortest path method that utilizes caching and bidirectional search"""
         if start not in self.graph:
             raise ValueError("start not in graph.")
         if end not in self.graph:
@@ -2005,7 +2008,7 @@ class Graph(BasicGraph):
         return shortest_path_bidirectional(self, start, end)
 
     def breadth_first_search(self, start, end):
-        """ Determines the path with fewest nodes.
+        """Determines the path with fewest nodes.
         :param start: start node
         :param end: end nodes
         :return: nodes, path as list
@@ -2022,7 +2025,7 @@ class Graph(BasicGraph):
         return breadth_first_walk(graph=self, start=start, end=end, reversed_walk=reversed_walk)
 
     def distance_map(self, starts=None, ends=None, reverse=False):
-        """ Maps the shortest path distance from any start to any end.
+        """Maps the shortest path distance from any start to any end.
         :param graph: instance of Graph
         :param starts: node or (set,list,tuple) of nodes
         :param ends: None (exhaustive map), node or (set,list,tuple) of nodes
@@ -2059,7 +2062,7 @@ class Graph(BasicGraph):
         return distance(graph=self, path=path)
 
     def maximum_flow(self, start, end):
-        """ Determines the maximum flow of the graph between
+        """Determines the maximum flow of the graph between
         start and end.
         :param start: node (source)
         :param end: node (sink)
@@ -2087,8 +2090,8 @@ class Graph(BasicGraph):
         """
         return minimum_cost_flow_using_successive_shortest_path(self, inventory, capacity)
 
-    def solve_tsp(self, method='greedy'):
-        """ solves the traveling salesman problem for the graph
+    def solve_tsp(self, method="greedy"):
+        """solves the traveling salesman problem for the graph
         (finds the shortest path through all nodes)
 
         :param method: str: 'greedy'
@@ -2100,11 +2103,8 @@ class Graph(BasicGraph):
         :return: tour length (path+return to starting point),
                  path travelled.
         """
-        methods = {
-            'greedy': tsp_greedy,
-            'bnb': tsp_branch_and_bound
-        }
-        solver = methods.get(method, 'greedy')
+        methods = {"greedy": tsp_greedy, "bnb": tsp_branch_and_bound}
+        solver = methods.get(method, "greedy")
         return solver(self)
 
     def subgraph_from_nodes(self, nodes):
@@ -2117,14 +2117,14 @@ class Graph(BasicGraph):
         return subgraph(graph=self, nodes=nodes)
 
     def is_subgraph(self, other):
-        """ Checks if self is a subgraph in other.
+        """Checks if self is a subgraph in other.
         :param other: instance of Graph
         :return: boolean
         """
         return is_subgraph(self, other)
 
     def is_partite(self, n=2):
-        """ Checks if self is n-partite
+        """Checks if self is n-partite
         :param n: int the number of partitions.
         :return: tuple: boolean, partitions as dict
                         (or None if graph isn't n-partite)
@@ -2132,19 +2132,19 @@ class Graph(BasicGraph):
         return is_partite(self, n)
 
     def has_cycles(self):
-        """ Checks if the graph has a cycle
+        """Checks if the graph has a cycle
         :return: bool
         """
         return has_cycles(graph=self)
 
     def components(self):
-        """ Determines the number of components
+        """Determines the number of components
         :return: list of sets of nodes. Each set is a component.
         """
         return components(graph=self)
 
     def network_size(self, n1, degrees_of_separation=None):
-        """ Determines the nodes within the range given by
+        """Determines the nodes within the range given by
         a degree of separation
         :param n1: start node
         :param degrees_of_separation: integer
@@ -2153,17 +2153,17 @@ class Graph(BasicGraph):
         return network_size(self, n1, degrees_of_separation)
 
     def phase_lines(self):
-        """ Determines the phase lines (cuts) of the graph
+        """Determines the phase lines (cuts) of the graph
         :returns: dictionary with phase: nodes in phase
         """
         return phase_lines(self)
 
     def sources(self, n):
-        """ Determines the DAG sources of node n """
+        """Determines the DAG sources of node n"""
         return sources(graph=self, n=n)
 
     def topological_sort(self, key=None):
-        """ Returns a generator for the topological order"""
+        """Returns a generator for the topological order"""
         return topological_sort(self, key=key)
 
     def critical_path(self):
@@ -2176,7 +2176,7 @@ class Graph(BasicGraph):
 
     @staticmethod
     def same_path(p1, p2):
-        """ compares two paths to determine if they're the same, despite
+        """compares two paths to determine if they're the same, despite
         being in different order.
 
         :param p1: list of nodes
@@ -2196,13 +2196,13 @@ class Graph(BasicGraph):
         return adjacency_matrix(graph=self)
 
     def minsum(self):
-        """ Finds the mode(s) that have the smallest sum of distance to all other nodes.
+        """Finds the mode(s) that have the smallest sum of distance to all other nodes.
         :return: list of nodes
         """
         return minsum(self)
 
     def minmax(self):
-        """ Finds the node(s) with shortest distance to all other nodes.
+        """Finds the node(s) with shortest distance to all other nodes.
         :return: list of nodes
         """
         return minmax(self)
@@ -2238,7 +2238,7 @@ class Graph(BasicGraph):
         return all_simple_paths(self, start, end)
 
     def all_paths(self, start, end):
-        """ finds all paths from start to end by traversing each fork once only.
+        """finds all paths from start to end by traversing each fork once only.
         :param start: node
         :param end: node
         :return: list of paths
@@ -2246,7 +2246,7 @@ class Graph(BasicGraph):
         return all_paths(graph=self, start=start, end=end)
 
     def degree_of_separation(self, n1, n2):
-        """ determines the degree of separation between 2 nodes
+        """determines the degree of separation between 2 nodes
         :param n1: node
         :param n2: node
         :return: degree
@@ -2254,7 +2254,7 @@ class Graph(BasicGraph):
         return degree_of_separation(self, n1, n2)
 
     def loop(self, start, mid, end=None):
-        """ finds a looped path via a mid-point
+        """finds a looped path via a mid-point
         :param start: node
         :param mid: node, midpoint for loop.
         :param end: node
@@ -2264,7 +2264,7 @@ class Graph(BasicGraph):
 
 
 class Graph3D(Graph):
-    """ a graph where all (x,y)-positions are unique. """
+    """a graph where all (x,y)-positions are unique."""
 
     def __init__(self, from_dict=None, from_list=None):
         super().__init__(from_dict=from_dict, from_list=from_list)
@@ -2286,7 +2286,7 @@ class Graph3D(Graph):
 
     @staticmethod
     def distance(n1, n2):
-        """ returns the distance between to xyz tuples coordinates
+        """returns the distance between to xyz tuples coordinates
         :param n1: (x,y,z)
         :param n2: (x,y,z)
         :return: float
@@ -2317,7 +2317,7 @@ class Graph3D(Graph):
         self._nodes[node_id] = obj
 
     def n_nearest_neighbours(self, node_id, n=1):
-        """ returns the node id of the `n` nearest neighbours. """
+        """returns the node id of the `n` nearest neighbours."""
         self._check_tuples(node_id)
         if not isinstance(n, int):
             raise TypeError(f"expected n to be integer, not {type(n)}")
@@ -2330,28 +2330,33 @@ class Graph3D(Graph):
             return [b for a, b in d][:n]
         return None
 
-    def plot(self, nodes=True, edges=True, rotation='xyz', maintain_aspect_ratio=False):
-        """ plots nodes and links using matplotlib3
+    def plot(self, nodes=True, edges=True, rotation="xyz", maintain_aspect_ratio=False):
+        """plots nodes and links using matplotlib3
         :param nodes: bool: plots nodes
         :param edges: bool: plots edges
         :param rotation: str: set view point as one of [xyz,xzy,yxz,yzx,zxy,zyx]
         :param maintain_aspect_ratio: bool: rescales the chart to maintain aspect ratio.
         :return: None. Plots figure.
         """
-        from graph.visuals import plot_3d # noqa
+        from graph.visuals import plot_3d  # noqa
+
         return plot_3d(self, nodes, edges, rotation, maintain_aspect_ratio)
 
 
 class Task(object):
-    """ Helper for critical path method """
-    __slots__ = ['task_id', 'duration',
-                 'earliest_start', 'earliest_finish',
-                 'latest_start', 'latest_finish']
+    """Helper for critical path method"""
 
-    def __init__(self,
-                 task_id, duration,
-                 earliest_start=0, latest_start=0,
-                 earliest_finish=float('inf'), latest_finish=float('inf')):
+    __slots__ = ["task_id", "duration", "earliest_start", "earliest_finish", "latest_start", "latest_finish"]
+
+    def __init__(
+        self,
+        task_id,
+        duration,
+        earliest_start=0,
+        latest_start=0,
+        earliest_finish=float("inf"),
+        latest_finish=float("inf"),
+    ):
         self.task_id = task_id
         self.duration = duration
         self.earliest_start = earliest_start
@@ -2362,14 +2367,16 @@ class Task(object):
     def __eq__(self, other):
         if not isinstance(other, Task):
             raise TypeError(f"can't compare {type(other)} with {type(self)}")
-        if any((
+        if any(
+            (
                 self.task_id != other.task_id,
                 self.duration != other.duration,
                 self.earliest_start != other.earliest_start,
                 self.latest_start != other.latest_start,
                 self.earliest_finish != other.earliest_finish,
-                self.latest_finish != other.latest_finish
-        )):
+                self.latest_finish != other.latest_finish,
+            )
+        ):
             return False
         return True
 
@@ -2379,9 +2386,14 @@ class Task(object):
 
     @property
     def args(self):
-        return (self.task_id, self.duration,
-                self.earliest_start, self.latest_start,
-                self.earliest_finish, self.latest_finish)
+        return (
+            self.task_id,
+            self.duration,
+            self.earliest_start,
+            self.latest_start,
+            self.earliest_finish,
+            self.latest_finish,
+        )
 
     def __repr__(self):
         return f"{self.__class__.__name__}{self.args}"
@@ -2438,7 +2450,7 @@ def critical_path(graph):
     for task_id in order:  # 2. forward pass:
         predecessors = [d[t] for t in graph.nodes(to_node=task_id)]
         duration = graph.node(task_id)
-        if not isinstance(duration, (float,int)):
+        if not isinstance(duration, (float, int)):
             raise ValueError(f"Expected task {task_id} to have a numeric duration, but got {type(duration)}")
         t = Task(task_id=task_id, duration=duration)
         # 1. the earliest start and earliest finish is determined in topological order.
@@ -2484,11 +2496,14 @@ def critical_path_minimize_for_slack(graph):
             break
         # identify any option for insertion:
         n1 = node.task_id
-        for n2 in (n2 for n2 in slack_node_ids if  # ...not on critical path
-                   n2 != n1 and  # ...not pointing to the source
-                   phases[n2] >= phases[n1] and  # ...downstream
-                   new_graph.edge(n2, n1) is None and  # ... not creating a cycle.
-                   new_graph.edge(n1, n2) is None):  # ... not already a dependency.
+        for n2 in (
+            n2
+            for n2 in slack_node_ids
+            if n2 != n1  # ...not on critical path
+            and phases[n2] >= phases[n1]  # ...not pointing to the source
+            and new_graph.edge(n2, n1) is None  # ...downstream
+            and new_graph.edge(n1, n2) is None  # ... not creating a cycle.
+        ):  # ... not already a dependency.
 
             new_graph.add_edge(n1, n2)
             new_edges.append((n1, n2))
@@ -2526,4 +2541,3 @@ def critical_path_minimize_for_slack(graph):
             new_graph.add_edge(n1, n2)
 
     return new_graph
-
