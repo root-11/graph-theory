@@ -18,6 +18,7 @@ Latest features:
 
 | date | description |
 |---|---|
+| 2022/12/12 | Maintenance release (2022.4.2): To speed up the package import plot3d has been moved to function call. |
 | 2022/10/04 | New tutorial: [Learn to solve traffic jams and sudoku's](https://github.com/root-11/graph-theory/blob/master/examples/graphs%20as%20finite%20state%20machines.ipynb) |
 | 2022/03/09 | bugfixes to TrafficJamSolver only. |
 | 2022/01/04 | new feature: Graph.distance_map, which allows the user to compute<br>the distance from a number of starts and ends as simulated annealing map. |
