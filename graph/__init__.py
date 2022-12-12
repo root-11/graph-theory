@@ -4,7 +4,6 @@ from heapq import heappop, heappush
 from itertools import combinations, chain
 from bisect import insort
 
-from graph.visuals import plot_3d
 
 __description__ = """
 The graph-theory library is organised in the following way for clarity of structure:
@@ -2339,6 +2338,7 @@ class Graph3D(Graph):
         :param maintain_aspect_ratio: bool: rescales the chart to maintain aspect ratio.
         :return: None. Plots figure.
         """
+        from graph.visuals import plot_3d # noqa
         return plot_3d(self, nodes, edges, rotation, maintain_aspect_ratio)
 
 
