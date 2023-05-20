@@ -2,7 +2,7 @@ from graph import Graph
 from itertools import product
 
 
-def grid(x,y, bidirectional=False):
+def grid(x, y, bidirectional=False):
     """
     :param x: number of columns
     :param y: number of rows
@@ -24,7 +24,7 @@ def grid(x,y, bidirectional=False):
 
 
 def london_underground():
-    """ the london underground network """
+    """the london underground network"""
     london_underground_stations = {  # id:(latitude,longitude,station name),
         1: (51.5028, -0.2801, "Acton Town"),
         2: (51.5143, -0.0755, "Aldgate"),
@@ -761,3 +761,5 @@ def london_underground():
     for (n1, n2), (line, time) in london_underground_connections.items():
         g.add_edge(n1, n2, time, bidirectional=True)
     return g
+
+
