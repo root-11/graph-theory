@@ -1031,11 +1031,16 @@ def tsp_greedy(graph):
 
         # Return (i, j) pairs denoting tour[i:j] sub_segments of a tour of length N.
         sub_segments = [(i, i + length) for length in reversed(range(2, n)) for i in reversed(range(n - length + 1))]
-
+        cache = set()
         while True:
-            improvements = {reverse_segment_if_improvement(graph, tour, i, j) for (i, j) in sub_segments}
-            if improvements == {None} or len(improvements) == 0:
-                return tour
+            tour_hash = hash(tuple(tour))
+            if tour_hash in cache:
+                return tour  # the search for optimization is repeating itself.
+            else:
+                cache.add(tour_hash)
+                improvements = {reverse_segment_if_improvement(graph, tour, i, j) for (i, j) in sub_segments}
+                if improvements == {None} or len(improvements) == 0:
+                    return tour
 
     def reverse_segment_if_improvement(graph, tour, i, j):
         """If reversing tour[i:j] would make the tour shorter, then do it."""
