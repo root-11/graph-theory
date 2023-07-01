@@ -1,25 +1,14 @@
-from .base import BasicGraph
-from .base import subgraph
-from .base import is_subgraph
-from .base import same_path
-from .base import has_path
-from .base import network_size
-from .base import components
+from .base import BasicGraph, subgraph, is_subgraph, same_path, has_path, network_size, components
 from .adjacency_matrix import adjacency_matrix
 from .all_pairs_shortest_path import all_pairs_shortest_paths
 from .all_paths import all_paths
 from .all_simple_paths import all_simple_paths
-from .bfs import breadth_first_search
-from .bfs import breadth_first_walk
-from .critical_path import critical_path_minimize_for_slack
-from .critical_path import critical_path
-from .cycle import cycle
-from .cycle import has_cycles
-from .dag import phase_lines
-from .dag import sources
+from .bfs import breadth_first_search, breadth_first_walk
+from .critical_path import critical_path_minimize_for_slack, critical_path
+from .cycle import cycle, has_cycles
+from .dag import phase_lines, sources
 from .degree_of_separation import degree_of_separation
-from .dfs import depth_first_search
-from .dfs import depth_scan
+from .dfs import depth_first_search, depth_scan
 from .distance_map import distance_map
 from .max_flow import maximum_flow
 from .max_flow_min_cut import maximum_flow_min_cut
@@ -27,13 +16,10 @@ from .min_cost_flow import minimum_cost_flow_using_successive_shortest_path
 from .minmax import minmax
 from .minsum import minsum
 from .partite import is_partite
-from .shortest_path import shortest_path
-from .shortest_path import shortest_path_bidirectional
-from .shortest_path import ShortestPathCache, distance
+from .shortest_path import shortest_path, shortest_path_bidirectional, ShortestPathCache, distance_from_path
 from .shortest_tree_all_pairs import shortest_tree_all_pairs
 from .topological_sort import topological_sort
-from .tsp import tsp_branch_and_bound
-from .tsp import tsp_greedy
+from .tsp import tsp_branch_and_bound, tsp_greedy, tsp_2023
 
 
 __description__ = """
@@ -134,7 +120,7 @@ class Graph(BasicGraph):
         :param path: list of nodes
         :return: distance along the path.
         """
-        return distance(graph=self, path=path)
+        return distance_from_path(graph=self, path=path)
 
     def maximum_flow(self, start, end):
         """Determines the maximum flow of the graph between

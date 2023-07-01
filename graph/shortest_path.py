@@ -324,7 +324,7 @@ class SPLength(object):
         self.value = float("inf")
 
 
-def distance(graph, path):
+def distance_from_path(graph, path):
     """Calculates the distance for the path in graph
     :param graph: class Graph
     :param path: list of nodes
