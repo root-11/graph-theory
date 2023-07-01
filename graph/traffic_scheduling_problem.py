@@ -1,5 +1,5 @@
 from time import process_time
-from graph import Graph
+from .base import BasicGraph
 from bisect import insort
 from itertools import product
 
@@ -135,8 +135,8 @@ def check_user_input(graph, loads):
 
     returns: list of Loads
     """
-    if not isinstance(graph, Graph):
-        raise TypeError(f"expected graph, not {type(graph)}")
+    if not isinstance(graph, BasicGraph):
+        raise TypeError(f"Expected subclass of BasicGraph, not {type(graph)}")
 
     all_loads = {}
     all_nodes = set()
@@ -304,8 +304,9 @@ class State(object):
 
 class JamSolver(object):
     def __init__(self, graph, loads, timer):
-        if not isinstance(graph, Graph):
-            raise TypeError
+        if not isinstance(graph, BasicGraph):
+            raise TypeError(f"Expected subclass of BasicGraph, not {type(graph)}")
+        Graph = type(graph)
         if not isinstance(loads, dict):
             raise TypeError
         if not all(isinstance(i, Load) for i in loads.values()):

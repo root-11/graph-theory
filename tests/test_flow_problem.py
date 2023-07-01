@@ -1,4 +1,5 @@
-from graph import Graph, minimum_cost_flow_using_successive_shortest_path
+from graph import Graph
+from graph.min_cost_flow import minimum_cost_flow_using_successive_shortest_path
 
 
 def test_maximum_flow():

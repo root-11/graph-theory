@@ -2,7 +2,8 @@ import random
 import time
 from itertools import combinations, permutations
 
-from graph import Graph, same_path
+from graph import Graph
+from graph.base import same_path
 from tests.test_graph import graph01, graph3x3, graph03, graph04, graph05, graph4x4
 from examples.graphs import london_underground
 

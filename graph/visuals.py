@@ -1,6 +1,7 @@
 try:
     from matplotlib import pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D  # import required by matplotlib.
+
     visuals_enabled = True
 except ImportError:
     visuals_enabled = False
@@ -11,6 +12,7 @@ def visualise(func):
         if not visuals_enabled:
             raise ImportError("visualise is not available unless matplotlib is installed")
         return func(*args, **kwargs)
+
     return wrapper
 
 
@@ -69,16 +71,16 @@ def plot_2d(graph, nodes=True, edges=True):
     if edges:
         for edge in graph.edges():
             s, e, d = edge  # s: (x1,y1), e: (x2,y2), d: distance
-            plt.plot([s[0], e[0]], [s[1], e[1]], 'bo-', clip_on=False)
+            plt.plot([s[0], e[0]], [s[1], e[1]], "bo-", clip_on=False)
 
-    plt.axis('scaled')
-    plt.axis('off')
+    plt.axis("scaled")
+    plt.axis("off")
     return plt
 
 
 @visualise
-def plot_3d(graph, nodes=True, edges=True, rotation='xyz', maintain_aspect_ratio=False):
-    """ plots nodes and links using matplotlib3
+def plot_3d(graph, nodes=True, edges=True, rotation="xyz", maintain_aspect_ratio=False):
+    """plots nodes and links using matplotlib3
     :param nodes: bool: plots nodes
     :param edges: bool: plots edges
     :param rotation: str: set view point as one of [xyz,xzy,yxz,yzx,zxy,zyx]
@@ -86,10 +88,10 @@ def plot_3d(graph, nodes=True, edges=True, rotation='xyz', maintain_aspect_ratio
     :return: matlibplot.pyplot
     """
     fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
+    ax = fig.add_subplot(111, projection="3d")
     if not len(rotation) == 3:
         raise ValueError(f"expected viewpoint as 'xyz' but got: {rotation}")
-    for c in 'xyz':
+    for c in "xyz":
         if c not in rotation:
             raise ValueError(f"rotation was missing {c}.")
     x, y, z = rotation
@@ -102,7 +104,7 @@ def plot_3d(graph, nodes=True, edges=True, rotation='xyz', maintain_aspect_ratio
             xyz[x] = [n1[0], n2[0]]
             xyz[y] = [n1[1], n2[1]]
             xyz[z] = [n1[2], n2[2]]
-            ax.plot3D(xyz['x'], xyz['y'], xyz['z'], 'gray')
+            ax.plot3D(xyz["x"], xyz["y"], xyz["z"], "gray")
 
     # Data for three-dimensional scattered points
     if nodes:
@@ -114,11 +116,11 @@ def plot_3d(graph, nodes=True, edges=True, rotation='xyz', maintain_aspect_ratio
             xyz[y].append(vy)
             xyz[z].append(vz)
             ix.append(idx)
-        ax.scatter3D(xyz['x'], xyz['y'], xyz['z'], c=ix, cmap='Greens')
+        ax.scatter3D(xyz["x"], xyz["y"], xyz["z"], c=ix, cmap="Greens")
 
     if (nodes or edges) and maintain_aspect_ratio:
         nodes = [n for n in graph.nodes()]
-        xyz_dir = {'x': 0, 'y': 1, 'z': 2}
+        xyz_dir = {"x": 0, "y": 1, "z": 2}
 
         xdim = xyz_dir[x]  # select the x dimension in the projection.
         # as the rotation will change the xdimension index.
@@ -146,7 +148,7 @@ def plot_3d(graph, nodes=True, edges=True, rotation='xyz', maintain_aspect_ratio
         za, zb = dz - max_dim, dz + max_dim
         ax.set_zlim(za, zb)
 
-    ax.set_xlabel(f'{x} Label')
-    ax.set_ylabel(f'{y} Label')
-    ax.set_zlabel(f'{z} Label')
+    ax.set_xlabel(f"{x} Label")
+    ax.set_ylabel(f"{y} Label")
+    ax.set_zlabel(f"{z} Label")
     return plt

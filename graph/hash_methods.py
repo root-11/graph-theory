@@ -1,6 +1,6 @@
 import hashlib
 
-from graph import Graph
+from .base import BasicGraph
 
 
 def graph_hash(graph):
@@ -8,7 +8,7 @@ def graph_hash(graph):
     :param graph: instance of class Graph.
     :return: graph hash (int) and graph (Graph) with hash values
     """
-    assert isinstance(graph, Graph)
+    assert isinstance(graph, BasicGraph)
     hash_func = hashlib.sha3_256()
     nodes = bytes("|".join(str(n) for n in sorted(graph.nodes())), 'utf-8')
     edges = bytes("|".join(str(e) for e in sorted(graph.edges())), 'utf-8')
@@ -23,12 +23,13 @@ def flow_graph_hash(graph):
 
     Any upstream change in hash will thereby propagate downstream.
     """
-    assert isinstance(graph, Graph)
+    assert isinstance(graph, BasicGraph)
     sources = graph.nodes(in_degree=0)
 
     original_hash = 'original hash'
     new_hash = 'new_hash'
-    hash_graph = Graph()  # new graph with hashes.
+    cls = type(graph)
+    hash_graph = cls()  # new graph with hashes.
     visited = set()
 
     while sources:
@@ -103,7 +104,7 @@ def merkle_tree(data_blocks):
     +----------------------------------------------+
 
     """
-    g = Graph()
+    g = BasicGraph()
 
     # initial hash:
     leaves = []

@@ -1,5 +1,7 @@
 import time
-from graph import Graph, phase_lines, critical_path, Task, critical_path_minimize_for_slack
+from graph import Graph
+from graph.critical_path import Task, critical_path, critical_path_minimize_for_slack
+from graph.dag import phase_lines
 from tests import profileit
 from tests.test_graph import (
     graph02,

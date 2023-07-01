@@ -1,4 +1,4 @@
-from graph import Graph
+from .base import BasicGraph
 import itertools
 
 __description__ = """
@@ -85,7 +85,7 @@ def clondike_transshipment_problem():
             paths.append(("L-{}-{}".format(level, dig), "L-{}-{}".format(level, dig + 1), 1))
 
     paths.extend([(n2, n1, d) for n1, n2, d in paths])  # adding the reverse path.
-    g = Graph(from_list=paths)
+    g = BasicGraph(from_list=paths)
     return g
 
 
@@ -96,7 +96,7 @@ class Train(object):
         :param start_location: a node in the network.
         :param access: Set of nodes to which this train has access.
         """
-        assert isinstance(rail_network, Graph)
+        assert isinstance(rail_network, BasicGraph)
         self._rail_network = rail_network
         assert start_location in self._rail_network.nodes()
         self._current_location = start_location
@@ -129,7 +129,7 @@ def schedule_rail_system(rail_network, trains, jobs):
         create itinerary items on the jobs.
         when all itineraries are complete, return the schedule.
     """
-    assert isinstance(rail_network, Graph)
+    assert isinstance(rail_network, BasicGraph)
     assert isinstance(trains, list)
     assert all(isinstance(t, Train) for t in trains)
     assert isinstance(jobs, list)
@@ -227,7 +227,8 @@ def find_perfect_circuit(graph, start, jobs):
     :param: jobs: list of movements [(A1,B1), (A2,B2,) ....]
     :return path [A1,B1, ..., A1]
     """
-    g = Graph()
+    G = type(graph)
+    g = G()
     for A, B in jobs:
         try:
             g.edge(A, B)

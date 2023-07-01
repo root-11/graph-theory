@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from graph import Graph
+from .base import BasicGraph
 
 __all__ = ['ap_solver', 'wtap_solver']
 
@@ -49,7 +49,7 @@ def ap_solver(graph):
     :param graph: Graph
     :return: optimal assignment as list of edges (agent, task, value)
     """
-    assert isinstance(graph, Graph)
+    assert isinstance(graph, BasicGraph)
     agents = [n for n in graph.nodes(in_degree=0)]
     tasks = [n for n in graph.nodes(out_degree=0)]
 
@@ -69,7 +69,8 @@ def ap_solver(graph):
         v_null -= 1
 
     unassigned_tasks = set(tasks)
-    assignments = Graph()
+    cls = type(graph)
+    assignments = cls()
 
     while unassigned_agents:
         n = unassigned_agents.pop(0)  # select phase:
@@ -131,7 +132,7 @@ def wtap_solver(probabilities, weapons, target_values):
     :return: tuple: value of target after attack, optimal assignment
 
     """
-    assert isinstance(probabilities, Graph)
+    assert isinstance(probabilities, BasicGraph)
     assert isinstance(weapons, list)
     assert isinstance(target_values, dict)
     # first: verify internal integrity of inputs.
@@ -150,7 +151,8 @@ def wtap_solver(probabilities, weapons, target_values):
     target_prob_set.clear()
 
     # then: Calculate the solution.
-    assignments = Graph()
+    cls = type(probabilities)
+    assignments = cls()
     current_target_values = sum(target_values.values()) + 1
 
     improvements = {}
@@ -205,8 +207,8 @@ def _damages(probabilities, assignment, target_values):
     :param target_values: dict with [target]=value.
     :return: total survival value.
     """
-    assert isinstance(probabilities, Graph)
-    assert isinstance(assignment, Graph)
+    assert isinstance(probabilities, BasicGraph)
+    assert isinstance(assignment, BasicGraph)
     assert isinstance(target_values, dict)
 
     survival_value = {target: [] for target in target_values}

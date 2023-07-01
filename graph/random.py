@@ -1,7 +1,7 @@
 import random
 import itertools
 
-from graph import Graph
+from .core import Graph
 
 
 def xy_distance(n1, n2):

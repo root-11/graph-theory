@@ -1,4 +1,4 @@
-from graph import Graph
+from graph.core import Graph
 from itertools import product
 
 

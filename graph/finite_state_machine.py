@@ -1,10 +1,10 @@
-from graph import Graph
+from .base import BasicGraph
 from itertools import count
 
 
 class FiniteStateMachine(object):
     def __init__(self):
-        self.states = Graph()
+        self.states = BasicGraph()
         self.current_state = None
         self._action_id = count()
         self.actions = {}
