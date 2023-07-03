@@ -192,7 +192,7 @@ def _opt1(graph, tour):
     #         if i == j:
     #             continue
 
-    return p_best
+    return list(p_best)
 
 
 def _opt2(graph, tour):
