@@ -342,6 +342,13 @@ class BasicGraph(object):
         """returns the number of edges departing from a node"""
         return self._out_degree[node]
 
+    def distance(self, nodes, return_to_start=False):
+        length = sum(self.edge(nodes[i - 1], nodes[i]) for i in range(len(nodes))) 
+        if return_to_start:
+            length += self.edge(nodes[-1], nodes[0])
+        return length
+        # return sum(self.edge(n1, n2, default=float("inf")) for n1, n2 in zip(nodes[:-1], nodes[1:]))
+
 
 def subgraph(graph, nodes):
     """Creates a subgraph as a copy from the graph

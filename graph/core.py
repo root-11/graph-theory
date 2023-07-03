@@ -151,7 +151,7 @@ class Graph(BasicGraph):
         """
         return minimum_cost_flow_using_successive_shortest_path(self, inventory, capacity)
 
-    def solve_tsp(self, method="greedy"):
+    def solve_tsp(self, method="2023"):
         """solves the traveling salesman problem for the graph
         (finds the shortest path through all nodes)
 
@@ -165,7 +165,7 @@ class Graph(BasicGraph):
                  path travelled.
         """
         methods = {"greedy": tsp_greedy, "bnb": tsp_branch_and_bound, "2023": tsp_2023}
-        solver = methods.get(method, "tsp_2023")
+        solver = methods.get(method)
         return solver(self)
 
     def subgraph_from_nodes(self, nodes):
