@@ -255,22 +255,21 @@ def _opt3(graph, tour):
         best = [(a, b) for a, b in zip([d0, d1, d2, d3, d4], ["d0", "d1", "d2", "d3", "d4"])]
         best.sort()
         _, index = best[0]
-        match index:
-            case "d1":
-                tour[i:j] = reversed(tour[i:j])
-                return -d0 + d1
-            case "d2":
-                tour[j:k] = reversed(tour[j:k])
-                return -d0 + d2
-            case "d3":
-                tmp = tour[j:k] + tour[i:j]
-                tour[i:k] = tmp
-                return -d0 + d3
-            case "d4":
-                tour[i:k] = reversed(tour[i:k])
-                return -d0 + d4
-            case _:
-                return 0
+        if index == "d1":
+            tour[i:j] = reversed(tour[i:j])
+            return -d0 + d1
+        elif index == "d2":
+            tour[j:k] = reversed(tour[j:k])
+            return -d0 + d2
+        elif index == "d3":
+            tmp = tour[j:k] + tour[i:j]
+            tour[i:k] = tmp
+            return -d0 + d3
+        elif index == "d4":
+            tour[i:k] = reversed(tour[i:k])
+            return -d0 + d4
+        else:
+            return 0
 
     def all_segments(n: int):
         """Generate all segments combinations"""
