@@ -1,4 +1,4 @@
-from graph.core import Graph
+from graph import Graph
 from itertools import product
 
 
@@ -761,5 +761,3 @@ def london_underground():
     for (n1, n2), (line, time) in london_underground_connections.items():
         g.add_edge(n1, n2, time, bidirectional=True)
     return g
-
-
