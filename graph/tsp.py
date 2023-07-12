@@ -197,6 +197,8 @@ def _opt1(graph, tour):
 
 def _opt2(graph, tour):
     """Iterative improvement based on 2 exchange."""
+    if not isinstance(graph, BasicGraph):
+        raise TypeError()
 
     def reverse_segment_if_improvement(graph, tour, i, j):
         """If reversing tour[i:j] would make the tour shorter, then do it."""
@@ -213,27 +215,34 @@ def _opt2(graph, tour):
         return [(tour[i - 1], tour[i]) for i in range(len(tour))]
 
     tour = list(tour)
-    p0, d0 = tour[:], sum(graph.edge(a, b) for a, b in _zipwalk(tour))
-    counter, inc = Counter(), 0
+    n = len(tour)
+    g = tuple((i, i + length) for length in reversed(range(2, n)) for i in reversed(range(n - length + 1)))
+
+    counter, c2, inc = Counter(), {}, 0
+    p0, d0 = tuple(tour), sum(graph.edge(a, b) for a, b in _zipwalk(tour))
+    counter[p0] += 1
+
     while True:
-        p0, d0 = tour[:], sum(graph.edge(a, b) for a, b in _zipwalk(tour))
-        n = len(tour)
-        # Return (i, j) pairs denoting tour[i:j] sub_segments of a tour of length N.
-        g = ((i, i + length) for length in reversed(range(2, n)) for i in reversed(range(n - length + 1)))
         improvements = {reverse_segment_if_improvement(graph, tour, i, j) for (i, j) in g}
 
         d1 = sum(graph.edge(a, b) for a, b in _zipwalk(tour))
         if d1 < d0:
             d0 = d1
             p0 = tour[:]
+
         if improvements == {None} or len(improvements) == 0:
             return p0
 
         counter[tuple(tour)] += 1
         inc += 1
         if inc % 100 == 0:
-            if stdev(counter.values()) > 2:  # the variance is exploding.
-                return p0
+            c1 = {k: v for k, v in counter.items() if v != 1}
+            if c1:  # there are any repeated values ...
+                if c1.keys() == c2.keys():  # ...and the keys haven't changed ...
+                    if sum(c1.values()) - sum(c2.values()) == 100:  # ... and the last 100 steps 
+                        # ... are completely accounted for, then it's a loop.
+                        return p0
+            c2 = c1
 
 
 def _opt3(graph, tour):
