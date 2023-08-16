@@ -264,9 +264,7 @@ class ShortestPathCache(object):
         if not isinstance(path, (list, tuple)):
             raise TypeError
         b = len(path)
-        if b < 2:
-            return
-        if b == 2:
+        if b <= 2:
             dist = self.graph.distance_from_path(path)
             self.cache[(path[0], path[-1])] = (dist, tuple(path))
 
@@ -295,9 +293,6 @@ class ShortestPathCache(object):
         else:
             avoids = frozenset(avoids)
 
-        d = 0 if start == end else None
-        p = ()
-
         if isinstance(avoids, frozenset):
             # as avoids can be volatile, it is not possible to benefit from the caching
             # methodology. This does however not mean that we need to forfeit the benefit
@@ -308,12 +303,14 @@ class ShortestPathCache(object):
                 d, p = shortest_path_bidirectional(self.graph, start, end, avoids=avoids)
                 self.repeated_cache[(start, end, hash_key)] = (d, p)
         else:
-            if d is None:  # is it cached?
-                d, p = self.cache.get((start, end), (None, None))
+            d, p = self.cache.get((start, end), (None, None))
 
             if d is None:  # search for it.
                 _, p = shortest_path_bidirectional(self.graph, start, end)
-                self._update_cache(p)
+                if not p:
+                    self.cache[(start, end)] = (float("inf"), [])
+                else:
+                    self._update_cache(p)
                 d, p = self.cache[(start, end)]
 
         return d, list(p)
