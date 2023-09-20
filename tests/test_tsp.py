@@ -42,7 +42,7 @@ def lec_24_graph():
     )
 
 
-def test_tsp_brute_force():
+def lec_24_brute_force():
     """Generates all combinations of solutions"""
     g = lec_24_graph()
     L = []
@@ -71,7 +71,7 @@ def test_tsp_brute_force():
 
 
 lec_24_tsp_path = [1, 3, 4, 2, 5]
-lec_24_valid_solutions = test_tsp_brute_force()
+lec_24_valid_solutions = lec_24_brute_force()
 assert tuple(lec_24_tsp_path) in lec_24_valid_solutions
 
 
