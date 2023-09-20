@@ -1,9 +1,10 @@
 from sys import maxsize
-from itertools import combinations
+from itertools import combinations, permutations
 from collections import Counter
 from statistics import stdev
 from .base import BasicGraph
 from bisect import insort
+from random import shuffle
 
 
 def tsp_branch_and_bound(graph):
@@ -151,7 +152,7 @@ def _greedy(graph):
 
     if len(new_segment) != len(graph.nodes()):
         raise ValueError("there's an unconnected component in the graph.")
-    return new_segment
+    return tuple(new_segment)
 
 
 def _opt1(graph, tour):
@@ -159,11 +160,11 @@ def _opt1(graph, tour):
 
     d_best = graph.distance(tour, return_to_start=True)
     p_best = tour
-    L = tour[:]
+    L = tuple(tour)
     for i in range(len(tour)):
         tmp = L[:i] + L[i + 1 :]
         for j in range(len(tour)):
-            L2 = tmp[:j] + [L[i]] + tmp[j:]
+            L2 = tmp[:j] + (L[i],) + tmp[j:]
             d = graph.distance(L2, return_to_start=True)
             if d < d_best:
                 d_best = d
@@ -192,13 +193,11 @@ def _opt1(graph, tour):
     #         if i == j:
     #             continue
 
-    return list(p_best)
+    return tuple(p_best)
 
 
 def _opt2(graph, tour):
     """Iterative improvement based on 2 exchange."""
-    if not isinstance(graph, BasicGraph):
-        raise TypeError()
 
     def reverse_segment_if_improvement(graph, tour, i, j):
         """If reversing tour[i:j] would make the tour shorter, then do it."""
@@ -231,7 +230,7 @@ def _opt2(graph, tour):
             p0 = tour[:]
 
         if improvements == {None} or len(improvements) == 0:
-            return p0
+            return tuple(p0)
 
         counter[tuple(tour)] += 1
         inc += 1
@@ -239,9 +238,9 @@ def _opt2(graph, tour):
             c1 = {k: v for k, v in counter.items() if v != 1}
             if c1:  # there are any repeated values ...
                 if c1.keys() == c2.keys():  # ...and the keys haven't changed ...
-                    if sum(c1.values()) - sum(c2.values()) == 100:  # ... and the last 100 steps 
+                    if sum(c1.values()) - sum(c2.values()) == 100:  # ... and the last 100 steps
                         # ... are completely accounted for, then it's a loop.
-                        return p0
+                        return tuple(p0)
             c2 = c1
 
 
@@ -250,6 +249,9 @@ def _opt3(graph, tour):
 
     def distance(a, b, graph=graph):
         return graph.edge(a, b, default=maxsize)
+
+    def _zipwalk(tour):
+        return [(tour[i - 1], tour[i]) for i in range(len(tour))]
 
     def reverse_segment_if_better(tour, i, j, k):
         """If reversing tour[i:j] would make the tour shorter, then do it."""
@@ -284,13 +286,46 @@ def _opt3(graph, tour):
         """Generate all segments combinations"""
         return ((i, j, k) for i in range(n) for j in range(i + 2, n) for k in range(j + 2, n + (i > 0)))
 
+    tour = list(tour)
+    p0, d0 = tour[:], sum(graph.edge(a, b) for a, b in _zipwalk(tour))
+    counter, inc, c_max = Counter(), 0, 2
     while True:
         delta = 0
         for a, b, c in all_segments(len(tour)):
             delta += reverse_segment_if_better(tour, a, b, c)
+
+        d1 = sum(graph.edge(a, b) for a, b in _zipwalk(tour))
+        if d1 < d0:
+            d0 = d1
+            p0 = tour[:]
+
         if delta >= 0:
             break
-    return tour
+
+        counter[tuple(tour)] += 1
+        if any(v > c_max for v in counter.values()):
+            shuffle(tour)
+            c_max += 1
+
+        inc += 1
+        if inc % 100 == 0:
+            if stdev(counter.values()) > 2:  # the variance is exploding.
+                break
+    return tuple(p0)
+
+
+def brute_force(graph):
+    d2 = float('inf')
+    nodes = graph.nodes()
+    for route in permutations(nodes, len(nodes)):
+        if route[0]!=nodes[0]:  # all iterations after this point are rotations.
+            break  
+        route += (route[0],)
+        d = graph.distance_from_path(route)
+        if d < d2:
+            d2 = d
+            p2 = route[:-1]
+    return d2, tuple(p2)
 
 
 def tsp_2023(graph):
@@ -303,6 +338,9 @@ def tsp_2023(graph):
     """
     if not isinstance(graph, BasicGraph):
         raise TypeError(f"Expected subclass of BasicGraph, not {type(graph)}")
+
+    if len(graph.nodes()) < 7:
+        return brute_force(graph)
 
     t = _greedy(graph)
     d = graph.distance(t)
