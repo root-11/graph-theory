@@ -217,25 +217,26 @@ def test_cyclic_condition():
     )
     # fmt:on
     def exhaustive(g):
-        # d2,p2 = exhaustive() this takes 6 hours to run, so here are the precomputed results:
+        # d2, p2 = exhaustive() this takes 13 minutes to run, so here are the precomputed results:
         # fmt:off
         p2 = ("10,20", "10,30", "10,40", "10,50", "10,60", "10,70", "11,50", "11,40", "11,30", "11,20", "18,30", "9,70", "9,60")
         # fmt:on
         d2 = 54
         return d2, p2
-        # The code below is here as documentation.
-        # from tqdm import tqdm
-        # def permutations(n, k):
-        #     return math.factorial(n) / math.factorial(n - k)
-        # p2, d2 = [], 999_999_999
-        # nodes = g.nodes()
-        # perms = permutations(len(nodes), len(nodes))
-        # for route in tqdm(itertools.permutations(nodes, len(nodes)), total=perms):
-        #     route += (route[0],)
-        #     d = g.distance_from_path(route)
+        # The code below is here as documentation.        
+        # assert isinstance(g, Graph)
+        # dm = g.all_pairs_shortest_paths()
+        # route = g.nodes()
+        # d2 = 999999999
+        # for tour in itertools.permutations(route, len(route)):
+        #     if tour[0] != route[0]:  # all subsequent iterations are rotations of the first set.
+        #         break
+        #     tour += (tour[0],)
+        #     d = sum(dm[a][b] for a,b in zip(tour[:-1], tour[1:]))
         #     if d < d2:
         #         d2 = d
-        #         p2 = route[:-1]
+        #         p2 = tour[:-1]
+        # return d2,p2
 
     d2, p2 = exhaustive(g)
     d1, p1 = g.solve_tsp()
