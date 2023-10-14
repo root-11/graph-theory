@@ -1,7 +1,6 @@
 from sys import maxsize
 from itertools import combinations, permutations
 from collections import Counter
-from statistics import stdev
 from .base import BasicGraph
 from bisect import insort
 from random import shuffle
@@ -230,18 +229,15 @@ def _opt2(graph, tour):
             p0 = tour[:]
 
         if improvements == {None} or len(improvements) == 0:
-            return tuple(p0)
+            break
 
         counter[tuple(tour)] += 1
         inc += 1
+
         if inc % 100 == 0:
-            c1 = {k: v for k, v in counter.items() if v != 1}
-            if c1:  # there are any repeated values ...
-                if c1.keys() == c2.keys():  # ...and the keys haven't changed ...
-                    if sum(c1.values()) - sum(c2.values()) == 100:  # ... and the last 100 steps
-                        # ... are completely accounted for, then it's a loop.
-                        return tuple(p0)
-            c2 = c1
+            if any(v > 2 for v in counter.values()):
+                break
+    return tuple(p0)
 
 
 def _opt3(graph, tour):
@@ -253,34 +249,43 @@ def _opt3(graph, tour):
     def _zipwalk(tour):
         return [(tour[i - 1], tour[i]) for i in range(len(tour))]
 
-    def reverse_segment_if_better(tour, i, j, k):
+    def reverse_segment_if_better(graph, tour, i, j, k):
         """If reversing tour[i:j] would make the tour shorter, then do it."""
+        distance = lambda a, b: graph.edge(a, b, default=maxsize)
+
         # Given tour [...A-B...C-D...E-F...]
         A, B, C, D, E, F = tour[i - 1], tour[i], tour[j - 1], tour[j], tour[k - 1], tour[k % len(tour)]
+        dmin, mindex = maxsize, ""
         d0 = distance(A, B) + distance(C, D) + distance(E, F)
+        dmin, mindex = d0, "d0"
         d1 = distance(A, C) + distance(B, D) + distance(E, F)
+        if d1 < dmin:
+            dmin, mindex = d1, "d1"
         d2 = distance(A, B) + distance(C, E) + distance(D, F)
+        if d2 < dmin:
+            dmin, mindex = d2, "d2"
         d3 = distance(A, D) + distance(E, B) + distance(C, F)
+        if d3 < dmin:
+            dmin, mindex = d3, "d3"
         d4 = distance(F, B) + distance(C, D) + distance(E, A)
+        if d4 < dmin:
+            dmin, mindex = d4, "d4"
 
-        best = [(a, b) for a, b in zip([d0, d1, d2, d3, d4], ["d0", "d1", "d2", "d3", "d4"])]
-        best.sort()
-        _, index = best[0]
-        if index == "d1":
+        if mindex == "d0":
+            return 0
+        if mindex == "d1":
             tour[i:j] = reversed(tour[i:j])
             return -d0 + d1
-        elif index == "d2":
+        elif mindex == "d2":
             tour[j:k] = reversed(tour[j:k])
             return -d0 + d2
-        elif index == "d3":
+        elif mindex == "d3":
             tmp = tour[j:k] + tour[i:j]
             tour[i:k] = tmp
             return -d0 + d3
-        elif index == "d4":
+        else:  # elif mindex == "d4":
             tour[i:k] = reversed(tour[i:k])
             return -d0 + d4
-        else:
-            return 0
 
     def all_segments(n: int):
         """Generate all segments combinations"""
@@ -288,11 +293,11 @@ def _opt3(graph, tour):
 
     tour = list(tour)
     p0, d0 = tour[:], sum(graph.edge(a, b) for a, b in _zipwalk(tour))
-    counter, inc, c_max = Counter(), 0, 2
+    counter, inc = Counter(), 0
     while True:
         delta = 0
         for a, b, c in all_segments(len(tour)):
-            delta += reverse_segment_if_better(tour, a, b, c)
+            delta += reverse_segment_if_better(graph, tour, a, b, c)
 
         d1 = sum(graph.edge(a, b) for a, b in _zipwalk(tour))
         if d1 < d0:
@@ -302,24 +307,19 @@ def _opt3(graph, tour):
         if delta >= 0:
             break
 
-        counter[tuple(tour)] += 1
-        if any(v > c_max for v in counter.values()):
-            shuffle(tour)
-            c_max += 1
-
         inc += 1
         if inc % 100 == 0:
-            if stdev(counter.values()) > 2:  # the variance is exploding.
+            if any(v > 2 for v in counter.values()):
                 break
     return tuple(p0)
 
 
 def brute_force(graph):
-    d2 = float('inf')
+    d2 = maxsize
     nodes = graph.nodes()
     for route in permutations(nodes, len(nodes)):
-        if route[0]!=nodes[0]:  # all iterations after this point are rotations.
-            break  
+        if route[0] != nodes[0]:  # all iterations after this point are rotations.
+            break
         route += (route[0],)
         d = graph.distance_from_path(route)
         if d < d2:
