@@ -12,7 +12,9 @@ dist/
 # Tutorial checkpoints
 examples/.ipynb_checkpoints/
 
-
 # IDE / Workspace
 .vscode/
 *scratch*.py
+
+# private datasets
+/datasets
