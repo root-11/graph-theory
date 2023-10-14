@@ -5,6 +5,8 @@ try:
     visuals_enabled = True
 except ImportError:
     visuals_enabled = False
+    import warnings
+    warnings.warn("matplotlib is not installed, visuals are disabled. Please install matplotlib>=3.1.0")
 
 
 def visualise(func):

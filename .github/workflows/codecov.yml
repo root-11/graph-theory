@@ -21,7 +21,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest
         python -m pip install coverage
-        python -m pip install -r requirements.txt
+        python -m pip install -r test-requirements.txt
         coverage run --source='.' --parallel -m pytest 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
