@@ -39,11 +39,11 @@ def test_nth_p():
 
 def test_nth_products():
     a, b, c = [1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 6]
-    L = list(n_products(a, b, n=10))
+    L = list(n_products(10, a, b))
     assert len(L) == 10
     assert L == [(1, 2), (1, 6), (2, 4), (3, 1), (3, 5), (4, 2), (4, 6), (5, 4), (6, 1), (6, 5)]
 
-    L = list(n_products(a, b, c, n=10))
+    L = list(n_products(10, a, b, c))
     assert len(L) == 10
     # fmt:off
     assert L == [(1, 2, 5), (1, 6, 3), (2, 4, 1), (3, 1, 4), (3, 5, 2), (4, 2, 5), (4, 6, 3), (5, 4, 1), (6, 1, 4), (6, 5, 2)]

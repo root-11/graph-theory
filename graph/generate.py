@@ -69,9 +69,9 @@ def nth_product(idx, *args):
     total = math.prod([len(a) for a in args])
     if idx < 0:
         idx += total
-    if index < 0 or index >= total:
-        raise IndexError(f"Index {index} out of range")
-    
+    if idx < 0 or idx >= total:
+        raise IndexError(f"Index {idx} out of range")
+
     elements = ()
     for i in range(len(args)):
         offset = math.prod([len(a) for a in args[i:]]) // len(args[i])
@@ -81,22 +81,26 @@ def nth_product(idx, *args):
     return elements
 
 
-def n_products(*args, n=20):
+def n_products(n, *args):
     """
     Returns the nth product of the given iterables.
+
+    Args:
+        n (int): the number of products to generate.
+        *args: the iterables.
     """
     if len(args) == 0:
         return ()
     if any(len(a) == 0 for a in args):
         raise ZeroDivisionError("Cannot generate products of empty iterables")
 
-    n = min(n, math.prod([len(a) for a in args]))
+    n = min(n, int(math.prod([len(a) for a in args])))
     step = math.prod([len(a) for a in args]) / n
 
     for ni in range(n):
         ix = int(step * ni + step / 2)
         yield nth_product(ix, *args)
-    
+
 
 def random_graph(size, degree=1.7, seed=1):
     if not isinstance(size, int):
@@ -111,13 +115,9 @@ def random_graph(size, degree=1.7, seed=1):
     rng = random.Random(seed)
     rng.shuffle(nodes)
 
-    edges = size * degree
+    edges = int(size * degree)
 
-    gen_length = math.factorial(nodes) / math.factorial(nodes - 2)
-    comb = int(gen_length / edges)
-
-    for i in nodes:
-        n = i * comb
-        a, b = nth_permutation(n, size, nodes)
+    L = n_products(edges, nodes, nodes)
+    for a, b in L:
         g.add_edge(a, b)
     return g
