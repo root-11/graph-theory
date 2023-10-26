@@ -1,5 +1,3 @@
-from functools import lru_cache
-from collections import defaultdict
 import math
 import random
 import itertools
@@ -42,19 +40,23 @@ def grid(length, width, bidirectional=False):
     return g
 
 
-def nth_permutation(idx, length, alphabet=None, prefix=()):
-    if alphabet is None:
-        alphabet = [i for i in range(length)]
-    if length == 0:
-        return prefix
-    else:
-        branch_count = math.factorial(length - 1)
-        for d in alphabet:
-            if d not in prefix:
-                if branch_count <= idx:
-                    idx -= branch_count
-                else:
-                    return nth_permutation(idx, length - 1, alphabet, prefix + (d,))
+def _nth_product_no_typecheck(idx, *args):
+    """returns the nth product of the given iterables.
+
+    Args:
+        idx (int): the index.
+        *args: the iterables.
+
+    Returns:
+        tuple: the elements at the given index.
+    """
+    elements = ()
+    for i in range(len(args)):
+        offset = math.prod([len(a) for a in args[i:]]) // len(args[i])
+        index = idx // offset
+        elements += (args[i][index],)
+        idx -= index * offset
+    return elements
 
 
 def nth_product(idx, *args):
@@ -71,19 +73,13 @@ def nth_product(idx, *args):
         idx += total
     if idx < 0 or idx >= total:
         raise IndexError(f"Index {idx} out of range")
-
-    elements = ()
-    for i in range(len(args)):
-        offset = math.prod([len(a) for a in args[i:]]) // len(args[i])
-        index = idx // offset
-        elements += (args[i][index],)
-        idx -= index * offset
-    return elements
+    return _nth_product_no_typecheck(idx, *args)
 
 
-def n_products(n, *args):
+def nth_products(n, *args):
     """
-    Returns the nth product of the given iterables.
+    Returns the n evenly spread combinations using 
+    nth product of the given iterables.
 
     Args:
         n (int): the number of products to generate.
@@ -99,10 +95,20 @@ def n_products(n, *args):
 
     for ni in range(n):
         ix = int(step * ni + step / 2)
-        yield nth_product(ix, *args)
+        yield _nth_product_no_typecheck(ix, *args)
 
 
 def random_graph(size, degree=1.7, seed=1):
+    """Generates a graph with randomized edges
+
+    Args:
+        size (int): number of nodes
+        degree (float, optional): Average degree of connectivity. Defaults to 1.7.
+        seed (int, optional): Random seed. Defaults to 1.
+
+    Returns:
+        Graph: the generated graph
+    """
     if not isinstance(size, int):
         raise TypeError(f"Expected int, not {type(size)}")
     if not isinstance(degree, float):
@@ -117,7 +123,7 @@ def random_graph(size, degree=1.7, seed=1):
 
     edges = int(size * degree)
 
-    L = n_products(edges, nodes, nodes)
+    L = nth_products(edges, nodes, nodes)
     for a, b in L:
         g.add_edge(a, b)
     return g
