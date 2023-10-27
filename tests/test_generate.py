@@ -37,6 +37,11 @@ def test_nth_p():
         assert comb == nth_product(i, a, b, c, d)
 
 
+def test_nth_p2():
+    v = nth_product(8, range(2), range(2), range(2), range(2))
+    assert v == (1,0,0,0)
+
+
 def test_nth_products():
     a, b, c = [1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 6]
     L = list(nth_products(10, a, b))
