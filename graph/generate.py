@@ -1,6 +1,8 @@
 import math
 import random
 import itertools
+from functools import reduce
+from operator import mul
 from graph.core import Graph
 
 
@@ -40,40 +42,35 @@ def grid(length, width, bidirectional=False):
     return g
 
 
-def _nth_product_no_typecheck(idx, *args):
-    """returns the nth product of the given iterables.
+def nth_product(index, *args):
+    """Equivalent to ``list(product(*args))[index]``.
 
-    Args:
-        idx (int): the index.
-        *args: the iterables.
+    The products of *args* can be ordered lexicographically.
+    :func:`nth_product` computes the product at sort position *index* without
+    computing the previous products.
 
-    Returns:
-        tuple: the elements at the given index.
+        >>> nth_product(8, range(2), range(2), range(2), range(2))
+        (1, 0, 0, 0)
+
+    ``IndexError`` will be raised if the given *index* is invalid.
     """
-    elements = ()
-    for i in range(len(args)):
-        offset = math.prod([len(a) for a in args[i:]]) // len(args[i])
-        index = idx // offset
-        elements += (args[i][index],)
-        idx -= index * offset
-    return elements
+    pools = list(map(tuple, reversed(args)))
+    ns = list(map(len, pools))
 
+    c = reduce(mul, ns)
 
-def nth_product(idx, *args):
-    """returns the nth product of the given iterables.
+    if index < 0:
+        index += c
 
-    Args:
-        idx (int): the index.
-        *args: the iterables.
-    """
-    if not isinstance(idx, int):
-        raise TypeError(f"Expected int, not {type(idx)}")
-    total = math.prod([len(a) for a in args])
-    if idx < 0:
-        idx += total
-    if idx < 0 or idx >= total:
-        raise IndexError(f"Index {idx} out of range")
-    return _nth_product_no_typecheck(idx, *args)
+    if not 0 <= index < c:
+        raise IndexError
+
+    result = []
+    for pool, n in zip(pools, ns):
+        result.append(pool[index % n])
+        index //= n
+
+    return tuple(reversed(result))
 
 
 def nth_products(n, *args):
@@ -95,7 +92,7 @@ def nth_products(n, *args):
 
     for ni in range(n):
         ix = int(step * ni + step / 2)
-        yield _nth_product_no_typecheck(ix, *args)
+        yield nth_product(ix, *args)
 
 
 def random_graph(size, degree=1.7, seed=1):
