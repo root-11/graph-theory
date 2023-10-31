@@ -7,6 +7,9 @@ from collections.abc import Iterable
 
 def distance_map(graph, starts=None, ends=None, reverse=False):
     """Maps the shortest path distance from any start to any end.
+
+    The "many to many" version of single source shortest path.
+
     :param graph: instance of Graph
     :param starts: None, node or (set,list,tuple) of nodes
     :param ends: None (exhaustive map), node or (set,list,tuple) of nodes
