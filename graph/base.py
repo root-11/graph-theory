@@ -22,6 +22,9 @@ class BasicGraph(object):
         self._in_degree = defaultdict(int)
         self._out_degree = defaultdict(int)
 
+        self._entering_edges = dict()
+        self._leaving_edges = set()
+
         if from_dict is not None:
             self.from_dict(from_dict)
         elif from_list is not None:
@@ -238,7 +241,7 @@ class BasicGraph(object):
                     m.append("{}={}".format(b, a))
             raise ValueError("edges({}) has too many inputs. Pick one.".format(m))
 
-        if path:
+        if path is not None:
             if not isinstance(path, list):
                 raise ValueError("expects a list")
             if len(path) < 2:
@@ -246,13 +249,13 @@ class BasicGraph(object):
 
             return [(path[ix], path[ix + 1], self._edges[path[ix]][path[ix + 1]]) for ix in range(len(path) - 1)]
 
-        if from_node:
+        if from_node is not None:
             if from_node in self._edges:
                 return [(from_node, n2, cost) for n2, cost in self._edges[from_node].items()]
             else:
                 return []
 
-        if to_node:
+        if to_node is not None:
             if to_node in self._reverse_edges:
                 return [(n1, to_node, value) for n1, value in self._reverse_edges[to_node].items()]
             else:
@@ -348,6 +351,24 @@ class BasicGraph(object):
             length += self.edge(nodes[-1], nodes[0])
         return length
         # return sum(self.edge(n1, n2, default=float("inf")) for n1, n2 in zip(nodes[:-1], nodes[1:]))
+
+    def add_boundary(self, nodes):
+        """enables the user to define clusters within the graph.
+
+        Boundaries can be nested, so each call to add_boundary(nodes=[...])
+        is additive.
+
+        Args:
+            nodes (list of nodes)
+        """
+        region = BasicGraph()
+        for n in nodes:
+            for s, e, d in self.edges(to_node=n) + self.edges(from_node=n):
+                region.add_edge(s, e, d)
+                if s not in nodes:  # incoming edge
+                    self._entering_edges[(s, e)] = region  # incoming pointing to the new graph.
+                if e not in nodes:  # outgoing edge.
+                    region._leaving_edges.add((s, e))
 
 
 def subgraph(graph, nodes):

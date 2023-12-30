@@ -8,6 +8,8 @@ from collections import defaultdict
 from heapq import heappop, heappush
 
 
+# classic BFS based SSSP
+# ----------------------
 def shortest_path(graph, start, end, avoids=None):
     """single source shortest path algorithm.
     :param graph: class Graph
@@ -58,6 +60,77 @@ def shortest_path(graph, start, end, avoids=None):
     return float("inf"), []
 
 
+def shortest_path_w_regions(graph, start, end, avoids=None):
+    if not isinstance(graph, BasicGraph):
+        raise TypeError(f"Expected subclass of BasicGraph, not {type(graph)}")
+    if start not in graph:
+        raise ValueError(f"{start} not in graph")
+    if end not in graph:
+        raise ValueError(f"{end} not in graph")
+    if avoids is None:
+        visited = set()
+    elif not isinstance(avoids, (frozenset, set, list)):
+        raise TypeError(f"Expect obstacles as set or frozenset, not {type(avoids)}")
+    else:
+        visited = set(avoids)
+
+    infinite = float("inf")
+    q, minimums = [(0, 0, start, ())], {start: 0}
+    i = 1
+
+    while q:
+        (cost, _, v1, path) = heappop(q)  # popping off the smallest cost one at a time
+
+        if v1 not in visited:
+            visited.add(v1)
+            path = (v1, path)
+
+        if v1 == end:  # exit criteria.
+            L = []
+            while path:
+                v, path = path[0], path[1]
+                L.append(v)
+            L.reverse()
+            return cost, L
+
+        for _, v2, dist in graph.edges(from_node=v1):
+            if v2 in visited:
+                continue
+            region = graph._entering_edges.get((v1, v2), None)
+            if region is None:
+                # normal BFS style search.
+                previous_distance = minimums.get(v2, infinite)
+                new_distance = cost + dist
+                if new_distance < previous_distance:
+                    minimums[v2] = new_distance
+                    heappush(q, (new_distance, i, v2, path))
+                    i += 1
+            else:
+                if end in region:  # search for the end.
+                    seq = [(v2, end)]
+                else:  # search for the exits from the region.
+                    seq = region._leaving_edges
+                for s, e in seq:
+                    d, p = shortest_path_w_regions(region, v2, e)  # recursive call.
+                    if d == infinite:
+                        continue
+                    previous_distance = minimums.get(v2, infinite)
+                    new_distance = cost + dist + d
+                    if new_distance < previous_distance:
+                        minimums[e] = new_distance
+                        new_path = path  # (0, ())
+                        for step in p:  # p = [2,5]
+                            if step == e:
+                                continue
+                            new_path = (step, new_path)  # (5,(2,(0,())))
+                        heappush(q, (new_distance, i, e, new_path))
+                        i += 1
+
+    return infinite, []
+
+
+# Bidirectional SSSP
+# ------------------
 class ScanThread(object):
     __slots__ = ["cost", "n1", "path"]
 
