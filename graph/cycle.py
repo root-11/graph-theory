@@ -1,4 +1,5 @@
 from .base import BasicGraph
+from .topological_sort import topological_sort
 
 
 def cycle(graph, start, mid, end=None):
@@ -39,7 +40,7 @@ def has_cycles(graph):
         if n1 == n2:  # detect nodes that point to themselves
             return True
     try:
-        _ = list(graph.phase_lines())  # tries to create a DAG.
+        _ = list(topological_sort(graph))  # tries to create a DAG.
         return False
     except AttributeError:
         return True
