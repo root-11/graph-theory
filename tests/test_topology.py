@@ -60,6 +60,11 @@ def test_has_cycles():
     g.add_node(4)
     assert g.has_cycles()
 
+    g.add_edge(4,5)
+    assert g.has_cycles()
+    g.add_edge(5,4)
+    assert g.has_cycles()
+
 
 def test_is_really_cyclic():
     g = Graph(from_list=[(1, 1, 1), (2, 2, 1)])  # two loops onto themselves.
