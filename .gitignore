@@ -18,3 +18,7 @@ examples/.ipynb_checkpoints/
 
 # private datasets
 /datasets
+
+# virtual environments
+.env/
+.venv/
