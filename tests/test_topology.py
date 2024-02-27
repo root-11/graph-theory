@@ -54,6 +54,12 @@ def test_is_not_cyclic():
     g = graph3x3()
     assert not g.has_cycles()
 
+def test_has_cycles():
+    g = Graph(from_list=[(1,2),(2,3),(3,1)])
+    assert g.has_cycles()
+    g.add_node(4)
+    assert g.has_cycles()
+
 
 def test_is_really_cyclic():
     g = Graph(from_list=[(1, 1, 1), (2, 2, 1)])  # two loops onto themselves.
