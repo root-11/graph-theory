@@ -230,6 +230,25 @@ def test_in_and_out_degree():
         assert g.in_degree(node) == in_degree[node]
         assert g.out_degree(node) == out_degree[node]
 
+def test_equals():
+    g1 = Graph(from_list=[(1,2),(2,3)])
+    g2 = g1.copy()
+    assert g1 == g2
+
+    g1.add_edge(3,1)
+    g1.del_edge(3,1)
+    assert g1 == g2
+
+    assert g1.edges() == g2.edges()
+    assert g1.nodes() == g2.nodes()
+
+def test_copy_equals():
+    g1 = Graph(from_list=[(1,2),(2,3)])
+    g1.add_edge(3,1)
+    g1.del_edge(3,1)
+    g2 = g1.copy()
+    assert g1 == g2
+
 
 def test_copy():
     g = graph05()
