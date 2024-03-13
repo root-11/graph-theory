@@ -28,9 +28,9 @@ jobs:
           - {name: 'Minimum Versions', python: '3.12', os: ubuntu-latest, tox: py312-min}
           - {name: 'Development Versions', python: '3.8', os: ubuntu-latest, tox: py38-dev}
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.name }}
-        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
       - name: Install dependencies
