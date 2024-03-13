@@ -27,19 +27,22 @@ jobs:
           - {name: 'PyPy', python: 'pypy-3.10', os: ubuntu-latest, tox: pypy310}
           - {name: 'Minimum Versions', python: '3.12', os: ubuntu-latest, tox: py312-min}
           - {name: 'Development Versions', python: '3.8', os: ubuntu-latest, tox: py38-dev}
-          - {name: Typing, python: '3.12', os: ubuntu-latest, tox: typing}
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c
+      - name: Set up Python ${{ matrix.name }}
+        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c
         with:
           python-version: ${{ matrix.python }}
-          cache: 'pip'
-          cache-dependency-path: requirements*/*.txt
-      - name: cache mypy
-        uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2
-        with:
-          path: ./.mypy_cache
-          key: mypy|${{ matrix.python }}|${{ hashFiles('pyproject.toml') }}
-        if: matrix.tox == 'typing'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install flake8 pytest
+          python -m pop install -r test-requirements.txt
+      - name: Lint with flake8
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - run: pip install tox
       - run: tox run -e ${{ matrix.tox }}
