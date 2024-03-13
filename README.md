@@ -12,20 +12,6 @@ A simple graph library...<br>
 *... with code that you can explain to your boss...*<br>
 
 Detailed tutorial evolving in the [examples section](https://github.com/root-11/graph-theory/blob/master/examples/readme.md).
----------------------------
-
-Latest features:
-
-| date | description |
-|---|---|
-| 2023/07/03 | Maintenance relealse (2023.7.1): Code has been reorganised so it is easier to navigate. No API changes. |
-| 2023/05/20 | Maintenance release (2022.4.3) [graph.phaseline](https://github.com/root-11/graph-theory/blob/da8b60137a73d7b7c23a960cb544181ca1bc122a/graph/__init__.py#L1291) has a new simpler and faster algorithm ( O(N*E) --> O(N+E) ). |
-| 2022/12/12 | Maintenance release (2022.4.2): To speed up the package import plot3d has been moved to function call. |
-| 2022/10/04 | New tutorial: [Learn to solve traffic jams and sudoku's](https://github.com/root-11/graph-theory/blob/master/examples/graphs%20as%20finite%20state%20machines.ipynb) |
-| 2022/03/09 | bugfixes to TrafficJamSolver only. |
-| 2022/01/04 | new feature: Graph.distance_map, which allows the user to compute<br>the distance from a number of starts and ends as simulated annealing map. |
-| 2022/01/04 | new generation of the traffic jam solver.|
-| 2021/12/12 | shortest path now accepts keyword `avoids`, which allows the user<br>to declare nodes which cannot be a part of the path.<br>This feature has no impact on performance.|
 
 ---------------------------
 Install:
@@ -38,8 +24,7 @@ Upgrade:
 
 Testing:
 
-    pytest tests --timesensitive  (for all tests)
-    pytest tests (for logic tests only)
+    pytest tests
 
 ---------------------------
 Import:
@@ -154,4 +139,5 @@ All module functions are available from Graph and Graph3D (where applicable).
 - Joshua Crestone for all simple paths test.
 - CodeMartyLikeYou for detecting a bug in `@memoize` 
 - Tom Carroll for detecting the bug in del_edge and inspiration for topological sort.
+- Sappique for discovering bug in `__eq__` and `has_cycles`.
 
