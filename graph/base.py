@@ -182,7 +182,8 @@ class BasicGraph(object):
             self._reverse_edges,
             self._nodes,
             self._in_degree,
-            self._out_degree]:
+            self._out_degree
+        ]:
             try:
                 del _d[node_id]
             except KeyError:
