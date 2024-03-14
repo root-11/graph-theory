@@ -55,7 +55,7 @@ def test_is_not_cyclic():
     assert not g.has_cycles()
 
 def test_has_cycles():
-    g = Graph(from_list=[(1,2),(2,3),(3,1)])
+    g = Graph(from_list=[(1, 2), (2, 3), (3, 1)])
     assert g.has_cycles()
     g.add_node(4)
     assert g.has_cycles()
@@ -162,17 +162,17 @@ def test_offset_phase_lines():
     This test recreates a bug
 
     1
-    \
+    |
     2
-    \
+    |
     3   <---
-    \ /      \
+    | /      |
     4   A    ^
-    \   \    |
+    |   |    |
     5   B    |
-    \___\   /
+    |___|   /
       6____/
-      \
+      |
       7
 
     """
@@ -225,17 +225,17 @@ def test_phaselines():
 def test_phaselines_for_ordering():
     """
     u1      u4      u2      u3
-    \       \       \_______\
+    |       |       |_______|
     csg     cs3       append
-    \       \           \
-    op1     \           op3
-    \       \           \
-    op2     \           cs2
-    \       \___________\
+    |       |           |
+    op1     |           op3
+    |       |           |
+    op2     |           cs2
+    |       |___________|
     cs1         join
-    \           \
+    |           |
     map1        map2
-    \___________\
+    |___________|
         save
 
     """
