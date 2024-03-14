@@ -178,10 +178,10 @@ class BasicGraph(object):
             self.del_edge(n1, node_id)
 
         for _d in [
-            self._edges, 
-            self._reverse_edges, 
-            self._nodes, 
-            self._in_degree, 
+            self._edges,
+            self._reverse_edges,
+            self._nodes,
+            self._in_degree,
             self._out_degree]:
             try:
                 del _d[node_id]
