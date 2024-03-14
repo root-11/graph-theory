@@ -13,17 +13,17 @@ def phase_lines(graph):
     so that multiple processors can work on them.
     Example: DAG with tasks:
         u1      u4      u2      u3
-        \       \       \_______\
+        |       |       |_______|
         csg     cs3       append
-        \       \           \
-        op1     \           op3
-        \       \           \
-        op2     \           cs2
-        \       \___________\
+        |       |           |
+        op1     |           op3
+        |       |           |
+        op2     |           cs2
+        |       |___________|
         cs1         join
-        \           \
+        |           |
         map1        map2
-        \___________\
+        |___________|
             save
     phaselines = {
         "u1": 0, "u4": 0, "u2": 0, "u3": 0, 
