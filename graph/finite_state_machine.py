@@ -17,7 +17,7 @@ class FiniteStateMachine(object):
         :return: None
         """
         if self._initial_state_was_set:
-            raise ValueError(f"initial state has already been set.")
+            raise ValueError("initial state has already been set.")
         if state not in self.states.nodes():
             raise ValueError(f"{state} is not a state.")
         self.current_state = state
