@@ -79,7 +79,7 @@ def phase_lines(graph):
                 g2.del_node(n1)  # remove nodes that have no incoming edges
 
         if set(q) == q2:
-            raise AttributeError(f"Loop found: The graph is not acyclic!")
+            raise AttributeError("Loop found: The graph is not acyclic!")
 
         # Finally turn the next iterations workqueue into current.
         # and increment the phaseline counter.
