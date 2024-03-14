@@ -345,20 +345,20 @@ def test_no_edge_connected():
     g = Graph()
     g.add_node(4)
     g.add_node(5)
-    assert g.is_connected(4, 5) == False
+    assert g.is_connected(4, 5) is False
 
 
 def test_edge_connected():
     g = Graph()
     g.add_edge(4, 5)
-    assert g.is_connected(4, 5) == True
+    assert g.is_connected(4, 5) is True
 
 
 def test_edge_not_connected():
     g = Graph()
     g.add_edge(3, 4)
     g.add_edge(5, 4)
-    assert g.is_connected(3, 5) == False
+    assert g.is_connected(3, 5) is False
 
 
 def test_del_edge():
