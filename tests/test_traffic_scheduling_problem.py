@@ -100,7 +100,7 @@ def test_compact_bfs_problem():
 def test_hill_climb():
     """
     [1]<--->[2]<--->[3]
-        \         /
+        \\        /
          +->[4]->+  single direction!
     """
     g = Graph()
@@ -146,7 +146,7 @@ def test_hill_climb_with_edge_different_weights():
 
          3       1
     [1]<--->[2]<--->[3]
-        \ 1     1  /
+        \\1     1  /
          <->[4]<->
     """
     g = Graph()
@@ -199,7 +199,7 @@ def test_hill_climb_with_restrictions_bidirectional():
 
          1       1
     [1]<--->[2]<--->[3]
-        \ 1     1  /
+        \\1     1  /
          <->[4]<->
     """
     g = Graph()
@@ -488,9 +488,9 @@ def test_shuffle2():
 def test_simple_reroute_4():
     """
         1
-       / \
+       / \\
       6---2
-     / \ / \
+     / \\/ \\
     5 - 4 - 3
     """
     g = Graph()
@@ -695,10 +695,10 @@ def test_3_trains():
     Two trains (abc & d) are going east. One train is going west (efgh).
 
     a-b-c--0-0-0--d--0--e-f-g-h
-         \---0---/ \-0-/
+         \\--0---/ \\0-/
 
     1-2-3--4-5-6--7--8---9-10-11-12
-         \---13--/ \-14-/
+         \\--13--/ \\14-/
 
     The solution is given by side stepping abc (on 4,5,6) & d (on 8)
     and letting efgh pass on (12, 11, 10, 9, 14, 7, 13, 3, 2, 1)
