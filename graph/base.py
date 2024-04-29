@@ -86,8 +86,8 @@ class BasicGraph(object):
             self.add_node(node2)
 
         if node1 in self._edges and node2 in self._edges[node1]:  # it's a value update.
-                self._edges[node1][node2] = value
-                self._reverse_edges[node2][node1] = value
+            self._edges[node1][node2] = value
+            self._reverse_edges[node2][node1] = value
         else:  # it's a new edge.
             forward = self._edges.get(node1, None)
             if forward is None:
