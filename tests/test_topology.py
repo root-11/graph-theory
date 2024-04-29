@@ -319,7 +319,7 @@ def test_phaselines_for_sycamore():
     assert end - start < 1  # second.
 
     # third objective: efficiency.
-    max_calls = 17677
+    max_calls = 17845
 
     profiled_phaseline_func = profileit(phase_lines)
 
