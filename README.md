@@ -139,5 +139,5 @@ All module functions are available from Graph and Graph3D (where applicable).
 - Joshua Crestone for all simple paths test.
 - CodeMartyLikeYou for detecting a bug in `@memoize` 
 - Tom Carroll for detecting the bug in del_edge and inspiration for topological sort.
-- Sappique for discovering bug in `__eq__` and `has_cycles`.
+- Sappique for discovering bugs in `__eq__`, `copy` and `has_cycles`.
 
