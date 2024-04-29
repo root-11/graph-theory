@@ -16,9 +16,9 @@ class BasicGraph(object):
         :param from_list: creates graph from list of edges(n1,n2,d)
         """
         self._nodes = {}
-        self._edges = defaultdict(dict)
+        self._edges = {}
         self._edge_count = 0
-        self._reverse_edges = defaultdict(dict)
+        self._reverse_edges = {}
         self._in_degree = defaultdict(int)
         self._out_degree = defaultdict(int)
 
@@ -86,11 +86,21 @@ class BasicGraph(object):
             self.add_node(node2)
 
         if node1 in self._edges and node2 in self._edges[node1]:  # it's a value update.
-            self._edges[node1][node2] = value
-            self._reverse_edges[node2][node1] = value
+                self._edges[node1][node2] = value
+                self._reverse_edges[node2][node1] = value
         else:  # it's a new edge.
-            self._edges[node1][node2] = value
-            self._reverse_edges[node2][node1] = value
+            forward = self._edges.get(node1, None)
+            if forward is None:
+                self._edges[node1] = {node2: value}
+            else:
+                self._edges[node1][node2] = value
+
+            rev = self._reverse_edges.get(node2,None)
+            if rev is None:
+                self._reverse_edges[node2] = {node1: value}
+            else:
+                self._reverse_edges[node2][node1] = value
+
             self._out_degree[node1] += 1
             self._in_degree[node2] += 1
             self._edge_count += 1
@@ -170,12 +180,14 @@ class BasicGraph(object):
             return
 
         # outgoing
-        for n2, _ in self._edges[node_id].copy().items():
-            self.del_edge(node_id, n2)
+        if self._out_degree[node_id]!=0:
+            for n2, _ in self._edges[node_id].copy().items():
+                self.del_edge(node_id, n2)
 
         # incoming
-        for n1, _ in self._reverse_edges[node_id].copy().items():
-            self.del_edge(n1, node_id)
+        if self._in_degree[node_id]!=0:
+            for n1, _ in self._reverse_edges[node_id].copy().items():
+                self.del_edge(n1, node_id)
 
         for _d in [
             self._edges,
@@ -216,7 +228,7 @@ class BasicGraph(object):
             return []
 
         if to_node is not None:
-            return list(self._reverse_edges[to_node])
+            return list(self._reverse_edges.get(to_node,{}))
 
         if in_degree is not None:
             if not isinstance(in_degree, int) or in_degree < 0:
@@ -332,7 +344,7 @@ class BasicGraph(object):
                 n = q.popleft()
                 if n not in visited:
                     visited.add(n)
-                for c in self._edges[n]:
+                for c in self._edges.get(n,{}):
                     if c == n2:
                         return True  # <-- Exit if connected.
                     if c in visited:
