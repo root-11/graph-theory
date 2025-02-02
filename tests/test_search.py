@@ -588,6 +588,29 @@ def test_incomparable_path_searching():
     assert p == (2, [("A", "6"), ("B", "7"), "B"])
 
 
+def test_memoize():
+    g = Graph()
+    g.add_edge(0, 1)
+    g.add_edge(1, 2)
+    g.add_edge(2, 3)
+
+    # Python interprets 0 as False which has nasty side effects.
+    assert g.shortest_path(0, 3, memoize=False) == (3, [0,1,2,3])
+    assert g.shortest_path(0, 3, memoize=True) == (3, [0,1,2,3])
+
+def test_memoize_bidi():
+    g = Graph()
+    g.add_edge(1, 2, 1, bidirectional=True)
+    g.add_edge(0, 1, 1, bidirectional=True)
+    g.add_edge(2, 3, 1, bidirectional=True)
+
+    # Python interprets 0 as False which has nasty side effects.
+    assert g.shortest_path(0, 3, memoize=False) == (3, [0,1,2,3])
+    assert g.shortest_path(3, 0, memoize=False) == (3, [3,2,1,0])
+    assert g.shortest_path(0, 3, memoize=True) == (3, [0,1,2,3])
+    assert g.shortest_path(3, 0, memoize=True) == (3, [3,2,1,0])
+
+
 def test_cached_graph():
     g = Graph(from_list=[(s, e, d + (s / 100)) for s, e, d in graph4x4().edges()])
     g2 = g.copy()
