@@ -140,4 +140,5 @@ All module functions are available from Graph and Graph3D (where applicable).
 - CodeMartyLikeYou for detecting a bug in `@memoize` 
 - Tom Carroll for detecting the bug in del_edge and inspiration for topological sort.
 - Sappique for discovering bugs in `__eq__`, `copy` and `has_cycles`.
+- joshinils for discovering bug where `graph.edges(from_node=0)` was interpreted as `False`.
 
