@@ -29,10 +29,10 @@ Testing:
 ---------------------------
 Import:
 
-    import Graph
-    g = Graph()  
+    from graph import Graph
+    g = Graph()
 
-    import Graph3d
+    from graph import Graph3D
     g3d = Graph3D()
 
 ---------------------------
@@ -44,7 +44,7 @@ Modules:
 | `from graph import Graph, Graph3D` | Elementary methods (see basic methods below) for Graph and Graph3D.|
 | `from graph import ...` | All methods available on Graph (see table below) |
 | `from graph.assignment_problem import ...` | solvers for assignment problem, the Weapons-Target Assignment Problem, ... |
-| `from graph.hash import ...` | graph hash functions: graph hash, merkle tree, flow graph hash | 
+| `from graph.hash_methods import ...` | graph hash functions: graph hash, merkle tree, flow graph hash | 
 | `from graph.random import ...` | graph generators for random, 2D and 3D graphs. |
 | `from graph.transshipment_problem import ...` | solvers for the transshipment problem |
 | `from graph.traffic_scheduling_problem import ...` | solvers for the traffic jams (and slide puzzle) |
@@ -84,7 +84,7 @@ All module functions are available from Graph and Graph3D (where applicable).
 | + | + | `g.shortest_path(start,end [, memoize, avoids])` | returns the distance and path for path with smallest edge sum <br> If `memoize=True`, sub results are cached for faster access if repeated calls.<br> If `avoids=set()`, then these nodes are not a part of the path. ||
 | + | + | `g.shortest_path_bidirectional(start,end)`       | returns distance and path for the path with smallest edge sum using bidrectional search.                                                                                                                              ||
 | + | + | `g.is_connected(start,end)`                      | determines if there is a path from start to end                                                                                                                                                                       ||
-| + | + | `g.breadth_first_search(start,end)`              | returns the number of edges and path with fewest edges                                                                                                                                                                ||
+| + | + | `g.breadth_first_search(start,end)`              | returns path (list of nodes) with fewest edges                                                                                                                                                                        ||
 | + | + | `g.breadth_first_walk(start,end)`                | returns a generator for a BFS walk                                                                                                                                                                                    ||
 | + | + | `g.degree_of_separation(n1,n2)`                  | returns the distance between two nodes using BFS                                                                                                                                                                      ||
 | + | + | `g.distance_map(starts,ends, reverse)`           | returns a dictionary with the distance from any start to any end (or reverse)                                                                                                                                         ||
@@ -97,10 +97,11 @@ All module functions are available from Graph and Graph3D (where applicable).
 | + | + | `g.depth_first_search(start,end)`                | returns path using DFS and backtracking                                                                                                                                                                               ||
 | + | + | `g.depth_scan(start, criteria)`                  | returns set of nodes where criteria is True                                                                                                                                                                           ||
 | + | + | `g.distance_from_path(path)`                     | returns the distance for path.                                                                                                                                                                                        ||
+| + | + | `g.distance(nodes [, return_to_start])`          | returns the total edge weight along the ordered list of nodes; if `return_to_start=True`, adds the closing edge                                                                                                       ||
 | + | + | `g.maximum_flow(source,sink)`                    | finds the maximum flow between a source and a sink                                                                                                                                                                    ||
 | + | + | `g.maximum_flow_min_cut(source,sink)`            | finds the maximum flow minimum cut between a source and a sink                                                                                                                                                        ||
 | + | + | `g.minimum_cost_flow(inventory, capacity)`       | finds the total cost and flows of the capacitated minimum cost flow.                                                                                                                                                  ||
-| + | + | `g.solve_tsp()`                                  | solves the traveling salesman problem for the graph.<br>Available methods: 'greedy' (default) and 'bnb                                                                                                                ||
+| + | + | `g.solve_tsp()`                                  | solves the traveling salesman problem for the graph.<br>Available methods: '2023' (default), 'greedy', and 'bnb'                                                                                                      ||
 | + | + | `g.subgraph_from_nodes(nodes)`                   | returns the subgraph of `g` involving `nodes`                                                                                                                                                                         ||
 | + | + | `g.is_subgraph(g2)`                              | determines if graph `g2` is a subgraph in g                                                                                                                                                                           ||
 | + | + | `g.is_partite(n)`                                | determines if graph is n-partite                                                                                                                                                                                      ||
@@ -116,7 +117,7 @@ All module functions are available from Graph and Graph3D (where applicable).
 | + | + | `g.all_simple_paths(start,end)`                  | finds all simple paths between 2 nodes                                                                                                                                                                                ||
 | + | + | `g.all_paths(start,end)`                         | finds all combinations of paths between 2 nodes                                                                                                                                                                       ||
 | - | + | `g3d.distance(n1,n2)`                            | returns the spatial distance between `n1` and `n2`                                                                                                                                                                    ||
-| - | + | `g3d.n_nearest_neighbour(n1, [n])`               | returns the `n` nearest neighbours to node `n1`                                                                                                                                                                       ||
+| - | + | `g3d.n_nearest_neighbours(n1, [n])`              | returns the `n` nearest neighbours to node `n1`                                                                                                                                                                       ||
 | - | + | `g3d.plot()`                                     | returns matplotlib plot of the graph.                                                                                                                                                                                 ||
 
 
